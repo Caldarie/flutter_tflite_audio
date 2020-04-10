@@ -1,0 +1,40 @@
+group 'audioprocessing.audio_processing' //do not edit
+version '1.0'
+
+buildscript {
+    repositories {
+        google()
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.6.2'
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 16
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    lintOptions {
+        disable 'InvalidPackage'
+    }
+
+    dependencies{
+        implementation "androidx.appcompat:appcompat:1.1.0"
+        implementation 'androidx.annotation:annotation:1.1.0'
+        implementation 'org.tensorflow:tensorflow-android:1.13.1'
+    }
+}
