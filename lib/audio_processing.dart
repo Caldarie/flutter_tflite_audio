@@ -16,6 +16,10 @@ class AudioProcessing {
     return hasPermissions;
   }
 
+  static Future requestPermissions() async{
+    return _channel.invokeMethod('requestPermissions');
+  }
+
   static Future startRecording() async{
     return _channel.invokeMethod('startRecording');
   }
