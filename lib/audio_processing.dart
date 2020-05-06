@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 class AudioProcessing {
-  static const MethodChannel _channel =
-      const MethodChannel('audio_processing');
+  static const MethodChannel _channel = const MethodChannel('audio_processing');
 
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');
@@ -16,16 +15,26 @@ class AudioProcessing {
     return hasPermissions;
   }
 
-  static Future requestPermissions() async{
+  static Future requestPermissions() async {
     return _channel.invokeMethod('requestPermissions');
   }
 
-  static Future startRecording() async{
+  static Future startRecording() async {
     return _channel.invokeMethod('startRecording');
   }
 
-  static Future startRecognition() async{
+  static Future startRecognition() async {
     return _channel.invokeMethod('startRecognition');
   }
 
+  static Future loadModel(model, numThreads, isAsset) async {
+    return _channel.invokeMethod(
+      'loadModel',
+      {"model": model,
+      //"labels": labels,
+      "numThreads": numThreads,
+      "isAsset": isAsset,
+      },
+    );
+  }
 }
