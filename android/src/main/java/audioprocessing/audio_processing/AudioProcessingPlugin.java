@@ -22,6 +22,8 @@ import org.tensorflow.lite.Interpreter;
 import audioprocessing.audio_processing.mfcc.MFCC;
 
 import java.io.File;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.nio.MappedByteBuffer;
@@ -50,30 +52,7 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
     private static final int SAMPLE_RATE = 16000;
     private static final int SAMPLE_DURATION_MS = 1000;
     private static final int RECORDING_LENGTH = (int) (SAMPLE_RATE * SAMPLE_DURATION_MS / 1000);
-    //private static final String MODEL_FILENAME = "file:///android_asset/conv_actions_frozen.tflite";
-    //private static final String LABEL_FILENAME = "file:///android_asset/conv_actions_labels.txt";
-    //private static final String OUTPUT_SCORES_NAME = "output";
-    private List<String> labels = new ArrayList<String>(
-            Arrays.asList(
-                    "_silence_",
-                    "_unknown_",
-                    "yes",
-                    "no",
-                    "up",
-                    "down",
-                    "left",
-                    "right",
-                    "on",
-                    "off",
-                    "stop",
-                    "go"
-            )
-    );
-
-//    private static final char[] map = new char[]{'0', ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
-//            'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
-//            'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
-
+    
     //ui elements
     private static final String LOG_TAG = "AudioProcessing";
     private static final int REQUEST_RECORD_AUDIO = 13;
@@ -85,6 +64,9 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
     private Thread recordingThread;
     private final Registrar registrar;
     private final ReentrantLock recordingBufferLock = new ReentrantLock();
+
+    //working label variables
+    private List<String> labels;
 
     //working recognition variables
     boolean shouldContinueRecognition = true;
@@ -167,39 +149,40 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
         tfliteOptions.setNumThreads(numThreads);
         tfLite = new Interpreter(buffer, tfliteOptions);
 
-        //String labels = args.get("labels").toString();
+        //load labels
+        String labels = args.get("label").toString();
+        Log.d(LOG_TAG, "label name is: " + labels);
 
-//        if (labels.length() > 0) {
-//            if (isAsset) {
-//                key = registrar.lookupKeyForAsset(labels);
-//                loadLabels(assetManager, key);
-//            } else {
-//                loadLabels(null, labels);
-//            }
-//        }
+        if (labels.length() > 0) {
+            if (isAsset) {
+                key = registrar.lookupKeyForAsset(labels);
+                loadLabels(assetManager, key);
+            } else {
+                loadLabels(null, labels);
+            }
+        }
 
         return "success";
     }
 
-//   private void loadLabels(AssetManager assetManager, String path) {
-//    BufferedReader br;
-//    try {
-//      if (assetManager != null) {
-//        br = new BufferedReader(new InputStreamReader(assetManager.open(path)));
-//      } else {
-//        br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path))));
-//      }
-//      String line;
-//      labels = new Vector<>();
-//      while ((line = br.readLine()) != null) {
-//        labels.add(line);
-//      }
-//      labelProb = new float[1][labels.size()];
-//      br.close();
-//    } catch (IOException e) {
-//      throw new RuntimeException("Failed to read label file", e);
-//    }
-//  }
+   private void loadLabels(AssetManager assetManager, String path) {
+    BufferedReader br;
+    try {
+      if (assetManager != null) {
+        br = new BufferedReader(new InputStreamReader(assetManager.open(path)));
+      } else {
+        br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path))));
+      }
+      String line;
+      labels = new ArrayList<>(); //resets label input
+      while ((line = br.readLine()) != null) {
+        labels.add(line);
+      }
+      br.close();
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to read label file", e);
+    }
+  }
 
 
     private void requestMicrophonePermission() {
@@ -364,7 +347,6 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
 
         stopRecognition();
 
-
         //Output the result.
         //String result = "";
 //        for (int i = 0; i < outputScores.length; i++) {
@@ -400,6 +382,10 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
         Log.d(LOG_TAG, "Recording stopped.");
     }
 
+//    public void resetInput(){
+//        tfLite.resizeInput(0, new int[] {RECORDING_LENGTH, 1});
+//        tfLite.resizeInput(1, new int[] {1});
+//    }
 }
 
 

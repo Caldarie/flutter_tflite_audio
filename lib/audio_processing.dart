@@ -27,11 +27,11 @@ class AudioProcessing {
     return _channel.invokeMethod('startRecognition');
   }
 
-  static Future loadModel(model, numThreads, isAsset) async {
+  static Future loadModel(model, label, numThreads, isAsset) async {
     return _channel.invokeMethod(
       'loadModel',
       {"model": model,
-      //"labels": labels,
+      "label": label,
       "numThreads": numThreads,
       "isAsset": isAsset,
       },
