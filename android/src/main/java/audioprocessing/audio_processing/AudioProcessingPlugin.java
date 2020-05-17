@@ -52,7 +52,14 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
     private static final int SAMPLE_RATE = 16000;
     private static final int SAMPLE_DURATION_MS = 1000;
     private static final int RECORDING_LENGTH = (int) (SAMPLE_RATE * SAMPLE_DURATION_MS / 1000);
-    
+
+    //label smoothing variables
+    private static final long AVERAGE_WINDOW_DURATION_MS = 1000;
+    private static final float DETECTION_THRESHOLD = 0.50f;
+    private static final int SUPPRESSION_MS = 1500;
+    private static final int MINIMUM_COUNT = 3;
+    private static final long MINIMUM_TIME_BETWEEN_SAMPLES_MS = 30;
+
     //ui elements
     private static final String LOG_TAG = "AudioProcessing";
     private static final int REQUEST_RECORD_AUDIO = 13;
@@ -72,6 +79,7 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
     boolean shouldContinueRecognition = true;
     private Thread recognitionThread;
     private Interpreter tfLite;
+    private LabelSmoothing labelSmoothing = null;
     //private TensorFlowInferenceInterface inferenceInterface;
 
 
@@ -323,7 +331,6 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
         // We need to feed in float values between -1.0 and 1.0, so divide the
         // signed 16-bit inputs.
         for (int i = 0; i < RECORDING_LENGTH; ++i) {
-            //doubleInputBuffer[i][0] = inputBuffer[i] / 32767.0;
             floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f;
         }
 
@@ -332,37 +339,34 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
 //        float[] mfccInput = mfccConvert.process(doubleInputBuffer);
 //        Log.v(LOG_TAG, "MFCC Input======> " + Arrays.toString(mfccInput));
 
-//        Object [] input = {mfccInput, 1, 157, 20};
 
+        //Create the input and output tensors to feed the model
         Object[] inputArray = {floatInputBuffer, sampleRateList};
         Map<Integer, Object> outputMap = new HashMap<>();
         outputMap.put(0, outputScores);
 
         // Run the model.
         tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
-//        inferenceInterface.feed(INPUT_DATA_NAME, mfccInput, 1, 157, 20);
-//        inferenceInterface.run(outputScoresNames);
-//        inferenceInterface.fetch(OUTPUT_SCORES_NAME, outputScores);
         Log.v(LOG_TAG, "OUTPUT======> " + Arrays.toString(outputScores[0]));
+        Log.v(LOG_TAG, "Output scores length " + outputScores.toString());
 
+        long currentTime = System.currentTimeMillis();
+
+        labelSmoothing =
+                new LabelSmoothing(
+                        labels,
+                        AVERAGE_WINDOW_DURATION_MS,
+                        DETECTION_THRESHOLD,
+                        SUPPRESSION_MS,
+                        MINIMUM_COUNT,
+                        MINIMUM_TIME_BETWEEN_SAMPLES_MS);
+        
+        final LabelSmoothing.RecognitionResult result =
+                labelSmoothing.processLatestResults(outputScores[0], currentTime);
+
+        Log.d(LOG_TAG, "final result:" + result.foundCommand);
+        
         stopRecognition();
-
-        //Output the result.
-        //String result = "";
-//        for (int i = 0; i < outputScores.length; i++) {
-//            if (outputScores[i] == 0)
-//                break;
-//            result += map[(int) outputScores[i]];
-//        }
-        //final String r = result;
-//        this.runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                outputText.setText(r);
-//            }
-//        });
-
-        //Log.v(LOG_TAG, "End recognition: " + result);
     }
 
     public void stopRecognition() {
