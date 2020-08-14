@@ -21,6 +21,7 @@ import org.tensorflow.lite.Interpreter;
 
 import audioprocessing.audio_processing.mfcc.MFCC;
 
+import java.util.concurrent.CompletableFuture; //required to get value from thread
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -82,6 +83,9 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
     private LabelSmoothing labelSmoothing = null;
     //private TensorFlowInferenceInterface inferenceInterface;
 
+    //result
+    final CompletableFuture<String> completableFuture = new CompletableFuture<>();
+
 
     public static void registerWith(Registrar registrar) {
         final MethodChannel channel = new MethodChannel(registrar.messenger(), "audio_processing");
@@ -118,9 +122,19 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
                 result.success(null);
                 break;
             case "requestPermissions":
-                Log.d(LOG_TAG, "requestPermission");
+                Log.d(LOG_TAG, "requesting permission..");
                 requestMicrophonePermission();
                 result.success(null);
+                break;
+            case "getResult":
+                Log.d(LOG_TAG, "getting result..");
+                try{
+                    String finalResult = getResult();
+                     Log.d(LOG_TAG, "final result: " + finalResult);
+                    result.success(finalResult);
+                } catch (Exception e){
+                    result.error("Recognition error", e.getMessage(), e);
+                }     
                 break;
             default:
                 result.notImplemented();
@@ -293,10 +307,14 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
         record.stop();
         record.release();
         stopRecording();
+        try{
         startRecognition();
+        } catch (Exception e){
+            Log.v(LOG_TAG, "Recognition Error");
+        }
     }
 
-    public synchronized void startRecognition() {
+    public synchronized void startRecognition() throws Exception{
         if (recognitionThread != null) {
             return;
         }
@@ -306,13 +324,17 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
                         new Runnable() {
                             @Override
                             public void run() {
-                                recognize();
+                                //Fetches result from thread)
+                                completableFuture.complete(recognize());
+                                stopRecognition();
+                                
                             }
                         });
+        
         recognitionThread.start();
     }
 
-    private void recognize() {
+    private String recognize() {
         Log.v(LOG_TAG, "Start recognition");
 
         short[] inputBuffer = new short[RECORDING_LENGTH];
@@ -364,10 +386,13 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
         final LabelSmoothing.RecognitionResult result =
                 labelSmoothing.processLatestResults(outputScores[0], currentTime);
 
-        Log.d(LOG_TAG, "final result:" + result.foundCommand);
+        return result.foundCommand;
         
-        stopRecognition();
     }
+
+    private String getResult() throws Exception{
+        return completableFuture.get();
+   }
 
     public void stopRecognition() {
         if (recognitionThread == null) {
@@ -386,10 +411,6 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
         Log.d(LOG_TAG, "Recording stopped.");
     }
 
-//    public void resetInput(){
-//        tfLite.resizeInput(0, new int[] {RECORDING_LENGTH, 1});
-//        tfLite.resizeInput(1, new int[] {1});
-//    }
 }
 
 

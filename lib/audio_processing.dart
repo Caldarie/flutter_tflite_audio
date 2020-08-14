@@ -30,11 +30,17 @@ class AudioProcessing {
   static Future loadModel(model, label, numThreads, isAsset) async {
     return _channel.invokeMethod(
       'loadModel',
-      {"model": model,
-      "label": label,
-      "numThreads": numThreads,
-      "isAsset": isAsset,
+      {
+        "model": model,
+        "label": label,
+        "numThreads": numThreads,
+        "isAsset": isAsset,
       },
     );
+  }
+
+  static Future<String> getResult() async {
+    final String result = await _channel.invokeMethod('getResult');
+    return result;
   }
 }
