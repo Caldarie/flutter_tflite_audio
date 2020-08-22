@@ -1,6 +1,8 @@
 # audio_processing
 
-Tensorflow plugin for audio classification
+My first plugin for flutter. This plugin allows you to use tflite to make audio/speech classifications. Currently supports android, however will update with an IOS version soon.
+
+If you have any feedback, or would like to help contribute in improving this plugin, please do not hesistate to let me know.
 
 ## Usage
 To use this plugin, add `audio_processing` as a [dependency in your pubspec.yaml file]
