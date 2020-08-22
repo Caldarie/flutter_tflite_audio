@@ -118,24 +118,6 @@ public class LabelSmoothing {
         }
 
         howManyResults = previousResults.size();
-//
-//        // If there are too few results, assume the result will be unreliable and
-//        // bail.
-//        final long earliestTime = previousResults.getFirst().first;
-//        final long samplesDuration = currentTimeMS - earliestTime;
-//
-//        Log.v("Number of Results: ", String.valueOf(howManyResults));
-//
-//        Log.v(
-//                "Duration < WD/FRAC?",
-//                String.valueOf((samplesDuration < (averageWindowDurationMs / MINIMUM_TIME_FRACTION))));
-//
-//        if ((howManyResults < minimumCount)
-//            //        || (samplesDuration < (averageWindowDurationMs / MINIMUM_TIME_FRACTION))
-//        ) {
-//            Log.v("RecognizeResult", "Too few results");
-//            return new RecognitionResult(previousTopLabel, 0.0f, false);
-//        }
 
         // Calculate the average score across all the results in the window.
         float[] averageScores = new float[labelsCount];
