@@ -323,7 +323,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Flutter",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = audioprocessing.audioProcessingExample;
+				PRODUCT_BUNDLE_IDENTIFIER = tfliteaudio.tfliteAudioExample
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -453,7 +453,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Flutter",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = audioprocessing.audioProcessingExample;
+				PRODUCT_BUNDLE_IDENTIFIER = tfliteaudio.tfliteAudioExample
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -476,7 +476,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Flutter",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = audioprocessing.audioProcessingExample;
+				PRODUCT_BUNDLE_IDENTIFIER = tfliteaudio.tfliteAudioExample
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VERSIONING_SYSTEM = "apple-generic";
 			};

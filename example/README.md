@@ -1,6 +1,6 @@
-# audio_processing_example
+# tflite_audio_example
 
-Demonstrates how to use the audio_processing plugin.
+Demonstrates how to use the tflite_audio plugin.
 
 ## Getting Started
 

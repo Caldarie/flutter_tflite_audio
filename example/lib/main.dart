@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:audio_processing/audio_processing.dart';
+import 'package:tflite_audio/tflite_audio.dart';
 
 void main() => runApp(MyApp());
 
@@ -59,19 +59,19 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future loadModel({model, label, numThreads, isAsset}) async {
-    return await AudioProcessing.loadModel(model, label, numThreads, isAsset);
+    return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
 
   Future<bool> checkPermissions() async {
-    return await AudioProcessing.checkPermissions;
+    return await TfliteAudio.checkPermissions;
   }
 
   Future<bool> requestPermissions() async {
-    return await AudioProcessing.requestPermissions();
+    return await TfliteAudio.requestPermissions();
   }
 
   Future<String> startRecognition() async {
-    return await AudioProcessing.startRecognition();
+    return await TfliteAudio.startRecognition();
   }
 
   @override

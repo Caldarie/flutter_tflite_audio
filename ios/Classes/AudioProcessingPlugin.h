@@ -1,4 +1,4 @@
 #import <Flutter/Flutter.h>
 
-@interface AudioProcessingPlugin : NSObject<FlutterPlugin>
+@interface TfliteAudioPlugin : NSObject<FlutterPlugin>
 @end

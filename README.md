@@ -1,9 +1,9 @@
-# audio_processing
+# tflite_audio
 
 Tensorflow plugin for audio classification
 
 ## Usage
-To use this plugin, add `audio_processing` as a [dependency in your pubspec.yaml file]
+To use this plugin, add `tflite_audio` as a [dependency in your pubspec.yaml file]
 
 ### Android
 Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:

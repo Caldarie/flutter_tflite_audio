@@ -1,5 +1,5 @@
 
-package audioprocessing.audio_processing;
+package flutter.tflite_audio;
 
 import android.util.Log;
 import android.util.Pair;

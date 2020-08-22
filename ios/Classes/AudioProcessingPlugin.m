@@ -1,11 +1,11 @@
-#import "AudioProcessingPlugin.h"
+#import "TfliteAudioPlugin.h"
 
-@implementation AudioProcessingPlugin
+@implementation TfliteAudioPlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
   FlutterMethodChannel* channel = [FlutterMethodChannel
-      methodChannelWithName:@"audio_processing"
+      methodChannelWithName:@"tflite_audio"
             binaryMessenger:[registrar messenger]];
-  AudioProcessingPlugin* instance = [[AudioProcessingPlugin alloc] init];
+  TfliteAudioPlugin* instance = [[TfliteAudioPlugin alloc] init];
   [registrar addMethodCallDelegate:instance channel:channel];
 }
 

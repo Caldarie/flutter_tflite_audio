@@ -1,4 +1,4 @@
-group 'audioprocessing.audio_processing' //do not edit
+group 'flutter.tflite_audio' //do not edit
 version '1.0'
 
 buildscript {

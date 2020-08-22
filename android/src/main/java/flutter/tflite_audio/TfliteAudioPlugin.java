@@ -1,4 +1,4 @@
-package audioprocessing.audio_processing;
+package flutter.tflite_audio;
 
 import android.Manifest;
 import android.app.Activity;
@@ -42,7 +42,7 @@ import io.flutter.plugin.common.PluginRegistry; //required for onRequestPermissi
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 
-public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
+public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
 
     //constants that control the behaviour of the recognition code and model settings
     private static final int SAMPLE_RATE = 16000;
@@ -83,14 +83,14 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
 
 
     public static void registerWith(Registrar registrar) {
-        final MethodChannel channel = new MethodChannel(registrar.messenger(), "audio_processing");
-        AudioProcessingPlugin audioProcessingPlugin = new AudioProcessingPlugin(registrar);
-        channel.setMethodCallHandler(audioProcessingPlugin);
-        registrar.addRequestPermissionsResultListener(audioProcessingPlugin);
+        final MethodChannel channel = new MethodChannel(registrar.messenger(), "tflite_audio");
+        TfliteAudioPlugin tfliteAudioPlugin = new TfliteAudioPlugin(registrar);
+        channel.setMethodCallHandler(tfliteAudioPlugin);
+        registrar.addRequestPermissionsResultListener(tfliteAudioPlugin);
     }
 
     //initialises register variable with a constructor
-    private AudioProcessingPlugin(Registrar registrar) {
+    private TfliteAudioPlugin(Registrar registrar) {
         this.registrar = registrar;
     }
 
