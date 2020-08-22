@@ -1,4 +1,4 @@
-# audio_processing
+# flutter_tflite_audio
 
 My first plugin for flutter. This plugin allows you to use tflite to make audio/speech classifications. Currently supports android, however will update with an IOS version soon.
 
