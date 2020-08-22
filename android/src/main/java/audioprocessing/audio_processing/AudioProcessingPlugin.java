@@ -5,23 +5,21 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.AssetFileDescriptor;
-
-//import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.media.AudioRecord;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
+import android.os.Looper;
+import android.os.Handler;
 
 import androidx.core.app.ActivityCompat;
-//import androidx.core.content.ContextCompat;
 import androidx.annotation.NonNull;
 
 import org.tensorflow.lite.Interpreter;
 
-import audioprocessing.audio_processing.mfcc.MFCC;
-
 import java.util.concurrent.CompletableFuture; //required to get value from thread
+import java.util.concurrent.CountDownLatch;
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -44,9 +42,6 @@ import io.flutter.plugin.common.PluginRegistry; //required for onRequestPermissi
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 
-/**
- * AudioProcessingPlugin
- */
 public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
 
     //constants that control the behaviour of the recognition code and model settings
@@ -62,7 +57,7 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
     private static final long MINIMUM_TIME_BETWEEN_SAMPLES_MS = 30;
 
     //ui elements
-    private static final String LOG_TAG = "AudioProcessing";
+    private static final String LOG_TAG = "Tflite_audio";
     private static final int REQUEST_RECORD_AUDIO = 13;
 
     //working recording variables
@@ -81,10 +76,10 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
     private Thread recognitionThread;
     private Interpreter tfLite;
     private LabelSmoothing labelSmoothing = null;
-    //private TensorFlowInferenceInterface inferenceInterface;
 
-    //result
-    final CompletableFuture<String> completableFuture = new CompletableFuture<>();
+    //result from classification
+    private Handler handler = new Handler(Looper.getMainLooper());
+    private Result result;
 
 
     public static void registerWith(Registrar registrar) {
@@ -105,36 +100,25 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
             case "loadModel":
                 Log.d(LOG_TAG, "loadModel");
                 try {
-                    String res = loadModel((HashMap) call.arguments);
-                    result.success(res);
-                    //result.success(null);
+                    loadModel((HashMap) call.arguments);
+                    result.success(null);
                 } catch (Exception e) {
                     result.error("failed to load model", e.getMessage(), e);
                 }
                 break;
-            case "hasPermissions":
-                Log.d(LOG_TAG, "Check for permissions");
-                result.success(hasPermissions());
-                break;
-            case "startRecording":
-                Log.d(LOG_TAG, "startRecording");
-                startRecording();
-                result.success(null);
+            case "checkPermissions":
+                Boolean hasPermission = hasPermissions();
+                result.success(hasPermission);
                 break;
             case "requestPermissions":
-                Log.d(LOG_TAG, "requesting permission..");
+                this.result = result;
                 requestMicrophonePermission();
-                result.success(null);
+                //note: result is passed on onRequestPermissionsResult().
                 break;
-            case "getResult":
-                Log.d(LOG_TAG, "getting result..");
-                try{
-                    String finalResult = getResult();
-                     Log.d(LOG_TAG, "final result: " + finalResult);
-                    result.success(finalResult);
-                } catch (Exception e){
-                    result.error("Recognition error", e.getMessage(), e);
-                }     
+            case "startRecognition":
+                this.result = result;
+                startRecording();
+                //Result is passed on to getResult()
                 break;
             default:
                 result.notImplemented();
@@ -142,7 +126,7 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
         }
     }
 
-    private String loadModel(HashMap args) throws IOException {
+    private void loadModel(HashMap args) throws IOException {
         String model = args.get("model").toString();
         Log.d(LOG_TAG, "model name is: " + model);
         Object isAssetObj = args.get("isAsset");
@@ -183,53 +167,57 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
                 loadLabels(null, labels);
             }
         }
-
-        return "success";
     }
 
-   private void loadLabels(AssetManager assetManager, String path) {
-    BufferedReader br;
-    try {
-      if (assetManager != null) {
-        br = new BufferedReader(new InputStreamReader(assetManager.open(path)));
-      } else {
-        br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path))));
-      }
-      String line;
-      labels = new ArrayList<>(); //resets label input
-      while ((line = br.readLine()) != null) {
-        labels.add(line);
-      }
-      br.close();
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to read label file", e);
+    private void loadLabels(AssetManager assetManager, String path) {
+        BufferedReader br;
+        try {
+            if (assetManager != null) {
+                br = new BufferedReader(new InputStreamReader(assetManager.open(path)));
+            } else {
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path))));
+            }
+            String line;
+            labels = new ArrayList<>(); //resets label input
+            while ((line = br.readLine()) != null) {
+                labels.add(line);
+            }
+            br.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read label file", e);
+        }
     }
-  }
 
 
-    private void requestMicrophonePermission() {
+    private String requestMicrophonePermission() {
+        Log.d(LOG_TAG, "Permission requested.");
         Activity activity = registrar.activity();
         ActivityCompat.requestPermissions(activity,
                 new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
+        return "permission granted";
     }
 
     @Override
     public boolean onRequestPermissionsResult(
             int requestCode, String[] permissions, int[] grantResults) {
         //if request is cancelled, result arrays will be empty
+        boolean hasPermission = false;
         if (requestCode == REQUEST_RECORD_AUDIO
                 && grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            hasPermission = true;
+            result.success(hasPermission);
             Log.d(LOG_TAG, "Permission granted.");
-//            tfLite.resizeInput(0, new int[] {RECORDING_LENGTH, 1});
-//            tfLite.resizeInput(1, new int[] {1});
-            startRecording();
+        } else {
+            Log.d(LOG_TAG, "Permission declined.");
+            hasPermission = false;
+            result.success(hasPermission);
         }
-
         return true;
     }
 
     private boolean hasPermissions() {
+        Log.d(LOG_TAG, "Check for permissions");
         Context context = registrar.context();
         PackageManager pm = context.getPackageManager();
         //int hasStoragePerm = pm.checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, context.getPackageName());
@@ -254,7 +242,7 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
                             }
                         });
         recordingThread.start();
-    }
+    }   
 
     private void record() {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
@@ -283,7 +271,7 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
 
         record.startRecording();
 
-        Log.v(LOG_TAG, "Recording started....");
+        Log.v(LOG_TAG, "Recording started");
 
 
         while (shouldContinue) {
@@ -307,35 +295,29 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
         record.stop();
         record.release();
         stopRecording();
-        try{
         startRecognition();
-        } catch (Exception e){
-            Log.v(LOG_TAG, "Recognition Error");
-        }
     }
 
-    public synchronized void startRecognition() throws Exception{
+    public synchronized void startRecognition() {
         if (recognitionThread != null) {
             return;
         }
         shouldContinueRecognition = true;
+
         recognitionThread =
                 new Thread(
                         new Runnable() {
                             @Override
                             public void run() {
-                                //Fetches result from thread)
-                                completableFuture.complete(recognize());
-                                stopRecognition();
-                                
+                               recognize();
                             }
                         });
-        
         recognitionThread.start();
     }
 
-    private String recognize() {
-        Log.v(LOG_TAG, "Start recognition");
+
+    private void recognize() {
+        Log.v(LOG_TAG, "Recognition started.");
 
         short[] inputBuffer = new short[RECORDING_LENGTH];
         float[][] floatInputBuffer = new float[RECORDING_LENGTH][1];
@@ -356,12 +338,6 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
             floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f;
         }
 
-        //MFCC java library.
-//        MFCC mfccConvert = new MFCC();
-//        float[] mfccInput = mfccConvert.process(doubleInputBuffer);
-//        Log.v(LOG_TAG, "MFCC Input======> " + Arrays.toString(mfccInput));
-
-
         //Create the input and output tensors to feed the model
         Object[] inputArray = {floatInputBuffer, sampleRateList};
         Map<Integer, Object> outputMap = new HashMap<>();
@@ -370,7 +346,7 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
         // Run the model.
         tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
         Log.v(LOG_TAG, "OUTPUT======> " + Arrays.toString(outputScores[0]));
-        Log.v(LOG_TAG, "Output scores length " + outputScores.toString());
+        //Log.v(LOG_TAG, "Output scores length " + outputScores.toString());
 
         long currentTime = System.currentTimeMillis();
 
@@ -382,17 +358,21 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
                         SUPPRESSION_MS,
                         MINIMUM_COUNT,
                         MINIMUM_TIME_BETWEEN_SAMPLES_MS);
-        
-        final LabelSmoothing.RecognitionResult result =
+
+        final LabelSmoothing.RecognitionResult recognitionResult =
                 labelSmoothing.processLatestResults(outputScores[0], currentTime);
 
-        return result.foundCommand;
-        
+        stopRecognition();
+        getResult(recognitionResult.foundCommand);
     }
 
-    private String getResult() throws Exception{
-        return completableFuture.get();
-   }
+    public void getResult(String recognitionResult) {
+        runOnUIThread(() -> {
+            Log.v(LOG_TAG, "result: " + recognitionResult);
+            result.success(recognitionResult);
+        });
+
+    }
 
     public void stopRecognition() {
         if (recognitionThread == null) {
@@ -410,6 +390,14 @@ public class AudioProcessingPlugin implements MethodCallHandler, PluginRegistry.
         recordingThread = null;//closes recording
         Log.d(LOG_TAG, "Recording stopped.");
     }
+
+    private void runOnUIThread(Runnable runnable)
+	{
+		if (Looper.getMainLooper() == Looper.myLooper())
+			runnable.run();
+		else
+			handler.post(runnable);
+	}
 
 }
 
