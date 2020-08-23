@@ -1,13 +1,67 @@
 # flutter_tflite_audio
 
-My first plugin for flutter. This plugin allows you to use tflite to make audio/speech classifications. Currently supports android, however will update with an IOS version soon.
+This plugin allows you to use tflite to make audio/speech classifications. Currently supports android, however will update with an IOS version soon.
 
-If you have any feedback, or would like to help contribute in improving this plugin, please do not hesistate to let me know.
 
-## Usage
-To use this plugin, add `tflite_audio` as a [dependency in your pubspec.yaml file]
+### How to add tflite_audio as a dependency:
+1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
 
-### Android
+### How to add tflite model and label to flutter:
+1. Place your custom tflite model and labels into the asset folder. 
+2. In pubsec.yaml, link your tflite model and label under 'assets'. For example:
+
+```
+  assets:
+    - assets/conv_actions_frozen.tflite
+    - assets/conv_actions_labels.txt
+
+```
+
+### How to use this plugin
+
+1. Import the plugin. For example:
+
+```
+import 'package:tflite_audio/tflite_audio.dart';
+```
+
+2. Load your model by linking the model and labels. The values for numThread and isAsset are on default as shown below:
+
+```
+loadModel(
+        model: "assets/conv_actions_frozen.tflite",
+        label: "assets/conv_actions_labels.txt",
+        numThreads: 1,
+        isAsset: true);
+```
+
+3. Use the following callbacks to make full use of the plugin:
+
+```
+//Loads your model
+ Future loadModel({model, label, numThreads, isAsset}) async {
+    return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
+  }
+
+//Checks if the user has permissions for voice recording
+  Future<bool> checkPermissions() async {
+    return await TfliteAudio.checkPermissions;
+  }
+
+//Asks for permission should the user have no permissions
+  Future<bool> requestPermissions() async {
+    return await TfliteAudio.requestPermissions();
+  }
+
+//Starts recording and then audio recogntion. Returns the result as a string value.
+  Future<String> startRecognition() async {
+    return await TfliteAudio.startRecognition();
+  }
+
+```
+
+
+### Android 
 Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
 
 ```
@@ -23,7 +77,7 @@ aaptOptions {
 ```
 
 
-### iOS
+### iOS [Tentative]
 Also add the following key to Info.plist for iOS
 ```
 <key>NSMicrophoneUsageDescription</key>
