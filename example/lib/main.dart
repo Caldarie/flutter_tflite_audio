@@ -12,6 +12,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Future<String> result;
   List<String> labelList = [
     'silence',
@@ -50,6 +51,7 @@ class _MyAppState extends State<MyApp> {
           if (permissionStatus == true) {
             await startRecognition().then((result) => _result = result);
           } else {
+            //Todo - add alert dialog here
             log("Please accept permission");
           }
         }).catchError((e) => "$e");
@@ -74,10 +76,18 @@ class _MyAppState extends State<MyApp> {
     return await TfliteAudio.startRecognition();
   }
 
+  void showInSnackBar(String value) {
+    _scaffoldKey.currentState.showSnackBar(new SnackBar(
+      content: new Text(value),
+      duration: const Duration(milliseconds: 1600),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
         home: Scaffold(
+            key: _scaffoldKey,
             appBar: AppBar(
               title: const Text('Tflite-audio/speech'),
             ),
@@ -114,10 +124,13 @@ class _MyAppState extends State<MyApp> {
                 );
               },
             )),
-            floatingActionButton: FloatingActionButton(onPressed: () {
-              setState(() {
-                result = startAudioRecognition();
-              });
-            })));
+            floatingActionButton: FloatingActionButton(
+                child: Icon(Icons.mic),
+                onPressed: () {
+                  setState(() {
+                    showInSnackBar("Recording.. Say a word from the list.");
+                    result = startAudioRecognition();
+                  });
+                })));
   }
 }
