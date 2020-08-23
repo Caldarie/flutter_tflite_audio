@@ -27,7 +27,7 @@ import 'package:tflite_audio/tflite_audio.dart';
 
 2. Load your model by linking the model and labels. The values for numThread and isAsset are on default as shown below:
 
-```
+```dart
 loadModel(
         model: "assets/conv_actions_frozen.tflite",
         label: "assets/conv_actions_labels.txt",
@@ -35,9 +35,9 @@ loadModel(
         isAsset: true);
 ```
 
-3. Use the following callbacks to make full use of the plugin:
+3. Use the following callbacks to make full use of the plugin. Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement the plugins
 
-```
+```dart
 //Loads your model
  Future loadModel({model, label, numThreads, isAsset}) async {
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
