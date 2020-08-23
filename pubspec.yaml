@@ -1,11 +1,11 @@
 name: tflite_audio
-description: Tensorflow plugin for audio classification
+description: Tflite plugin for audio classification
 version: 0.0.1
-author:
-homepage:
+homepage: https://github.com/Caldarie/flutter_tflite_audio
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
+  flutter: ">=1.10.0 <2.0.0"
 
 dependencies:
   flutter:
