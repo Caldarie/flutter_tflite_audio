@@ -15,7 +15,7 @@ class _MyAppState extends State<MyApp> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Future<String> result;
   List<String> labelList = [
-    'silence',
+    '_silence_',
     '_unknown_',
     'yes',
     'no',
@@ -46,12 +46,13 @@ class _MyAppState extends State<MyApp> {
       if (permissionStatus == true) {
         await startRecognition().then((result) => _result = result);
       } else {
+        //! - requestpermission() will not be called again if permissions have been denied.
         //requests for permission if there are no permissions.
         await requestPermissions().then((permissionStatus) async {
           if (permissionStatus == true) {
             await startRecognition().then((result) => _result = result);
           } else {
-            //Todo - add alert dialog here
+            //Todo - replace log wih alert dialog/snackbar here
             log("Please accept permission");
           }
         }).catchError((e) => "$e");
@@ -128,7 +129,8 @@ class _MyAppState extends State<MyApp> {
                 child: Icon(Icons.mic),
                 onPressed: () {
                   setState(() {
-                    showInSnackBar("Recording.. Say a word from the list.");
+                    //! - snackbar shows if permissions have been denied
+                    showInSnackBar("Say a word from the list.");
                     result = startAudioRecognition();
                   });
                 })));
