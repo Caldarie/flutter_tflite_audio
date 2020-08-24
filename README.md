@@ -2,9 +2,6 @@
 
 This plugin allows you to use tflite to make audio/speech classifications. Currently supports android, however will update with an IOS version soon.
 
-![](audio_recognition_example.jpg)
-
-
 ### How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
 
