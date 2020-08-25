@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 class TfliteAudio {
-  static const MethodChannel _channel = const MethodChannel('tflite_audio');
+  static const MethodChannel _channel = MethodChannel('tflite_audio');
 
   static Future<bool> get checkPermissions async {
-    final bool hasPermissions = await _channel.invokeMethod('checkPermissions');
-    return hasPermissions;
+    return await _channel.invokeMethod('checkPermissions');
   }
 
   static Future<bool> requestPermissions() async {
@@ -22,10 +21,10 @@ class TfliteAudio {
     return _channel.invokeMethod(
       'loadModel',
       {
-        "model": model,
-        "label": label,
-        "numThreads": numThreads,
-        "isAsset": isAsset,
+        'model': model,
+        'label': label,
+        'numThreads': numThreads,
+        'isAsset': isAsset,
       },
     );
   }

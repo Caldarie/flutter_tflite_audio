@@ -1,0 +1,25 @@
+include: package:effective_dart/analysis_options.yaml
+
+linter:
+  rules:
+    await_only_futures: true
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true
+    prefer_relative_imports: false
+    prefer_single_quotes: true
+    public_member_api_docs: false
+    sort_child_properties_last: true
+    sort_constructors_first: true
+    unawaited_futures: true
+analyzer:
+  exclude:
+    - lib/**/*.freezed.dart
+    - lib/**/*.g.dart
+    - lib/intl/arb/*
+    - lib/intl/messages/*
+  strong-mode:
+    implicit-casts: false
+  errors:
+    close_sinks: ignore
+    missing_return: error
+    dead_code: warning

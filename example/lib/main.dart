@@ -33,8 +33,8 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     loadModel(
-        model: "assets/conv_actions_frozen.tflite",
-        label: "assets/conv_actions_labels.txt",
+        model: 'assets/conv_actions_frozen.tflite',
+        label: 'assets/conv_actions_labels.txt',
         numThreads: 1,
         isAsset: true);
   }
@@ -44,18 +44,19 @@ class _MyAppState extends State<MyApp> {
     await checkPermissions().then((permissionStatus) async {
       //starts recognition if theres permissions
       if (permissionStatus == true) {
-        await startRecognition().then((result) => _result = result);
+        await startRecognition().then((result) => _result = result.toString());
       } else {
         //! - requestpermission() will not be called again if permissions have been denied.
         //requests for permission if there are no permissions.
         await requestPermissions().then((permissionStatus) async {
           if (permissionStatus == true) {
-            await startRecognition().then((result) => _result = result);
+            await startRecognition()
+                .then((result) => _result = result.toString());
           } else {
             //Todo - replace log wih alert dialog/snackbar here
-            log("Please accept permission");
+            log('Please accept permission');
           }
-        }).catchError((e) => "$e");
+        }).catchError((e) => '$e');
       }
     });
     return _result;
@@ -73,7 +74,7 @@ class _MyAppState extends State<MyApp> {
     return await TfliteAudio.requestPermissions();
   }
 
-  Future<String> startRecognition() async {
+  Future<dynamic> startRecognition() async {
     return await TfliteAudio.startRecognition();
   }
 
@@ -116,7 +117,7 @@ class _MyAppState extends State<MyApp> {
                           padding: const EdgeInsets.all(5.0),
                           child: Text(labels.toString(),
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               )));
@@ -126,13 +127,14 @@ class _MyAppState extends State<MyApp> {
               },
             )),
             floatingActionButton: FloatingActionButton(
-                child: Icon(Icons.mic),
-                onPressed: () {
-                  setState(() {
-                    //! - snackbar shows if permissions have been denied
-                    showInSnackBar("Say a word from the list.");
-                    result = startAudioRecognition();
-                  });
-                })));
+              onPressed: () {
+                setState(() {
+                  //! - snackbar shows if permissions have been denied
+                  showInSnackBar('Say a word from the list.');
+                  result = startAudioRecognition();
+                });
+              },
+              child: const Icon(Icons.mic),
+            )));
   }
 }
