@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+// ignore: avoid_classes_with_only_static_members
 class TfliteAudio {
   static const MethodChannel _channel = MethodChannel('tflite_audio');
 
@@ -17,6 +18,7 @@ class TfliteAudio {
     return _channel.invokeMethod('startRecognition');
   }
 
+  // ignore: type_annotate_public_apis
   static Future loadModel(model, label, numThreads, isAsset) async {
     return _channel.invokeMethod(
       'loadModel',

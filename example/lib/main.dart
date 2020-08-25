@@ -107,7 +107,7 @@ class _MyAppState extends State<MyApp> {
                           child: Text(
                             labels.toString(),
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 25,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green),
