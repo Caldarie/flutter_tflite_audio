@@ -62,7 +62,8 @@ class _MyAppState extends State<MyApp> {
     return _result;
   }
 
-  Future loadModel({model, label, numThreads, isAsset}) async {
+  Future loadModel(
+      {String model, String label, int numThreads, bool isAsset}) async {
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
 
@@ -131,7 +132,13 @@ class _MyAppState extends State<MyApp> {
                 setState(() {
                   //! - snackbar shows if permissions have been denied
                   showInSnackBar('Say a word from the list.');
-                  result = startAudioRecognition();
+                  //result = startAudioRecognition();
+                  loadModel(
+                          model: 'assets/conv_actions_frozen.tflite',
+                          label: 'assets/conv_actions_labels.txt',
+                          numThreads: 1,
+                          isAsset: true)
+                      .then((value) => log(value.toString()));
                 });
               },
               child: const Icon(Icons.mic),

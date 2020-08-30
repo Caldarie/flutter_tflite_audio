@@ -19,7 +19,12 @@ class TfliteAudio {
   }
 
   // ignore: type_annotate_public_apis
-  static Future loadModel(model, label, numThreads, isAsset) async {
+  static Future loadModel(
+      // ignore: avoid_positional_boolean_parameters
+      String model,
+      String label,
+      int numThreads,
+      bool isAsset) async {
     return _channel.invokeMethod(
       'loadModel',
       {
