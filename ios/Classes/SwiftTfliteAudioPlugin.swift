@@ -6,15 +6,15 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     
     private var registrar: FlutterPluginRegistrar!
     private var result: FlutterResult!
-
+    
     private var interpreter: Interpreter!
     
     let threadCountLimit = 10
     //let sampleRate = 16000
-
-
+    
+    private var labelArray: [String] = []
     /// TensorFlow Lite `Interpreter` object for performing inference on a given model.
-   
+    
     
     init(_ _registrar: FlutterPluginRegistrar) {
         registrar = _registrar  
@@ -44,21 +44,23 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     
     func loadModel(registrar: FlutterPluginRegistrar, args:[String:AnyObject]){
         
-        var modelPath: String
-        var modelKey: String
-        //isAsset shared with label and model
         let isAsset = args["isAsset"] as! Bool
         
-         //Get model path
+        var modelPath: String
+        var modelKey: String
+        let model = args["model"] as! String
+        
+        
+        //Get model path
         if(isAsset){
-            modelKey = registrar.lookupKey(forAsset: args["model"] as! String)
+            modelKey = registrar.lookupKey(forAsset: model)
             modelPath = Bundle.main.path(forResource: modelKey, ofType: nil)!
         } else {
-            modelPath = args["model"] as! String
+            modelPath = model
         }
         
         // Specify the options for the `Interpreter`.
-        var threadCount = args["numThreads"] as! Int
+        let threadCount = args["numThreads"] as! Int
         var options = Interpreter.Options()
         options.threadCount = threadCount
         
@@ -72,31 +74,36 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
             //return nil
         }
         
-        result("reddit")
-        // //Load labels
-        // var labelPath: String
-        // var labelKey: String
-
-        // if(labelPath.count > 0){
-        //   if(isAsset){
-        //     labelKey = registrar.lookupKey(forAsset: args["label"] as! String)
-        //     labelPath = Bundle.main.path(forResource: labelKey, ofType: nil) as! String
-        //   } else {
-        //     labelPath = args["label"] as! String
-        //   }
+        //Load labels
+        var labelPath: String
+        var labelKey: String
+         let label = args["label"] as! String
         
-        // loadLabels(labelPath: labelPath)
-        // }
+        if(label.count > 0){
+            if(isAsset){
+                labelKey = registrar.lookupKey(forAsset: label)
+                labelPath = Bundle.main.path(forResource: labelKey, ofType: nil)!
+            } else {
+                labelPath = label
+            }
+
+         loadLabels(labelPath: labelPath)
+
+        }
+        
     }
     
-
     
-    // func startRecognition(){
-    //     result("start recogniton")
-    // }
-
-
-    // func loadLabels(labelPath: String){
-    //   result(labelPath)
-    // }
+    private func loadLabels(labelPath: String){
+        do {
+            //let contents = try String(contentsOf: label, encoding: .utf8)
+            let contents = try String(describing: labelPath.cString(using: String.Encoding.utf8))
+            labelArray = contents.components(separatedBy: .newlines)
+            result(labelArray)
+        } catch {
+            fatalError("Labels cannot be read. Please add a valid labels file and try again.")
+        }
+        
+        
+    }
 }
