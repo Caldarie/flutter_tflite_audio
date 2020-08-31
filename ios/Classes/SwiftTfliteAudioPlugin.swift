@@ -58,12 +58,13 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     
     func checkPermissions() {
         switch AVAudioSession.sharedInstance().recordPermission {
-            
         case .granted:
             print("Permission granted")
+            result(true);
             //startTappingMicrophone()
         case .denied:
             print("Permission denied")
+            result(false);
             //use alert dialog here
             //delegate?.showCameraPermissionsDeniedAlert()
         case .undetermined:
