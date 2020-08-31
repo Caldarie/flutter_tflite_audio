@@ -1,14 +1,22 @@
 import Flutter
 import UIKit
 import TensorFlowLite
+import AVFoundation
 
 public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     
+    //flutter
     private var registrar: FlutterPluginRegistrar!
     private var result: FlutterResult!
     
+    //tensorflow
     private var interpreter: Interpreter!
     
+    //AvAudioEngine
+    private var audioEngine: AVAudioEngine = AVAudioEngine()
+    private var reddit: [String: AnyObject]!
+
+
     let threadCountLimit = 10
     //let sampleRate = 16000
     
@@ -28,19 +36,60 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        let arguments = call.arguments as! [String: AnyObject]
-        self.result = result
         
+        self.result = result
+
         switch call.method{
         case "loadModel":
+            let arguments = call.arguments as! [String: AnyObject]
+            reddit = arguments 
             loadModel(registrar: registrar, args: arguments)
             break 
+        case "checkPermissions":
+            checkPermissions()
+     
+            //startTappingMicrophone()
         case "startRecognition":
             print("button")
             break
         default: result(FlutterMethodNotImplemented)
         }
     }
+    
+    func checkPermissions() {
+        switch AVAudioSession.sharedInstance().recordPermission {
+            
+        case .granted:
+            print("Permission granted")
+            //startTappingMicrophone()
+        case .denied:
+            print("Permission denied")
+            //use alert dialog here
+            //delegate?.showCameraPermissionsDeniedAlert()
+        case .undetermined:
+            print("requesting permission")
+            requestPermissions()
+        }
+    }
+    
+    func requestPermissions() {
+        AVAudioSession.sharedInstance().requestRecordPermission { (granted) in
+            if granted {
+                print("start tapping microphone")
+                //self.startTappingMicrophone()
+            }
+            else {
+                print("check permissions")
+                self.checkPermissions()
+            }
+        }
+    }
+    
+    
+    func startTappingMicrophone(){
+        print("reddit")
+    }
+
     
     func loadModel(registrar: FlutterPluginRegistrar, args:[String:AnyObject]){
         
@@ -77,7 +126,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
         //Load labels
         var labelPath: String
         var labelKey: String
-         let label = args["label"] as! String
+        let label = args["label"] as! String
         
         if(label.count > 0){
             if(isAsset){
@@ -86,13 +135,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
             } else {
                 labelPath = label
             }
-
-         loadLabels(labelPath: labelPath)
-
+            
+            loadLabels(labelPath: labelPath)
+            
         }
         
     }
-    
     
     private func loadLabels(labelPath: String){
         do {
