@@ -106,19 +106,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
                     result.error("failed to load model", e.getMessage(), e);
                 }
                 break;
-            case "checkPermissions":
-                Boolean hasPermission = hasPermissions();
-                result.success(hasPermission);
-                break;
-            case "requestPermissions":
+            case "startAudioRecognition":
                 this.result = result;
-                requestMicrophonePermission();
-                //note: result is passed on onRequestPermissionsResult().
-                break;
-            case "startRecognition":
-                this.result = result;
-                startRecording();
-                //Result is passed on to getResult()
+                checkPermissions();
                 break;
             default:
                 result.notImplemented();
@@ -189,45 +179,46 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
     }
 
 
-    private String requestMicrophonePermission() {
+    private void checkPermissions() {
+        //int hasStoragePerm = pm.checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, context.getPackageName());
+                //        boolean hasPermissions = hasStoragePerm == PackageManager.PERMISSION_GRANTED
+//                && hasRecordPerm == PackageManager.PERMISSION_GRANTED;
+        Log.d(LOG_TAG, "Check for permissions");
+        Context context = registrar.context();
+        PackageManager pm = context.getPackageManager();
+        int hasRecordPerm = pm.checkPermission(Manifest.permission.RECORD_AUDIO, context.getPackageName());
+        boolean hasPermissions = hasRecordPerm == PackageManager.PERMISSION_GRANTED;
+        if(hasPermissions){
+            startRecording();
+            Log.d(LOG_TAG, "Permission already granted. start recording");
+        } else {
+            requestMicrophonePermission();
+        }
+    }
+
+    private void requestMicrophonePermission() {
         Log.d(LOG_TAG, "Permission requested.");
         Activity activity = registrar.activity();
         ActivityCompat.requestPermissions(activity,
                 new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
-        return "permission granted";
     }
 
     @Override
     public boolean onRequestPermissionsResult(
             int requestCode, String[] permissions, int[] grantResults) {
         //if request is cancelled, result arrays will be empty
-        boolean hasPermission = false;
         if (requestCode == REQUEST_RECORD_AUDIO
                 && grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            hasPermission = true;
-            result.success(hasPermission);
-            Log.d(LOG_TAG, "Permission granted.");
+            startRecording();
+            Log.d(LOG_TAG, "Permission granted. Start recording...");
         } else {
-            Log.d(LOG_TAG, "Permission declined.");
-            hasPermission = false;
-            result.success(hasPermission);
+            Log.d(LOG_TAG, "Permission has been declined. Please accept permissions in yout settings"); 
         }
         return true;
     }
 
-    private boolean hasPermissions() {
-        Log.d(LOG_TAG, "Check for permissions");
-        Context context = registrar.context();
-        PackageManager pm = context.getPackageManager();
-        //int hasStoragePerm = pm.checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, context.getPackageName());
-        int hasRecordPerm = pm.checkPermission(Manifest.permission.RECORD_AUDIO, context.getPackageName());
-//        boolean hasPermissions = hasStoragePerm == PackageManager.PERMISSION_GRANTED
-//                && hasRecordPerm == PackageManager.PERMISSION_GRANTED;
-        boolean hasPermissions = hasRecordPerm == PackageManager.PERMISSION_GRANTED;
-        return hasPermissions;
-    }
-
+   
     public synchronized void startRecording() {
         if (recordingThread != null) {
             return;

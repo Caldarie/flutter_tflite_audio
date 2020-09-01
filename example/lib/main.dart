@@ -39,44 +39,13 @@ class _MyAppState extends State<MyApp> {
         isAsset: true);
   }
 
-  Future<String> startAudioRecognition() async {
-    String _result;
-    await checkPermissions().then((permissionStatus) async {
-      //starts recognition if theres permissions
-      if (permissionStatus == true) {
-        await startRecognition().then((result) => _result = result.toString());
-      } else {
-        //! - requestpermission() will not be called again if permissions have been denied.
-        //requests for permission if there are no permissions.
-        await requestPermissions().then((permissionStatus) async {
-          if (permissionStatus == true) {
-            await startRecognition()
-                .then((result) => _result = result.toString());
-          } else {
-            //Todo - replace log wih alert dialog/snackbar here
-            log('Please accept permission');
-          }
-        }).catchError((e) => '$e');
-      }
-    });
-    return _result;
-  }
-
   Future loadModel(
       {String model, String label, int numThreads, bool isAsset}) async {
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
 
-  Future<bool> checkPermissions() async {
-    return await TfliteAudio.checkPermissions;
-  }
-
-  Future<bool> requestPermissions() async {
-    return await TfliteAudio.requestPermissions();
-  }
-
-  Future<dynamic> startRecognition() async {
-    return await TfliteAudio.startRecognition();
+  Future<dynamic> startAudioRecognition() async {
+    return await TfliteAudio.startAudioRecognition();
   }
 
   void showInSnackBar(String value) {
@@ -132,12 +101,7 @@ class _MyAppState extends State<MyApp> {
                 setState(() {
                   //! - snackbar shows if permissions have been denied
                   showInSnackBar('Say a word from the list.');
-                  //result = startAudioRecognition();
-                  loadModel(
-                          model: 'assets/conv_actions_frozen.tflite',
-                          label: 'assets/conv_actions_labels.txt',
-                          numThreads: 1,
-                          isAsset: true)
+                  startAudioRecognition()
                       .then((value) => log(value.toString()));
                 });
               },

@@ -6,16 +6,8 @@ import 'package:flutter/services.dart';
 class TfliteAudio {
   static const MethodChannel _channel = MethodChannel('tflite_audio');
 
-  static Future<bool> get checkPermissions async {
-    return await _channel.invokeMethod('checkPermissions');
-  }
-
-  static Future<bool> requestPermissions() async {
-    return _channel.invokeMethod('requestPermissions');
-  }
-
-  static Future startRecognition() async {
-    return _channel.invokeMethod('startRecognition');
+  static Future<dynamic> startAudioRecognition() async {
+    return _channel.invokeMethod('startAudioRecognition');
   }
 
   // ignore: type_annotate_public_apis
