@@ -36,7 +36,7 @@ loadModel(
         isAsset: true);
 ```
 
-3. Use the following callbacks to make full use of the plugin. Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement the plugins
+3. Use the following futures to make use of this plugin. Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
 
 ```dart
 //Loads your model
@@ -44,18 +44,8 @@ loadModel(
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
 
-//Checks if the user has permissions for voice recording
-  Future<bool> checkPermissions() async {
-    return await TfliteAudio.checkPermissions;
-  }
-
-//Asks for permission should the user have no permissions
-  Future<bool> requestPermissions() async {
-    return await TfliteAudio.requestPermissions();
-  }
-
-//Starts recording and then audio recogntion. Returns the result as a string value.
-  Future<String> startRecognition() async {
+//This future checks for permissions, records voice and starts audio recognition, then returns the result.
+  Future<String> startAudioRecognition() async {
     return await TfliteAudio.startRecognition();
   }
 

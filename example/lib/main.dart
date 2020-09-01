@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:developer';
-
+//import 'dart:developer';
 import 'package:tflite_audio/tflite_audio.dart';
 
 void main() => runApp(MyApp());
@@ -46,6 +45,12 @@ class _MyAppState extends State<MyApp> {
 
   Future<dynamic> startAudioRecognition() async {
     return await TfliteAudio.startAudioRecognition();
+  }
+
+  Future<String> getResult() async {
+    String _result;
+    await startAudioRecognition().then((result) => _result = result.toString());
+    return _result;
   }
 
   void showInSnackBar(String value) {
@@ -101,8 +106,7 @@ class _MyAppState extends State<MyApp> {
                 setState(() {
                   //! - snackbar shows if permissions have been denied
                   showInSnackBar('Say a word from the list.');
-                  startAudioRecognition()
-                      .then((value) => log(value.toString()));
+                  result = getResult();
                 });
               },
               child: const Icon(Icons.mic),
