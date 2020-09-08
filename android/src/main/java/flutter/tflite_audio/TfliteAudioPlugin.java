@@ -48,7 +48,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
     private static final int SAMPLE_RATE = 16000;
     private static final int SAMPLE_DURATION_MS = 1000;
     private static final int RECORDING_LENGTH = (int) (SAMPLE_RATE * SAMPLE_DURATION_MS / 1000);
-
+  
     //label smoothing variables
     private static final long AVERAGE_WINDOW_DURATION_MS = 1000;
     private static final float DETECTION_THRESHOLD = 0.50f;
@@ -245,6 +245,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
         if (bufferSize == AudioRecord.ERROR || bufferSize == AudioRecord.ERROR_BAD_VALUE) {
             bufferSize = SAMPLE_RATE * 2;
         }
+        Log.v(LOG_TAG, "Buffer size: " + bufferSize);
         short[] audioBuffer = new short[bufferSize / 2];
 
         AudioRecord record =
