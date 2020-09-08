@@ -43,13 +43,17 @@ class _MyAppState extends State<MyApp> {
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
 
-  Future<dynamic> startAudioRecognition() async {
-    return await TfliteAudio.startAudioRecognition();
+  Future<dynamic> startAudioRecognition(
+      {int sampleRate, int recordingLength, int bufferSize}) async {
+    return await TfliteAudio.startAudioRecognition(
+        sampleRate, recordingLength, bufferSize);
   }
 
   Future<String> getResult() async {
     String _result;
-    await startAudioRecognition().then((result) => _result = result.toString());
+    await startAudioRecognition(
+            sampleRate: 16000, recordingLength: 16000, bufferSize: 1280)
+        .then((result) => _result = result.toString());
     return _result;
   }
 

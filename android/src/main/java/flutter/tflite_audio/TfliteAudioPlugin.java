@@ -45,9 +45,11 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
 
     //constants that control the behaviour of the recognition code and model settings
-    private static final int SAMPLE_RATE = 16000;
-    private static final int SAMPLE_DURATION_MS = 1000;
-    private static final int RECORDING_LENGTH = (int) (SAMPLE_RATE * SAMPLE_DURATION_MS / 1000);
+    //private static final int recordingLength = 16000;
+ 
+    // private static final int sampleRate = 16000;
+    //private static final int SAMPLE_DURATION_MS = 1000;
+    // private static final int recordingLength = (int) (sampleRate * SAMPLE_DURATION_MS / 1000);
   
     //label smoothing variables
     private static final long AVERAGE_WINDOW_DURATION_MS = 1000;
@@ -61,7 +63,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
     private static final int REQUEST_RECORD_AUDIO = 13;
 
     //working recording variables
-    short[] recordingBuffer = new short[RECORDING_LENGTH];
+    short[] recordingBuffer; 
     int recordingOffset = 0;
     boolean shouldContinue = true;
     private Thread recordingThread;
@@ -77,9 +79,11 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
     private Interpreter tfLite;
     private LabelSmoothing labelSmoothing = null;
 
-    //result from classification
+    //flutter
     private Handler handler = new Handler(Looper.getMainLooper());
+    private HashMap arguments;
     private Result result;
+
 
 
     public static void registerWith(Registrar registrar) {
@@ -96,18 +100,18 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+        this.arguments = (HashMap) call.arguments;
+        this.result = result;
         switch (call.method) {
             case "loadModel":
                 Log.d(LOG_TAG, "loadModel");
                 try {
-                    loadModel((HashMap) call.arguments);
-                    result.success(null);
+                    loadModel();
                 } catch (Exception e) {
                     result.error("failed to load model", e.getMessage(), e);
                 }
                 break;
             case "startAudioRecognition":
-                this.result = result;
                 checkPermissions();
                 break;
             default:
@@ -116,10 +120,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
         }
     }
 
-    private void loadModel(HashMap args) throws IOException {
-        String model = args.get("model").toString();
+    private void loadModel() throws IOException {
+        String model = arguments.get("model").toString();
         Log.d(LOG_TAG, "model name is: " + model);
-        Object isAssetObj = args.get("isAsset");
+        Object isAssetObj = arguments.get("isAsset");
         boolean isAsset = isAssetObj == null ? false : (boolean) isAssetObj;
         MappedByteBuffer buffer = null;
         String key = null;
@@ -140,13 +144,13 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
             buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, declaredLength);
         }
 
-        int numThreads = (int) args.get("numThreads");
+        int numThreads = (int) arguments.get("numThreads");
         final Interpreter.Options tfliteOptions = new Interpreter.Options();
         tfliteOptions.setNumThreads(numThreads);
         tfLite = new Interpreter(buffer, tfliteOptions);
 
         //load labels
-        String labels = args.get("label").toString();
+        String labels = arguments.get("label").toString();
         Log.d(LOG_TAG, "label name is: " + labels);
 
         if (labels.length() > 0) {
@@ -176,6 +180,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
         } catch (IOException e) {
             throw new RuntimeException("Failed to read label file", e);
         }
+        
     }
 
 
@@ -238,20 +243,28 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
     private void record() {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
+        int bufferSize = (int) arguments.get("bufferSize");
+        int sampleRate = (int) arguments.get("sampleRate");
+        int recordingLength = (int) arguments.get("recordingLength");
+        short[] recordingFrameBuffer = new short[bufferSize / 2];
+        
+        //initialize recordingBuffer
+        recordingBuffer = new short[recordingLength];
+      
+
         // Estimate the buffer size we'll need for this device.
-        int bufferSize =
-                AudioRecord.getMinBufferSize(
-                        SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        if (bufferSize == AudioRecord.ERROR || bufferSize == AudioRecord.ERROR_BAD_VALUE) {
-            bufferSize = SAMPLE_RATE * 2;
-        }
-        Log.v(LOG_TAG, "Buffer size: " + bufferSize);
-        short[] audioBuffer = new short[bufferSize / 2];
+        // int bufferSize =
+        //         AudioRecord.getMinBufferSize(
+        //                 sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        // if (bufferSize == AudioRecord.ERROR || bufferSize == AudioRecord.ERROR_BAD_VALUE) {
+        //     bufferSize = sampleRate * 2;
+        // }
+        // Log.v(LOG_TAG, "Buffer size: " + bufferSize);
 
         AudioRecord record =
                 new AudioRecord(
                         MediaRecorder.AudioSource.DEFAULT,
-                        SAMPLE_RATE,
+                        sampleRate,
                         AudioFormat.CHANNEL_IN_MONO,
                         AudioFormat.ENCODING_PCM_16BIT,
                         bufferSize);
@@ -267,13 +280,13 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
 
 
         while (shouldContinue) {
-            int numberRead = record.read(audioBuffer, 0, audioBuffer.length);
+            int numberRead = record.read(recordingFrameBuffer, 0, recordingFrameBuffer.length);
             int maxLength = recordingBuffer.length;
             Log.v(LOG_TAG, "read: " + numberRead);
             recordingBufferLock.lock();
             try {
                 if (recordingOffset + numberRead < maxLength) {
-                    System.arraycopy(audioBuffer, 0, recordingBuffer, recordingOffset, numberRead);
+                    System.arraycopy(recordingFrameBuffer, 0, recordingBuffer, recordingOffset, numberRead);
                 } else {
                     shouldContinue = false;
                 }
@@ -311,10 +324,13 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
     private void recognize() {
         Log.v(LOG_TAG, "Recognition started.");
 
-        short[] inputBuffer = new short[RECORDING_LENGTH];
-        float[][] floatInputBuffer = new float[RECORDING_LENGTH][1];
+        int sampleRate = (int) arguments.get("sampleRate");
+        int recordingLength = (int) arguments.get("recordingLength");
+
+        short[] inputBuffer = new short[recordingLength];
+        float[][] floatInputBuffer = new float[recordingLength][1];
         float[][] outputScores = new float[1][labels.size()];
-        int[] sampleRateList = new int[]{SAMPLE_RATE};
+        int[] sampleRateList = new int[]{sampleRate};
 
         recordingBufferLock.lock();
         try {
@@ -326,7 +342,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
 
         // We need to feed in float values between -1.0 and 1.0, so divide the
         // signed 16-bit inputs.
-        for (int i = 0; i < RECORDING_LENGTH; ++i) {
+        for (int i = 0; i < recordingLength; ++i) {
             floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f;
         }
 

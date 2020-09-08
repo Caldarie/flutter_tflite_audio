@@ -40,13 +40,17 @@ loadModel(
 
 ```dart
 //Loads your model
+//Higher numThreads will be reduce inference times, but is more intensive on cpu
  Future loadModel({model, label, numThreads, isAsset}) async {
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
 
 //This future checks for permissions, records voice and starts audio recognition, then returns the result.
+//Make sure the recordingLength fits your tensor input
+//Higher buffer size = more latency, but less intensive on cpu. Also shorter recording time.
+//Sample rate is the number of samples per second
   Future<String> startAudioRecognition() async {
-    return await TfliteAudio.startRecognition();
+     await startAudioRecognition(sampleRate: 16000, recordingLength: 16000, bufferSize: 1280)
   }
 
 ```
