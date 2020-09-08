@@ -26,7 +26,24 @@ This plugin allows you to use tflite to make audio/speech classifications. Curre
 import 'package:tflite_audio/tflite_audio.dart';
 ```
 
-2. Load your model by linking the model and labels. The values for numThread and isAsset are on default as shown below:
+2. Use the following futures to make use of this plugin. Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
+
+```dart
+//Loads your model
+//Higher numThreads will be reduce inference times, but is more intensive on cpu
+ Future loadModel({model, label, numThreads, isAsset}) async {
+    return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
+  }
+
+ Future<dynamic> startAudioRecognition(
+      {int sampleRate, int recordingLength, int bufferSize}) async {
+    return await TfliteAudio.startAudioRecognition(
+        sampleRate, recordingLength, bufferSize);
+  }
+
+```
+
+3. Call the function loadModel() and assign the appropriate arguments. The values for numThread and isAsset are on default as shown below:
 
 ```dart
 loadModel(
@@ -36,15 +53,9 @@ loadModel(
         isAsset: true);
 ```
 
-3. Use the following futures to make use of this plugin. Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
+4. Call the function startAudioRecognition() and assign samplerate, recordinglength and buffersize. The values below are in within the example model's input parameters.
 
 ```dart
-//Loads your model
-//Higher numThreads will be reduce inference times, but is more intensive on cpu
- Future loadModel({model, label, numThreads, isAsset}) async {
-    return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
-  }
-
 //This future checks for permissions, records voice and starts audio recognition, then returns the result.
 //Make sure the recordingLength fits your tensor input
 //Higher buffer size = more latency, but less intensive on cpu. Also shorter recording time.
