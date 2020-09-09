@@ -1,6 +1,8 @@
 # flutter_tflite_audio
 
-This plugin allows you to use tflite to make audio/speech classifications. Currently supports android, however will update with an IOS version soon.
+This plugin allows you to use tflite to make audio/speech classifications. Can now support ios and android. 
+
+If you have any feature requests or would like to contribute to this plugin, please do not hesistate to contact me.
 
 ![](audio_recognition_example.jpg)
 
@@ -43,7 +45,7 @@ import 'package:tflite_audio/tflite_audio.dart';
 
 ```
 
-3. Call the function loadModel() and assign the appropriate arguments. The values for numThread and isAsset are on default as shown below:
+3. Call the future loadModel() and assign the appropriate arguments. The values for numThread and isAsset are on default as shown below:
 
 ```dart
 loadModel(
@@ -53,7 +55,7 @@ loadModel(
         isAsset: true);
 ```
 
-4. Call the function startAudioRecognition() and assign samplerate, recordinglength and buffersize. The values below are in within the example model's input parameters.
+4. Call the future startAudioRecognition() and assign samplerate, recordinglength and buffersize. The values below are within the example model's input parameters.
 
 ```dart
 //This future checks for permissions, records voice and starts audio recognition, then returns the result.
@@ -83,9 +85,13 @@ aaptOptions {
 ```
 
 
-### iOS [Tentative]
+### iOS
 Also add the following key to Info.plist for iOS
 ```
 <key>NSMicrophoneUsageDescription</key>
 <string>Record audio for playback</string>
 ```
+
+## References
+
+https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands

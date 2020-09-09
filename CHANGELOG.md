@@ -1,4 +1,7 @@
 
+## 0.1.0
+* Added iOS support
+
 ## 0.0.4
 * Added the following arguments into the future: startAudioRecognition()
     - sampleRate

@@ -1,6 +1,6 @@
 name: tflite_audio
 description: Tflite plugin for audio classification
-version: 0.0.4
+version: 0.1.0
 homepage: https://github.com/Caldarie/flutter_tflite_audio
 
 environment:
