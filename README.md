@@ -103,7 +103,7 @@ aaptOptions {
 
     a. Open your project workspace on xcode
   
-    b. Select root runner on the left hand side pannel
+    b. Select root runner on the left panel
   
     c. Under the info tab, change the iOS deployment target to 12.0
 
