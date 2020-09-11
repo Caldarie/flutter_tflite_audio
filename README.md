@@ -100,9 +100,12 @@ aaptOptions {
 ```
 
 2. Change the deployment target to at least 12.0. This could be done by:
-  a. Open your project workspace on xcode
-  b. Select root runner on the left hand side pannel
-  c. Under the info tab, change the iOS deployment target to 12.0
+
+    a. Open your project workspace on xcode
+  
+    b. Select root runner on the left hand side pannel
+  
+    c. Under the info tab, change the iOS deployment target to 12.0
 
 3. Open your podfile in your iOS folder and change platform ios to 12. Also make sure that use_frameworks! is under runner. For example
 
