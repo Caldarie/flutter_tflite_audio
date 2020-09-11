@@ -6,10 +6,10 @@ If you have any feature requests or would like to contribute to this plugin, ple
 
 ![](audio_recognition_example.jpg)
 
-### How to add tflite_audio as a dependency:
+## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
 
-### How to add tflite model and label to flutter:
+## How to add tflite model and label to flutter:
 1. Place your custom tflite model and labels into the asset folder. 
 2. In pubsec.yaml, link your tflite model and label under 'assets'. For example:
 
@@ -20,7 +20,7 @@ If you have any feature requests or would like to contribute to this plugin, ple
 
 ```
 
-### How to use this plugin
+## How to use this plugin
 
 1. Import the plugin. For example:
 
@@ -76,7 +76,7 @@ loadModel(
 ```
 
 
-### Android 
+## Android 
 Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
 
 ```
@@ -92,7 +92,7 @@ aaptOptions {
 ```
 
 
-### iOS
+## iOS
 1. Add the following key to Info.plist for iOS. This ould be found in <YourApp>/ios/Runner
 ```
 <key>NSMicrophoneUsageDescription</key>
