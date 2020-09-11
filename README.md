@@ -110,7 +110,7 @@ aaptOptions {
 platform :ios, '12.0'
 ```
 
-```
+```ruby
 target 'Runner' do
   use_frameworks! #Make sure you have this line
   use_modular_headers!
