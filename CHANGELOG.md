@@ -1,4 +1,8 @@
 
+## 0.1.1
+* Made some fixes with making options explicit
+* Added alert dialog when permission is denied.
+
 ## 0.1.0
 * Added iOS support
 

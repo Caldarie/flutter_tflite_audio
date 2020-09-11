@@ -1,7 +1,7 @@
 name: tflite_audio
 maintainer: Michael Nguyen
 description: Tflite plugin for flutter. Can make audio classifications on both android and iOS with the user's specifications.
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/Caldarie/flutter_tflite_audio
 
 environment:

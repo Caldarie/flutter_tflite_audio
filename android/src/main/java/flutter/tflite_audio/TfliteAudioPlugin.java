@@ -2,10 +2,15 @@ package flutter.tflite_audio;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.content.res.AssetFileDescriptor;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.provider.Settings;
 import android.util.Log;
 import android.media.AudioRecord;
 import android.media.AudioFormat;
@@ -46,11 +51,11 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
 
     //constants that control the behaviour of the recognition code and model settings
     //private static final int recordingLength = 16000;
- 
+
     // private static final int sampleRate = 16000;
     //private static final int SAMPLE_DURATION_MS = 1000;
     // private static final int recordingLength = (int) (sampleRate * SAMPLE_DURATION_MS / 1000);
-  
+
     //label smoothing variables
     private static final long AVERAGE_WINDOW_DURATION_MS = 1000;
     private static final float DETECTION_THRESHOLD = 0.50f;
@@ -63,7 +68,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
     private static final int REQUEST_RECORD_AUDIO = 13;
 
     //working recording variables
-    short[] recordingBuffer; 
+    short[] recordingBuffer;
     int recordingOffset = 0;
     boolean shouldContinue = true;
     private Thread recordingThread;
@@ -83,7 +88,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
     private Handler handler = new Handler(Looper.getMainLooper());
     private HashMap arguments;
     private Result result;
-
 
 
     public static void registerWith(Registrar registrar) {
@@ -180,20 +184,20 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
         } catch (IOException e) {
             throw new RuntimeException("Failed to read label file", e);
         }
-        
+
     }
 
 
     private void checkPermissions() {
         //int hasStoragePerm = pm.checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, context.getPackageName());
-                //        boolean hasPermissions = hasStoragePerm == PackageManager.PERMISSION_GRANTED
+        //        boolean hasPermissions = hasStoragePerm == PackageManager.PERMISSION_GRANTED
 //                && hasRecordPerm == PackageManager.PERMISSION_GRANTED;
         Log.d(LOG_TAG, "Check for permissions");
         Context context = registrar.context();
         PackageManager pm = context.getPackageManager();
         int hasRecordPerm = pm.checkPermission(Manifest.permission.RECORD_AUDIO, context.getPackageName());
         boolean hasPermissions = hasRecordPerm == PackageManager.PERMISSION_GRANTED;
-        if(hasPermissions){
+        if (hasPermissions) {
             startRecording();
             Log.d(LOG_TAG, "Permission already granted. start recording");
         } else {
@@ -218,12 +222,47 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
             startRecording();
             Log.d(LOG_TAG, "Permission granted. Start recording...");
         } else {
-            Log.d(LOG_TAG, "Permission has been declined. Please accept permissions in yout settings"); 
+            showRationaleDialog(
+                    "Microphone Permissions",
+                    "Permission has been declined. Please accept permissions in your settings"
+            );
+            Log.d(LOG_TAG, "Permission denied. Showing rationale dialog...");
         }
         return true;
     }
 
-   
+
+    public void showRationaleDialog(String title, String message) {
+
+        runOnUIThread(() -> {
+            Activity activity = registrar.activity();
+            AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+            builder.setTitle(title);
+            builder.setMessage(message);
+            builder.setPositiveButton(
+                    "Settings",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    Uri.parse("package:" + activity.getPackageName()));
+                            intent.addCategory(Intent.CATEGORY_DEFAULT);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            activity.startActivity(intent);
+                        }
+                    });
+            builder.setNegativeButton(
+                    "Cancel",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                        }
+                    });
+            AlertDialog alert = builder.create();
+            alert.show();
+        });
+
+    }
+
     public synchronized void startRecording() {
         if (recordingThread != null) {
             return;
@@ -238,7 +277,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
                             }
                         });
         recordingThread.start();
-    }   
+    }
 
     private void record() {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
@@ -247,10 +286,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
         int sampleRate = (int) arguments.get("sampleRate");
         int recordingLength = (int) arguments.get("recordingLength");
         short[] recordingFrameBuffer = new short[bufferSize / 2];
-        
+
         //initialize recordingBuffer
         recordingBuffer = new short[recordingLength];
-      
+
 
         // Estimate the buffer size we'll need for this device.
         // int bufferSize =
@@ -314,7 +353,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
                         new Runnable() {
                             @Override
                             public void run() {
-                               recognize();
+                                recognize();
                             }
                         });
         recognitionThread.start();
@@ -399,13 +438,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
         Log.d(LOG_TAG, "Recording stopped.");
     }
 
-    private void runOnUIThread(Runnable runnable)
-	{
-		if (Looper.getMainLooper() == Looper.myLooper())
-			runnable.run();
-		else
-			handler.post(runnable);
-	}
+    private void runOnUIThread(Runnable runnable) {
+        if (Looper.getMainLooper() == Looper.myLooper())
+            runnable.run();
+        else
+            handler.post(runnable);
+    }
 
 }
 
