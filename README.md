@@ -63,7 +63,7 @@ loadModel(
 
     **bufferSize** - A higher value has more latency, less cpu intensive, and shorter recording time. A lower value has less latency, more cpy intensive, and       longer recording time.
   
-Please take a look at the example below. The values used  example model's input parameters.
+    Please take a look at the example below. The values used  example model's input parameters.
 
 ```dart
   Future<String> startAudioRecognition() async {
