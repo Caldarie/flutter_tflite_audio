@@ -56,19 +56,21 @@ loadModel(
 ```
 
 4. Call the future startAudioRecognition() and assign values for the arguments:
-  **samplerate** - determines the number of samples per second 
-  **recordinglength** - determines the max length of the recording buffer. Make sure the value is <= your tensor input array
-  **buffersize** - A higher value has more latency, less cpu intensive, and shorter recording time. A lower value has less latency, more cpy intensive, and longer recording time.
+
+    **sampleRate** - determines the number of samples per second
+
+    **recordingLength** - determines the max length of the recording buffer. Make sure the value is <= your tensor input array
+
+    **bufferSize** - A higher value has more latency, less cpu intensive, and shorter recording time. A lower value has less latency, more cpy intensive, and       longer recording time.
   
-  Please take a look at the example below. The values used  example model's input parameters.
+Please take a look at the example below. The values used  example model's input parameters.
 
 ```dart
-//This future checks for permissions, records voice and starts audio recognition, then returns the result.
-//Make sure the recordingLength fits your tensor input
-//Higher buffer size = more latency, but less intensive on cpu. Also shorter recording time.
-//Sample rate is the number of samples per second
   Future<String> startAudioRecognition() async {
-     await startAudioRecognition(sampleRate: 16000, recordingLength: 16000, bufferSize: 1280)
+     await startAudioRecognition(
+           sampleRate: 16000, 
+           recordingLength: 16000, 
+           bufferSize: 1280)
   }
 
 ```
