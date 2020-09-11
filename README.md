@@ -55,7 +55,12 @@ loadModel(
         isAsset: true);
 ```
 
-4. Call the future startAudioRecognition() and assign samplerate, recordinglength and buffersize. The values below are within the example model's input parameters.
+4. Call the future startAudioRecognition() and assign values for the arguments:
+  **samplerate** - determines the number of samples per second 
+  **recordinglength** - determines the max length of the recording buffer. Make sure the value is <= your tensor input array
+  **buffersize** - A higher value has more latency, less cpu intensive, and shorter recording time. A lower value has less latency, more cpy intensive, and longer recording time.
+  
+  Please take a look at the example below. The values used  example model's input parameters.
 
 ```dart
 //This future checks for permissions, records voice and starts audio recognition, then returns the result.
@@ -86,10 +91,30 @@ aaptOptions {
 
 
 ### iOS
-Also add the following key to Info.plist for iOS
+1. Add the following key to Info.plist for iOS. This ould be found in <YourApp>/ios/Runner
 ```
 <key>NSMicrophoneUsageDescription</key>
 <string>Record audio for playback</string>
+```
+
+2. Change the deployment target to at least 12.0. This could be done by:
+  a. Open your project workspace on xcode
+  b. Select root runner on the left hand side pannel
+  c. Under the info tab, change the iOS deployment target to 12.0
+
+3. Open your podfile in your iOS folder and change platform ios to 12. Also make sure that use_frameworks! is under runner. For example
+
+```
+platform :ios, '12.0'
+```
+
+```
+target 'Runner' do
+  use_frameworks! #Make sure you have this line
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end
 ```
 
 ## References
