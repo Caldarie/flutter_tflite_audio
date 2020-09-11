@@ -79,16 +79,16 @@ class LabelSmoothing {
       fatalError("Results should be provided in increasing time order")
     }
 
-    if let lastResult = previousResults.last {
+    // if let lastResult = previousResults.last {
 
-      let timeSinceMostRecent = currentTime - previousResults[previousResults.count - 1].time
+    //   let timeSinceMostRecent = currentTime - previousResults[previousResults.count - 1].time
 
-      // If not enough time has passed after the last inference, we return the previously identified
-      // result as legitimate one.
-      if timeSinceMostRecent < minimumTimeBetweenSamples {
-        return RecognitionResult(score: previousTopScore, name: previousTopLabel, isNew: false)
-      }
-    }
+    //   // If not enough time has passed after the last inference, we return the previously identified
+    //   // result as legitimate one.
+    //   if timeSinceMostRecent < minimumTimeBetweenSamples {
+    //     return RecognitionResult(score: previousTopScore, name: previousTopLabel, isNew: false)
+    //   }
+    // }
 
     // Appends the new results to the identified results
     let results: ResultsAtTime = ResultsAtTime(time: currentTime, scores: latestResults)

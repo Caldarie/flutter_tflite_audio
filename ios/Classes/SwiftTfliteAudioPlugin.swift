@@ -188,7 +188,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
             // Calculate inference time
             let startDate = Date()
             interval = Date().timeIntervalSince(startDate) * 1000
-            print("interval: \(interval)")
+            print("interval: \(interval!)")
 
             //Run inference by invoking the `Interpreter`.
             try interpreter.invoke() //required!!! Do not touch
@@ -207,8 +207,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
         let results =  getResults(withScores: scores)
         //let results = Result(recognitionResult: command, inferenceTime: interval)
         print("scores: \(scores)")
-        print("results: \(results)")
-        result(results)
+        print("results: \(results!)")
+        result(results!)
 
     }
 
