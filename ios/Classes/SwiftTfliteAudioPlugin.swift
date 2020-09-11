@@ -1,4 +1,5 @@
 import Flutter
+import CoreLocation 
 import UIKit
 import TensorFlowLite
 import AVFoundation
@@ -17,12 +18,11 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     private var result: FlutterResult!
     private var arguments: [String: AnyObject]!
     
-     /// TensorFlow Lite `Interpreter` object for performing inference on a given model.
+    /// TensorFlow Lite `Interpreter` object for performing inference on a given model.
     private var interpreter: Interpreter!
     
     //AvAudioEngine used for recording
     private var audioEngine: AVAudioEngine = AVAudioEngine()
-    
 
     //Microphone variables
     private let audioBufferInputTensorIndex = 0
@@ -38,7 +38,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     private let suppressionMs = 1500.0
     private let minimumCount = 3
     private let labelOffset = 2
-   
+    
     
     
     init(_ _registrar: FlutterPluginRegistrar) {
@@ -74,8 +74,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
             print("Permission granted")
             startMicrophone()
         case .denied:
-            print("Permission denied. Please accept permission in your settings.")
-            //use alert dialog here
+            showAlert(title: "Microphone Permissions", message: "Permission denied. Please accept permission in your settings.")
         //delegate?.showCameraPermissionsDeniedAlert()
         case .undetermined:
             print("requesting permission")
@@ -95,6 +94,27 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
                 print("check permissions")
                 self.checkPermissions()
             }
+        }
+    }
+    
+    func showAlert(title: String, message: String) {
+        
+        DispatchQueue.main.async {
+            let alertController = UIAlertController(title: title, message:
+                message, preferredStyle: .alert)
+            var rootViewController = UIApplication.shared.keyWindow?.rootViewController
+            let settingsAction = UIAlertAction(title: "Settings", style: .default) { (_) -> Void in
+                guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else {
+                    return
+                }
+                if UIApplication.shared.canOpenURL(settingsUrl) {
+                    UIApplication.shared.open(settingsUrl, completionHandler: { (success) in })
+                }
+            }
+            let cancelAction = UIAlertAction(title: "Cancel", style: .default, handler: nil)
+            alertController.addAction(cancelAction)
+            alertController.addAction(settingsAction)
+            rootViewController?.present(alertController, animated: true, completion: nil)
         }
     }
     
@@ -189,14 +209,14 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
             let startDate = Date()
             interval = Date().timeIntervalSince(startDate) * 1000
             print("interval: \(interval!)")
-
+            
             //Run inference by invoking the `Interpreter`.
             try interpreter.invoke() //required!!! Do not touch
             
             // Get the output `Tensor` to process the inference results.
             outputTensor = try interpreter.output(at: 0)
-         
-
+            
+            
             
         } catch let error {
             print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
@@ -209,33 +229,33 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
         print("scores: \(scores)")
         print("results: \(results!)")
         result(results!)
-
+        
     }
-
+    
     //private func getResults(withScores scores: [Float]) -> RecognitionResult? {
     private func getResults(withScores scores: [Float]) -> String? {
-
-    var results: [Float] = []
-    for i in 0..<labelArray.count {
-      results.append(scores[i])
+        
+        var results: [Float] = []
+        for i in 0..<labelArray.count {
+            results.append(scores[i])
+        }
+        
+        // Runs results through recognize commands.
+        let command = recognitionResult?.process(
+            latestResults: results,
+            currentTime: Date().timeIntervalSince1970 * 1000
+        )
+        
+        //Check if command is new and the identified result is not silence or unknown.
+        // guard let newCommand = command,
+        //   let index = labelArray.firstIndex(of: newCommand.name),
+        //   newCommand.isNew,
+        //   index >= labelOffset
+        // else {
+        //     return nil
+        // }
+        return command?.name
     }
-
-    // Runs results through recognize commands.
-    let command = recognitionResult?.process(
-      latestResults: results,
-      currentTime: Date().timeIntervalSince1970 * 1000
-    )
-
-    //Check if command is new and the identified result is not silence or unknown.
-    // guard let newCommand = command,
-    //   let index = labelArray.firstIndex(of: newCommand.name),
-    //   newCommand.isNew,
-    //   index >= labelOffset
-    // else {
-    //     return nil
-    // }
-    return command?.name
-  }
     
     
     func loadModel(registrar: FlutterPluginRegistrar){
@@ -339,3 +359,13 @@ extension Array {
         #endif  // swift(>=5.0)
     }
 }
+
+// //Used for permissions
+// extension UIViewController {
+
+// }
+
+
+
+
+
