@@ -15,6 +15,21 @@ class TfliteAudio {
     });
   }
 
+  static Future<dynamic> processRecognitionResults(
+      int averageWindowDurationMs,
+      int minimumTimeBetweenSamples,
+      int supressionMs,
+      int minimumCount,
+      double detectionThreshold) async {
+    return _channel.invokeMethod('startAudioRecognition', {
+      'averageWindowDurationMs': averageWindowDurationMs,
+      'minimumTimeBetweenSamples': minimumTimeBetweenSamples,
+      'supressionMs': supressionMs,
+      'minimumCount': minimumCount,
+      'detectionThreshold': detectionThreshold
+    });
+  }
+
   static Future loadModel(
       String model, String label, int numThreads, bool isAsset) async {
     return _channel.invokeMethod(

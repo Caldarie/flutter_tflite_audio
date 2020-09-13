@@ -49,6 +49,20 @@ class _MyAppState extends State<MyApp> {
         sampleRate, recordingLength, bufferSize);
   }
 
+  Future<dynamic> processRecognitionResults(
+      {int averageWindowDurationMs,
+      int minimumTimeBetweenSamples,
+      int supressionMs,
+      int minimumCount,
+      double detectionThreshold}) async {
+    return await TfliteAudio.processRecognitionResults(
+        averageWindowDurationMs,
+        minimumTimeBetweenSamples,
+        supressionMs,
+        minimumCount,
+        detectionThreshold);
+  }
+
   Future<String> getResult() async {
     String _result;
     await startAudioRecognition(
