@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-//import 'dart:developer';
+import 'dart:developer';
 import 'package:tflite_audio/tflite_audio.dart';
 
 void main() => runApp(MyApp());
@@ -12,7 +12,8 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  Future<String> result;
+  Future<Map<dynamic, dynamic>> result;
+  final isRecording = ValueNotifier<bool>(false);
   List<String> labelList = [
     '_silence_',
     '_unknown_',
@@ -43,31 +44,17 @@ class _MyAppState extends State<MyApp> {
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
 
-  Future<dynamic> startAudioRecognition(
+  Future<Map<dynamic, dynamic>> startAudioRecognition(
       {int sampleRate, int recordingLength, int bufferSize}) async {
     return await TfliteAudio.startAudioRecognition(
         sampleRate, recordingLength, bufferSize);
   }
 
-  Future<dynamic> processRecognitionResults(
-      {int averageWindowDurationMs,
-      int minimumTimeBetweenSamples,
-      int supressionMs,
-      int minimumCount,
-      double detectionThreshold}) async {
-    return await TfliteAudio.processRecognitionResults(
-        averageWindowDurationMs,
-        minimumTimeBetweenSamples,
-        supressionMs,
-        minimumCount,
-        detectionThreshold);
-  }
-
-  Future<String> getResult() async {
-    String _result;
+  Future<Map<dynamic, dynamic>> getResult() async {
+    Map<dynamic, dynamic> _result;
     await startAudioRecognition(
             sampleRate: 16000, recordingLength: 16000, bufferSize: 1280)
-        .then((result) => _result = result.toString());
+        .then((map) => _result = map);
     return _result;
   }
 
@@ -87,47 +74,81 @@ class _MyAppState extends State<MyApp> {
               title: const Text('Tflite-audio/speech'),
             ),
             body: Center(
-                child: FutureBuilder<String>(
+                child: FutureBuilder<Map<dynamic, dynamic>>(
               future: result,
-              builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+              builder: (BuildContext context,
+                  AsyncSnapshot<Map<dynamic, dynamic>> snapshot) {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: labelList.map((labels) {
-                    if (labels == snapshot.data) {
-                      return Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Text(
-                            labels.toString(),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                                fontSize: 25,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green),
-                          ));
-                    } else {
-                      return Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Text(labels.toString(),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              )));
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.none:
+                      case ConnectionState.waiting:
+                        return Padding(
+                            padding: const EdgeInsets.all(5.0),
+                            child: Text(labels.toString(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                )));
+                        break;
+                      default:
+                        if (labels == snapshot.data['recognitionResult']) {
+                          return Padding(
+                              padding: const EdgeInsets.all(5.0),
+                              child: Text(
+                                labels.toString(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green),
+                              ));
+                        } else {
+                          return Padding(
+                              padding: const EdgeInsets.all(5.0),
+                              child: Text(labels.toString(),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  )));
+                        }
                     }
                   }).toList(),
                 );
               },
             )),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                setState(() {
-                  //! - snackbar shows if permissions have been denied
-                  showInSnackBar('Say a word from the list.');
-                  result = getResult();
-                });
-              },
-              child: const Icon(Icons.mic),
-            )));
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: Container(
+                child: ValueListenableBuilder(
+                    valueListenable: isRecording,
+                    builder: (context, value, widget) {
+                      if (value == false) {
+                        return FloatingActionButton(
+                          onPressed: () {
+                            isRecording.value = true;
+                            // value == true;
+                            setState(() {
+                              result = getResult().whenComplete(
+                                  () => isRecording.value = false);
+                            });
+                          },
+                          backgroundColor: Colors.blue,
+                          child: const Icon(Icons.mic),
+                        );
+                      } else {
+                        return FloatingActionButton(
+                          onPressed: () {
+                            log('button pressed too many times');
+                          },
+                          backgroundColor: Colors.red,
+                          child: const Icon(Icons.adjust),
+                        );
+                      }
+                    }))));
   }
 }

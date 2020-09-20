@@ -1,3 +1,9 @@
+## 0.1.2
+* Instead of returning a single string value, getResult() now returns a map with the following values:
+    - recognitionResult 
+    - inferenceTime
+* Fixed issue in example where pressing the record button multiple times will crash the app.
+* Added feature in example where pressing the recording button changes color.
 
 ## 0.1.1
 * Made some fixes with making options explicit

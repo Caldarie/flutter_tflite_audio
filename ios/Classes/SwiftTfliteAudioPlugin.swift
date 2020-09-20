@@ -5,11 +5,12 @@ import TensorFlowLite
 import AVFoundation
 import os
 
-/// A result from invoking the `Interpreter`.
-// struct Result {
-//     let recognitionResult: RecognitionResult?
-//     let inferenceTime: Double
-// }
+//  Interpreter result => dictionarty
+struct Result: Codable {
+    // let recognitionResult: RecognitionResult?
+    let recognitionResult: String!
+    let inferenceTime: Double
+}
 
 public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     
@@ -75,7 +76,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
             startMicrophone()
         case .denied:
             showAlert(title: "Microphone Permissions", message: "Permission denied. Please accept permission in your settings.")
-        //delegate?.showCameraPermissionsDeniedAlert()
+            // result("REQUIRE_PERMISSION")
         case .undetermined:
             print("requesting permission")
             requestPermissions()
@@ -102,7 +103,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
         DispatchQueue.main.async {
             let alertController = UIAlertController(title: title, message:
                 message, preferredStyle: .alert)
-            var rootViewController = UIApplication.shared.keyWindow?.rootViewController
+            let rootViewController = UIApplication.shared.keyWindow?.rootViewController
             let settingsAction = UIAlertAction(title: "Settings", style: .default) { (_) -> Void in
                 guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else {
                     return
@@ -207,12 +208,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
             
             // Calculate inference time
             let startDate = Date()
-            interval = Date().timeIntervalSince(startDate) * 1000
-            print("interval: \(interval!)")
-            
-            //Run inference by invoking the `Interpreter`.
             try interpreter.invoke() //required!!! Do not touch
-            
+            interval = Date().timeIntervalSince(startDate) * 1000
+        
             // Get the output `Tensor` to process the inference results.
             outputTensor = try interpreter.output(at: 0)
             
@@ -224,15 +222,21 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
         
         // Gets the formatted and averaged results.
         let scores = [Float32](unsafeData: outputTensor.data) ?? []
-        let results =  getResults(withScores: scores)
-        //let results = Result(recognitionResult: command, inferenceTime: interval)
-        print("scores: \(scores)")
-        print("results: \(results!)")
-        result(results!)
+        let results = getResults(withScores: scores)
+        let finalResults = Result(recognitionResult: results, inferenceTime: interval)
+
+        //Convert results to dictionary and then json
+        let dict = finalResults.dictionary
+        print("results: \(dict!)")
+        result(dict!)
+//        let jsonData = try! JSONSerialization.data(withJSONObject: dict!, options: [])
+//        let jsonString = String(data: jsonData, encoding: String.Encoding.ascii)!
+//        print("results: \(jsonString)")
+//        result(jsonString)
         
     }
     
-    //private func getResults(withScores scores: [Float]) -> RecognitionResult? {
+    // private func getResults(withScores scores: [Float]) -> RecognitionResult? {
     private func getResults(withScores scores: [Float]) -> String? {
         
         var results: [Float] = []
@@ -360,12 +364,19 @@ extension Array {
     }
 }
 
-// //Used for permissions
-// extension UIViewController {
+// Used to encode the struct class Result to json
+extension Encodable {
+        var dictionary: [String: Any]? {
+        guard let data = try? JSONEncoder().encode(self) else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)).flatMap { $0 as? [String: Any] }
+        }
+}
 
-// }
-
-
-
-
+extension Decodable {
+  init(from: Any) throws {
+    let data = try JSONSerialization.data(withJSONObject: from, options: .prettyPrinted)
+    let decoder = JSONDecoder()
+    self = try decoder.decode(Self.self, from: data)
+  }
+}
 

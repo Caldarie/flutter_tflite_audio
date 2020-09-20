@@ -2,9 +2,15 @@
 
 This plugin allows you to use tflite to make audio/speech classifications. Can now support ios and android. 
 
-If you have any feature requests or would like to contribute to this plugin, please do not hesistate to contact me.
+If there are any problems with the plugin, please do not hesistate to create an issue or request features on github.
 
 ![](audio_recognition_example.jpg)
+
+# Limitations of this plugin and roadmap
+
+1. Can only use decoded wave for the tensor inputs. Will add an ability to use mfcc.
+2. Can only run the model once after recording. Will add a feature to run the model multiple times per recording at the user's specification.
+3. Fixed tensor input and output arrays. 
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
@@ -37,7 +43,7 @@ import 'package:tflite_audio/tflite_audio.dart';
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
 
- Future<dynamic> startAudioRecognition(
+  Future<Map<dynamic, dynamic>> startAudioRecognition(
       {int sampleRate, int recordingLength, int bufferSize}) async {
     return await TfliteAudio.startAudioRecognition(
         sampleRate, recordingLength, bufferSize);
@@ -55,7 +61,7 @@ loadModel(
         isAsset: true);
 ```
 
-4. Call the future startAudioRecognition() and assign values for the arguments:
+4. To get the results, call the future startAudioRecognition(). Assign values to the following arguments to fit your custom model:
 
     **sampleRate** - determines the number of samples per second
 
@@ -66,12 +72,8 @@ loadModel(
     Please take a look at the example below. The values used  example model's input parameters.
 
 ```dart
-  Future<String> startAudioRecognition() async {
-     await startAudioRecognition(
-           sampleRate: 16000, 
-           recordingLength: 16000, 
-           bufferSize: 1280)
-  }
+  Map<dynamic, dynamic> result = await startAudioRecognition(
+            sampleRate: 16000, recordingLength: 16000, bufferSize: 1280)
 
 ```
 

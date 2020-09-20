@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 class TfliteAudio {
   static const MethodChannel _channel = MethodChannel('tflite_audio');
 
-  static Future<dynamic> startAudioRecognition(
+  static Future<Map<dynamic, dynamic>> startAudioRecognition(
       int sampleRate, int recordingLength, int bufferSize) async {
     return _channel.invokeMethod('startAudioRecognition', {
       'sampleRate': sampleRate,
