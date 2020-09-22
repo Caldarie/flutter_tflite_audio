@@ -93,7 +93,7 @@ bufferSize - Make sure this value is equal or below your recording length. A ver
     
 ```    
 
-## Android 
+## Android Installation & Permissions
 Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
 
 ```
@@ -109,7 +109,7 @@ aaptOptions {
 ```
 
 
-## iOS
+## iOS Installation & Permissions
 1. Add the following key to Info.plist for iOS. This ould be found in <YourApp>/ios/Runner
 ```
 <key>NSMicrophoneUsageDescription</key>
