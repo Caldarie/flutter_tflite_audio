@@ -8,9 +8,9 @@ If there are any problems with the plugin, please do not hesistate to create an 
 
 ## Limitations of this plugin and roadmap
 
-1. Can only use decoded wave for the tensor inputs. Will add an ability to use mfcc.
-2. Can only run the model once after recording. Will add a feature to run the model multiple times per recording at the user's specification.
-3. Fixed tensor input and output arrays. 
+1. Can only use decoded wave for the tensor input. Will add an ability to use mfcc in the future.
+2. Can only run the model once after recording. Will add a feature to run the model multiple times or indefintely the user's specification.
+3. Fixed tensor input and output shape. Perhaps will add a feature where this can be shaped. 
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
@@ -34,15 +34,27 @@ If there are any problems with the plugin, please do not hesistate to create an 
 import 'package:tflite_audio/tflite_audio.dart';
 ```
 
-2. Use the following futures to make use of this plugin. Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
+2. To load your model, bascially call the the future loadModel() and assign the appropriate values to the arguments like below:
+
 
 ```dart
 //Loads your model
-//Higher numThreads will be reduce inference times, but is more intensive on cpu
  Future loadModel({model, label, numThreads, isAsset}) async {
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
 
+  ```dart
+loadModel(
+        model: "assets/conv_actions_frozen.tflite",
+        label: "assets/conv_actions_labels.txt",
+        numThreads: 1,
+        isAsset: true);
+```
+
+
+3. To get the results, call the future startAudioRecognition and assign the appropriate values to the arguments. 
+
+```dart
   Future<Map<dynamic, dynamic>> startAudioRecognition(
       {int sampleRate, int recordingLength, int bufferSize}) async {
     return await TfliteAudio.startAudioRecognition(
@@ -51,32 +63,30 @@ import 'package:tflite_audio/tflite_audio.dart';
 
 ```
 
-3. Call the future loadModel() and assign the appropriate arguments. The values for numThread and isAsset are on default as shown below:
-
 ```dart
-loadModel(
-        model: "assets/conv_actions_frozen.tflite",
-        label: "assets/conv_actions_labels.txt",
-        numThreads: 1,
-        isAsset: true);
+//To get the results from invoking the model
+  Map<dynamic, dynamic> result = await startAudioRecognition(
+            sampleRate: 16000, recordingLength: 16000, bufferSize: 1280);
+
+//Call values from map
+  var recognitionResult = result['recognitionResult'] 
+  var inferenceTIme = result['inferenceTime']
 ```
 
-4. To get the results, call the future startAudioRecognition(). Assign values to the following arguments to fit your custom model:
+
+Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
+
+
+4. For a rough guide on the parameters
+
+    **numThreads** - higher threads will reduce inferenceTime. However, cpu usage will be higher.
 
     **sampleRate** - determines the number of samples per second
 
-    **recordingLength** - determines the max length of the recording buffer. Make sure the value is <= your tensor input array
+    **recordingLength** - determines the max length of the recording buffer. If the value is not below or equal to your tensor input, it will crash.
 
-    **bufferSize** - A higher value has more latency, less cpu intensive, and shorter recording time. A lower value has less latency, more cpy intensive, and       longer recording time.
-  
-    Please take a look at the example below. The values used  example model's input parameters.
-
-```dart
-  Map<dynamic, dynamic> result = await startAudioRecognition(
-            sampleRate: 16000, recordingLength: 16000, bufferSize: 1280)
-
-```
-
+    **bufferSize** - Make sure this value is equal or below your recording length. A very high value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive
+    
 
 ## Android 
 Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
