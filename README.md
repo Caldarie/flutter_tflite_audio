@@ -6,7 +6,7 @@ If there are any problems with the plugin, please do not hesistate to create an 
 
 ![](audio_recognition_example.jpg)
 
-# Limitations of this plugin and roadmap
+## Limitations of this plugin and roadmap
 
 1. Can only use decoded wave for the tensor inputs. Will add an ability to use mfcc.
 2. Can only run the model once after recording. Will add a feature to run the model multiple times per recording at the user's specification.
