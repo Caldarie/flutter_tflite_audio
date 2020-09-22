@@ -228,12 +228,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
         //Convert results to dictionary and then json
         let dict = finalResults.dictionary
         print("results: \(dict!)")
-        result(dict!)
-//        let jsonData = try! JSONSerialization.data(withJSONObject: dict!, options: [])
-//        let jsonString = String(data: jsonData, encoding: String.Encoding.ascii)!
-//        print("results: \(jsonString)")
-//        result(jsonString)
-        
+        result(dict!)        
     }
     
     // private func getResults(withScores scores: [Float]) -> RecognitionResult? {
