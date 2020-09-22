@@ -27,6 +27,8 @@ If there are any problems with the plugin, please do not hesistate to create an 
 ```
 
 ## How to use this plugin
+Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
+
 
 1. Import the plugin. For example:
 
@@ -75,19 +77,19 @@ loadModel(
 ```
 
 
-Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
+
 
 
 4. For a rough guide on the parameters
 
 ```
-    **numThreads** - higher threads will reduce inferenceTime. However, cpu usage will be higher.
+numThreads - higher threads will reduce inferenceTime. However, cpu usage will be higher.
 
-    **sampleRate** - determines the number of samples per second
+sampleRate - determines the number of samples per second
 
-    **recordingLength** - determines the max length of the recording buffer. If the value is not below or equal to your tensor input, it will crash.
+recordingLength - determines the max length of the recording buffer. If the value is not below or equal to your tensor input, it will crash.
 
-    **bufferSize** - Make sure this value is equal or below your recording length. A very high value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive
+bufferSize - Make sure this value is equal or below your recording length. A very high value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive
     
 ```    
 
