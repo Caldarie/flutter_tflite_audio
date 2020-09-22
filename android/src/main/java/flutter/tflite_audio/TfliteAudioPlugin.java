@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.Date;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -79,6 +80,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
     private List<String> labels;
 
     //working recognition variables
+    private long lastProcessingTimeMs;
     boolean shouldContinueRecognition = true;
     private Thread recognitionThread;
     private Interpreter tfLite;
@@ -226,6 +228,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
                     "Microphone Permissions",
                     "Permission has been declined. Please accept permissions in your settings"
             );
+            result.success("REQUIRE_PERMISSION");
             Log.d(LOG_TAG, "Permission denied. Showing rationale dialog...");
         }
         return true;
@@ -371,6 +374,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
         float[][] outputScores = new float[1][labels.size()];
         int[] sampleRateList = new int[]{sampleRate};
 
+       
+
         recordingBufferLock.lock();
         try {
             int maxLength = recordingBuffer.length;
@@ -390,12 +395,14 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
         Map<Integer, Object> outputMap = new HashMap<>();
         outputMap.put(0, outputScores);
 
-        // Run the model.
+        // Calculate inference time
+        long startTime = new Date().getTime();
         tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
-        Log.v(LOG_TAG, "OUTPUT======> " + Arrays.toString(outputScores[0]));
-        //Log.v(LOG_TAG, "Output scores length " + outputScores.toString());
+        lastProcessingTimeMs = new Date().getTime() - startTime;
 
-        long currentTime = System.currentTimeMillis();
+
+        Log.v(LOG_TAG, "OUTPUT======> " + Arrays.toString(outputScores[0]));
+        Log.v(LOG_TAG, Long.toString(lastProcessingTimeMs));
 
         labelSmoothing =
                 new LabelSmoothing(
@@ -406,16 +413,24 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
                         MINIMUM_COUNT,
                         MINIMUM_TIME_BETWEEN_SAMPLES_MS);
 
+        long currentTime = System.currentTimeMillis();
         final LabelSmoothing.RecognitionResult recognitionResult =
                 labelSmoothing.processLatestResults(outputScores[0], currentTime);
-
+     
+        //Map score and inference time
+        Map <String, Object> finalResults = new HashMap();
+        finalResults.put("recognitionResult", recognitionResult.foundCommand);
+        finalResults.put("inferenceTime", lastProcessingTimeMs);
+        
+        //pass the map to flutter and stop recognition
+        getResult(finalResults);
         stopRecognition();
-        getResult(recognitionResult.foundCommand);
     }
 
-    public void getResult(String recognitionResult) {
+    //When passing results, required to be sent via main thread.
+    public void getResult(Map <String, Object> recognitionResult) {
         runOnUIThread(() -> {
-            Log.v(LOG_TAG, "result: " + recognitionResult);
+            Log.v(LOG_TAG, "result: " + recognitionResult.toString());
             result.success(recognitionResult);
         });
 
