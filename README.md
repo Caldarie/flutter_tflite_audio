@@ -42,8 +42,9 @@ import 'package:tflite_audio/tflite_audio.dart';
  Future loadModel({model, label, numThreads, isAsset}) async {
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
+```
 
-  ```dart
+```dart
 loadModel(
         model: "assets/conv_actions_frozen.tflite",
         label: "assets/conv_actions_labels.txt",
@@ -79,6 +80,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 
 4. For a rough guide on the parameters
 
+```
     **numThreads** - higher threads will reduce inferenceTime. However, cpu usage will be higher.
 
     **sampleRate** - determines the number of samples per second
@@ -87,6 +89,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 
     **bufferSize** - Make sure this value is equal or below your recording length. A very high value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive
     
+```    
 
 ## Android 
 Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
