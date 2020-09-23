@@ -1,5 +1,10 @@
+## 0.1.3
+* Hotfix for crash when permission has been denied.
+* Added the key 'hasPermission' for the future startAudioRecognitions().
+* Added feature in example where it'll show inference times
+
 ## 0.1.2
-* Instead of returning a single string value, getResult() now returns a map with the following values:
+* Instead of returning a single string value, the future startAudioRecognition() now returns a map with the following keys:
     - recognitionResult 
     - inferenceTime
 * Fixed issue in example where pressing the record button multiple times will crash the app.
