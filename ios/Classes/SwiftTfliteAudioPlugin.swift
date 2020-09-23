@@ -10,6 +10,7 @@ struct Result: Codable {
     // let recognitionResult: RecognitionResult?
     let recognitionResult: String!
     let inferenceTime: Double
+    let hasPermission: Bool
 }
 
 public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
@@ -76,7 +77,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
             startMicrophone()
         case .denied:
             showAlert(title: "Microphone Permissions", message: "Permission denied. Please accept permission in your settings.")
-            // result("REQUIRE_PERMISSION")
+            let finalResults = Result(recognitionResult: nil, inferenceTime: 0, hasPermission: false)
+            let dict = finalResults.dictionary
+            result(dict!)
         case .undetermined:
             print("requesting permission")
             requestPermissions()
@@ -223,7 +226,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
         // Gets the formatted and averaged results.
         let scores = [Float32](unsafeData: outputTensor.data) ?? []
         let results = getResults(withScores: scores)
-        let finalResults = Result(recognitionResult: results, inferenceTime: interval)
+        let roundInterval = interval.rounded();
+        let finalResults = Result(recognitionResult: results, inferenceTime: roundInterval, hasPermission: true)
 
         //Convert results to dictionary and then json
         let dict = finalResults.dictionary

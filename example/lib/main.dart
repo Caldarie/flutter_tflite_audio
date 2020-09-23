@@ -54,7 +54,11 @@ class _MyAppState extends State<MyApp> {
     Map<dynamic, dynamic> _result;
     await startAudioRecognition(
             sampleRate: 16000, recordingLength: 16000, bufferSize: 1280)
-        .then((map) => _result = map);
+        // .then((map) => _result = map);
+        .then((value) {
+      _result = value;
+      log(value.toString());
+    });
     return _result;
   }
 
@@ -65,6 +69,11 @@ class _MyAppState extends State<MyApp> {
     ));
   }
 
+  String mapToValue(dynamic value) {
+    String reddit = value.toString() ?? null;
+    return reddit;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -73,40 +82,17 @@ class _MyAppState extends State<MyApp> {
             appBar: AppBar(
               title: const Text('Tflite-audio/speech'),
             ),
-            body: Center(
-                child: FutureBuilder<Map<dynamic, dynamic>>(
-              future: result,
-              builder: (BuildContext context,
-                  AsyncSnapshot<Map<dynamic, dynamic>> snapshot) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: labelList.map((labels) {
-                    switch (snapshot.connectionState) {
-                      case ConnectionState.none:
-                      case ConnectionState.waiting:
-                        return Padding(
-                            padding: const EdgeInsets.all(5.0),
-                            child: Text(labels.toString(),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                )));
-                        break;
-                      default:
-                        if (labels == snapshot.data['recognitionResult']) {
-                          return Padding(
-                              padding: const EdgeInsets.all(5.0),
-                              child: Text(
-                                labels.toString(),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                    fontSize: 25,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.green),
-                              ));
-                        } else {
+            body: FutureBuilder<Map<dynamic, dynamic>>(
+                future: result,
+                builder: (BuildContext context,
+                    AsyncSnapshot<Map<dynamic, dynamic>> snapshot) {
+                  switch (snapshot.connectionState) {
+                    case ConnectionState.none:
+                      return Center(
+                          child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: labelList.map((labels) {
                           return Padding(
                               padding: const EdgeInsets.all(5.0),
                               child: Text(labels.toString(),
@@ -115,12 +101,84 @@ class _MyAppState extends State<MyApp> {
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black,
                                   )));
-                        }
-                    }
-                  }).toList(),
-                );
-              },
-            )),
+                        }).toList(),
+                      ));
+                      break;
+                    case ConnectionState.waiting:
+                      return Stack(children: <Widget>[
+                        const Align(
+                            alignment: Alignment.bottomRight,
+                            child: const Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: const Text('calculating..',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: Colors.black,
+                                    )))),
+                        Center(
+                            child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: labelList.map((labels) {
+                            return Padding(
+                                padding: const EdgeInsets.all(5.0),
+                                child: Text(labels.toString(),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    )));
+                          }).toList(),
+                        ))
+                      ]);
+                      break;
+                    default:
+                      return Stack(children: <Widget>[
+                        Align(
+                            alignment: Alignment.bottomRight,
+                            child: Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: Text(
+                                    snapshot.data['inferenceTime'].toString() +
+                                        'ms',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: Colors.black,
+                                    )))),
+                        Center(
+                            child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: labelList.map((labels) {
+                            if (labels == snapshot.data['recognitionResult']) {
+                              return Padding(
+                                  padding: const EdgeInsets.all(5.0),
+                                  child: Text(labels.toString(),
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 30,
+                                        color: Colors.green,
+                                      )));
+                            } else {
+                              return Padding(
+                                  padding: const EdgeInsets.all(5.0),
+                                  child: Text(labels.toString(),
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      )));
+                            }
+                          }).toList(),
+                        ))
+                      ]);
+                  }
+                }),
             floatingActionButtonLocation:
                 FloatingActionButtonLocation.centerFloat,
             floatingActionButton: Container(
@@ -152,3 +210,24 @@ class _MyAppState extends State<MyApp> {
                     }))));
   }
 }
+// if (labels == snapshot.data['recognitionResult']) {
+//   return Padding(
+//       padding: const EdgeInsets.all(5.0),
+//       child: Text(
+//         labels.toString(),
+//         textAlign: TextAlign.center,
+//         style: const TextStyle(
+//             fontSize: 25,
+//             fontWeight: FontWeight.bold,
+//             color: Colors.green),
+//       ));
+// } else {
+//   return Padding(
+//       padding: const EdgeInsets.all(5.0),
+//       child: Text(labels.toString(),
+//           textAlign: TextAlign.center,
+//           style: const TextStyle(
+//             fontWeight: FontWeight.bold,
+//             color: Colors.black,
+//           )));
+// }

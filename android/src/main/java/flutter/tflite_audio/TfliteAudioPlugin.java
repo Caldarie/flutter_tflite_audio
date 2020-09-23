@@ -228,8 +228,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
                     "Microphone Permissions",
                     "Permission has been declined. Please accept permissions in your settings"
             );
-            result.success("REQUIRE_PERMISSION");
-            Log.d(LOG_TAG, "Permission denied. Showing rationale dialog...");
+            //return false for hasPermission
+            Map <String, Object> finalResults = new HashMap();
+            finalResults.put("recognitionResult", null);
+            finalResults.put("inferenceTime", 0);
+            finalResults.put("hasPermission", false);
+            result.success(finalResults);
         }
         return true;
     }
@@ -421,6 +425,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, PluginRegistry.Requ
         Map <String, Object> finalResults = new HashMap();
         finalResults.put("recognitionResult", recognitionResult.foundCommand);
         finalResults.put("inferenceTime", lastProcessingTimeMs);
+        finalResults.put("hasPermission", true);
         
         //pass the map to flutter and stop recognition
         getResult(finalResults);
