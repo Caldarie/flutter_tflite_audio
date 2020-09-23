@@ -62,17 +62,12 @@ class _MyAppState extends State<MyApp> {
     return _result;
   }
 
-  void showInSnackBar(String value) {
-    _scaffoldKey.currentState.showSnackBar(new SnackBar(
-      content: new Text(value),
-      duration: const Duration(milliseconds: 1600),
-    ));
-  }
-
-  String mapToValue(dynamic value) {
-    String reddit = value.toString() ?? null;
-    return reddit;
-  }
+  // void showInSnackBar(String value) {
+  //   _scaffoldKey.currentState.showSnackBar(new SnackBar(
+  //     content: new Text(value),
+  //     duration: const Duration(milliseconds: 1600),
+  //   ));
+  // }
 
   @override
   Widget build(BuildContext context) {
