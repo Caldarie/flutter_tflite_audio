@@ -6,7 +6,6 @@ If there are any problems with the plugin, please do not hesistate to create an 
 
 ![](audio_recognition_example.jpg)
 
-<br/><br/>
 
 ## Limitations of this plugin and roadmap
 
@@ -14,12 +13,9 @@ If there are any problems with the plugin, please do not hesistate to create an 
 2. Can only run the model once after recording. Will add a feature to run the model multiple times or indefintely the user's specification.
 3. Fixed tensor input and output shape. Perhaps will add a feature where this can be shaped. 
 
-<br/><br/>
-
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
 
-<br/><br/>
 
 ## How to add tflite model and label to flutter:
 1. Place your custom tflite model and labels into the asset folder. 
@@ -31,7 +27,6 @@ If there are any problems with the plugin, please do not hesistate to create an 
     - assets/conv_actions_labels.txt
 
 ```
-<br/><br/>
 
 ## How to use this plugin
 Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
@@ -42,7 +37,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 ```
 import 'package:tflite_audio/tflite_audio.dart';
 ```
-<br/>
+
 
 2. To load your model, bascially call the the future loadModel() and assign the appropriate values to the arguments like below:
 
@@ -62,7 +57,7 @@ loadModel(
         isAsset: true);
 ```
 
-<br/>
+
 
 3. To get the results, call the future startAudioRecognition and assign the appropriate values to the arguments. 
 
@@ -85,10 +80,6 @@ loadModel(
   var inferenceTIme = result['inferenceTime']
 ```
 
-
-<br/>
-
-
 4. For a rough guide on the parameters
 
 ```
@@ -101,8 +92,6 @@ recordingLength - determines the max length of the recording buffer. If the valu
 bufferSize - Make sure this value is equal or below your recording length. A very high value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive
     
 ```    
-
-<br/><br/>
 
 ## Android Installation & Permissions
 Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
@@ -119,15 +108,12 @@ aaptOptions {
         noCompress 'tflite'
 ```
 
-<br/><br/>
-
 ## iOS Installation & Permissions
 1. Add the following key to Info.plist for iOS. This ould be found in <YourApp>/ios/Runner
 ```
 <key>NSMicrophoneUsageDescription</key>
 <string>Record audio for playback</string>
 ```
-<br/>
 
 2. Change the deployment target to at least 12.0. This could be done by:
 
@@ -137,7 +123,6 @@ aaptOptions {
   
     c. Under the info tab, change the iOS deployment target to 12.0
     
-<br/>
 
 3. Open your podfile in your iOS folder and change platform ios to 12. Also make sure that use_frameworks! is under runner. For example
 
@@ -153,8 +138,6 @@ target 'Runner' do
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 ```
-
-<br/><br/>
 
 ## References
 
