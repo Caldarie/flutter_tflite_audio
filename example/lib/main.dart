@@ -210,24 +210,3 @@ class _MyAppState extends State<MyApp> {
                     }))));
   }
 }
-// if (labels == snapshot.data['recognitionResult']) {
-//   return Padding(
-//       padding: const EdgeInsets.all(5.0),
-//       child: Text(
-//         labels.toString(),
-//         textAlign: TextAlign.center,
-//         style: const TextStyle(
-//             fontSize: 25,
-//             fontWeight: FontWeight.bold,
-//             color: Colors.green),
-//       ));
-// } else {
-//   return Padding(
-//       padding: const EdgeInsets.all(5.0),
-//       child: Text(labels.toString(),
-//           textAlign: TextAlign.center,
-//           style: const TextStyle(
-//             fontWeight: FontWeight.bold,
-//             color: Colors.black,
-//           )));
-// }
