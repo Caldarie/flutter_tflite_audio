@@ -43,14 +43,14 @@ import 'package:tflite_audio/tflite_audio.dart';
 
 
 ```dart
-//Loads your model
+//Create a future from the plugin as shown below:
  Future loadModel({model, label, numThreads, isAsset}) async {
     return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
   }
 ```
 
 ```dart
-//Initialize the future as is.
+//Assign the values and then call the future as shown below
 loadModel(
         model: "assets/conv_actions_frozen.tflite",
         label: "assets/conv_actions_labels.txt",
@@ -63,7 +63,7 @@ loadModel(
 3. To get the results, call the future startAudioRecognition and assign the appropriate values to the arguments. For example:
 
 ```dart
-//Load the future as is
+//Create a future from the plugin as shown below
   Future<Map<dynamic, dynamic>> startAudioRecognition(
       {int sampleRate, int recordingLength, int bufferSize}) async {
     return await TfliteAudio.startAudioRecognition(
@@ -73,7 +73,8 @@ loadModel(
 ```
 
 ```dart
-//call the future, which will return a map value
+//Assign the future to map as shown below. 
+//Remember to assign the appropriate values.
   Map<dynamic, dynamic> result = await startAudioRecognition(
             sampleRate: 16000, recordingLength: 16000, bufferSize: 1280);
 
@@ -92,7 +93,10 @@ sampleRate - determines the number of samples per second
 
 recordingLength - determines the max length of the recording buffer. If the value is not below or equal to your tensor input, it will crash.
 
-bufferSize - Make sure this value is equal or below your recording length. A very high value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive
+bufferSize - Make sure this value is equal or below your recording length. 
+A very high value may not allow the recording enough time to capture your voice. 
+A lower value will give more time, but it'll be more cpu intensive
+Remember that this value varies depending on your device.
     
 ```    
 
