@@ -7,7 +7,7 @@ linter:
     prefer_const_literals_to_create_immutables: true
     prefer_relative_imports: false
     prefer_single_quotes: true
-    public_member_api_docs: false
+    public_member_api_docs: true
     sort_child_properties_last: true
     sort_constructors_first: true
     unawaited_futures: true

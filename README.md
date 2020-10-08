@@ -50,6 +50,7 @@ import 'package:tflite_audio/tflite_audio.dart';
 ```
 
 ```dart
+//Initialize the future as is.
 loadModel(
         model: "assets/conv_actions_frozen.tflite",
         label: "assets/conv_actions_labels.txt",
@@ -59,9 +60,10 @@ loadModel(
 
 
 
-3. To get the results, call the future startAudioRecognition and assign the appropriate values to the arguments. 
+3. To get the results, call the future startAudioRecognition and assign the appropriate values to the arguments. For example:
 
 ```dart
+//Load the future as is
   Future<Map<dynamic, dynamic>> startAudioRecognition(
       {int sampleRate, int recordingLength, int bufferSize}) async {
     return await TfliteAudio.startAudioRecognition(
@@ -71,13 +73,14 @@ loadModel(
 ```
 
 ```dart
-//To get the results from invoking the model
+//call the future, which will return a map value
   Map<dynamic, dynamic> result = await startAudioRecognition(
             sampleRate: 16000, recordingLength: 16000, bufferSize: 1280);
 
-//Call values from map
+//use following keys to get the result you want from the map. Such as:
   var recognitionResult = result['recognitionResult'] 
   var inferenceTIme = result['inferenceTime']
+  var hasPermission = result['hasPermission']
 ```
 
 4. For a rough guide on the parameters

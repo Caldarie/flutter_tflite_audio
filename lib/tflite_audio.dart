@@ -2,10 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-// ignore: avoid_classes_with_only_static_members
+// Class which manages the futures for the plugins
 class TfliteAudio {
   static const MethodChannel _channel = MethodChannel('tflite_audio');
 
+// Future to obtain results. Returns a map with the following values:
+//1. recognitionResult - string value
+//2. inferenceTime - int value
+//3. hasPermission - boolean which checks for permission
   static Future<Map<dynamic, dynamic>> startAudioRecognition(
       int sampleRate, int recordingLength, int bufferSize) async {
     return _channel.invokeMethod('startAudioRecognition', {
@@ -15,6 +19,8 @@ class TfliteAudio {
     });
   }
 
+//Future for loading your model and label
+//a larger num of threads will reduce inferenceTime.
   static Future loadModel(
       String model, String label, int numThreads, bool isAsset) async {
     return _channel.invokeMethod(
