@@ -1,3 +1,7 @@
+## 0.1.3+1
+* Used reusable widgets for easier to read code.
+* Added some documentation 
+
 ## 0.1.3
 * Hotfix for crash when permission has been denied.
 * Added the key 'hasPermission' for the future startAudioRecognitions().
