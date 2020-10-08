@@ -91,7 +91,8 @@ numThreads - higher threads will reduce inferenceTime. However, cpu usage will b
 
 sampleRate - determines the number of samples per second
 
-recordingLength - determines the max length of the recording buffer. If the value is not below or equal to your tensor input, it will crash.
+recordingLength - determines the max length of the recording buffer. 
+If the value is not below or equal to your tensor input, it will crash.
 
 bufferSize - Make sure this value is equal or below your recording length. 
 A very high value may not allow the recording enough time to capture your voice. 
