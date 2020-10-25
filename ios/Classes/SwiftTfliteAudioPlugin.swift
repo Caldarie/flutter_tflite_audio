@@ -25,7 +25,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     
     //AvAudioEngine used for recording
     private var audioEngine: AVAudioEngine = AVAudioEngine()
-
+    
     //Microphone variables
     private let audioBufferInputTensorIndex = 0
     private let sampleRateInputTensorIndex = 1
@@ -105,7 +105,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
         
         DispatchQueue.main.async {
             let alertController = UIAlertController(title: title, message:
-                message, preferredStyle: .alert)
+                                                        message, preferredStyle: .alert)
             let rootViewController = UIApplication.shared.keyWindow?.rootViewController
             let settingsAction = UIAlertAction(title: "Settings", style: .default) { (_) -> Void in
                 guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else {
@@ -129,8 +129,15 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
         let bufferSize = arguments["bufferSize"] as! Int
         let sampleRate = arguments["sampleRate"] as! Int
         let recordingLength = arguments["recordingLength"] as! Int
+        let numOfRecordings = arguments["numOfRecordings"] as! Int
+        
+        let maxRecordingLength = recordingLength * numOfRecordings
         let recordingFrameBuffer = bufferSize/2 
-        var recordingBuffer: [Int16] = [] //length should match the sampleRate
+        
+        //recording frames are appended and stored in this array
+        var recordingBuffer: [Int16] = [] 
+        var preRecordingCount: Int = 0
+        var recordingCount: Int = recordingLength
         
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
@@ -168,13 +175,23 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
                     recordingBuffer.append(contentsOf: channelDataValueArray)
                     print("recordingBuffer length: \(recordingBuffer.count)")
                     
-                    //Recording stops if the lengt hof recordingBuffer array reaches more than the sample rate.
-                    if(recordingBuffer.count >= recordingLength){
-                        print("Recording stopped.")
-                        self.audioEngine.stop()
-                        inputNode.removeTap(onBus: 0)
-                        self.runModel(onBuffer: Array(recordingBuffer[0..<sampleRate]))
+                    
+                    if(recordingBuffer.count >= recordingCount){
+                        print("reached threshold")
+                        self.runModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
+                        if(recordingBuffer.count >= maxRecordingLength){
+                            print("Recording stopped.")
+                            self.audioEngine.stop()
+                            inputNode.removeTap(onBus: 0)
+                        }else{
+                            print("Looping...")
+                            recordingCount += recordingLength
+                            preRecordingCount += recordingLength
+                            print(recordingCount)
+                            print(preRecordingCount)
+                        }
                     }
+                    
                 } //channeldata
             } //conversion queue
         } //installtap
@@ -213,7 +230,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
             let startDate = Date()
             try interpreter.invoke() //required!!! Do not touch
             interval = Date().timeIntervalSince(startDate) * 1000
-        
+            
             // Get the output `Tensor` to process the inference results.
             outputTensor = try interpreter.output(at: 0)
             
@@ -228,7 +245,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
         let results = getResults(withScores: scores)
         let roundInterval = interval.rounded();
         let finalResults = Result(recognitionResult: results, inferenceTime: roundInterval, hasPermission: true)
-
+        
         //Convert results to dictionary and then json
         let dict = finalResults.dictionary
         print("results: \(dict!)")
@@ -365,17 +382,17 @@ extension Array {
 
 // Used to encode the struct class Result to json
 extension Encodable {
-        var dictionary: [String: Any]? {
+    var dictionary: [String: Any]? {
         guard let data = try? JSONEncoder().encode(self) else { return nil }
         return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)).flatMap { $0 as? [String: Any] }
-        }
+    }
 }
 
 extension Decodable {
-  init(from: Any) throws {
-    let data = try JSONSerialization.data(withJSONObject: from, options: .prettyPrinted)
-    let decoder = JSONDecoder()
-    self = try decoder.decode(Self.self, from: data)
-  }
+    init(from: Any) throws {
+        let data = try JSONSerialization.data(withJSONObject: from, options: .prettyPrinted)
+        let decoder = JSONDecoder()
+        self = try decoder.decode(Self.self, from: data)
+    }
 }
 
