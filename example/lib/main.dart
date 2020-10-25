@@ -49,16 +49,23 @@ class _MyAppState extends State<MyApp> {
 
   //Call the plugin future here
   Future<Map<dynamic, dynamic>> startAudioRecognition(
-      {int sampleRate, int recordingLength, int bufferSize}) async {
+      {int sampleRate,
+      int recordingLength,
+      int bufferSize,
+      int numOfRecordings}) async {
     return await TfliteAudio.startAudioRecognition(
-        sampleRate, recordingLength, bufferSize);
+        sampleRate, recordingLength, bufferSize, numOfRecordings);
   }
 
   //get result by calling the future startAudioRecognition future
   Future<Map<dynamic, dynamic>> getResult() async {
     Map<dynamic, dynamic> _result;
     await startAudioRecognition(
-            sampleRate: 16000, recordingLength: 16000, bufferSize: 1280)
+            sampleRate: 16000,
+            recordingLength: 16000,
+            bufferSize: 1640,
+            // 1280,
+            numOfRecordings: 2)
         .then((value) {
       _result = value;
       log(value.toString());

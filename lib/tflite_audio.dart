@@ -10,12 +10,13 @@ class TfliteAudio {
 //1. recognitionResult - string value
 //2. inferenceTime - int value
 //3. hasPermission - boolean which checks for permission
-  static Future<Map<dynamic, dynamic>> startAudioRecognition(
-      int sampleRate, int recordingLength, int bufferSize) async {
+  static Future<Map<dynamic, dynamic>> startAudioRecognition(int sampleRate,
+      int recordingLength, int bufferSize, int numOfRecordings) async {
     return _channel.invokeMethod('startAudioRecognition', {
       'sampleRate': sampleRate,
       'recordingLength': recordingLength,
-      'bufferSize': bufferSize
+      'bufferSize': bufferSize,
+      'numOfRecordings': numOfRecordings,
     });
   }
 
