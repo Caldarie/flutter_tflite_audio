@@ -16,6 +16,7 @@ struct Result: Codable {
 public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     
     //flutter
+    private let recognitionStreamHandler = RecognitionStreamHandler();
     private var registrar: FlutterPluginRegistrar!
     private var result: FlutterResult!
     private var arguments: [String: AnyObject]!
@@ -44,7 +45,10 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin {
     
     
     init(_ _registrar: FlutterPluginRegistrar) {
-        registrar = _registrar  
+        registrar = _registrar
+
+        let eventChannel = FlutterEventChannel(name: "startAudioRecognition", binaryMessenger: registrar.messenger())
+        eventChannel.setStreamHandler(recognitionStreamHandler)  
     }
     
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -396,3 +400,18 @@ extension Decodable {
     }
 }
 
+class RecognitionStreamHandler: NSObject, FlutterStreamHandler{
+    
+    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+            
+        // AudioRecognition().loadRecognitionArguments(arguments: arguments as? [String: AnyObject]);
+        events(arguments)
+        return nil
+    }
+    
+    func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        // _eventSink = nil
+        return nil
+    }
+    
+}

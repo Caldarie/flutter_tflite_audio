@@ -44,16 +44,17 @@ class _MyAppState extends State<MyApp> {
   //get result by calling the future startAudioRecognition future
   Future<Map<dynamic, dynamic>> getResult() async {
     Map<dynamic, dynamic> _result;
-    await TfliteAudio.startAudioRecognition(
+    TfliteAudio.startAudioRecognition(
             sampleRate: 16000,
             recordingLength: 16000,
             bufferSize: 1640,
             // 1280,
             numOfRecordings: 2)
-        .then((value) {
-      _result = value;
-      log(value.toString());
-    });
+        .listen((event) => log(event.toString()));
+    //     .then((value) {
+    //   _result = value;
+    //   log(value.toString());
+    // });
     return _result;
   }
 
@@ -86,10 +87,11 @@ class _MyAppState extends State<MyApp> {
                         Align(
                             alignment: Alignment.bottomRight,
                             child: inferenceTimeWidget(
-                                snapshot.data['inferenceTime'].toString() +
-                                    'ms')),
+                                // snapshot.data['inferenceTime'].toString() +
+                                'ms')),
                         labelListWidget(
-                            snapshot.data['recognitionResult'].toString())
+                            // snapshot.data['recognitionResult'].toString()
+                            )
                       ]);
                   }
                 }),
