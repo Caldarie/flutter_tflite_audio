@@ -34,33 +34,17 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     //Initilize the loadModel future
-    loadModel(
+    TfliteAudio.loadModel(
         model: 'assets/conv_actions_frozen.tflite',
         label: 'assets/conv_actions_labels.txt',
         numThreads: 1,
         isAsset: true);
   }
 
-  //Call the plugin future here
-  Future loadModel(
-      {String model, String label, int numThreads, bool isAsset}) async {
-    return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
-  }
-
-  //Call the plugin future here
-  Future<Map<dynamic, dynamic>> startAudioRecognition(
-      {int sampleRate,
-      int recordingLength,
-      int bufferSize,
-      int numOfRecordings}) async {
-    return await TfliteAudio.startAudioRecognition(
-        sampleRate, recordingLength, bufferSize, numOfRecordings);
-  }
-
   //get result by calling the future startAudioRecognition future
   Future<Map<dynamic, dynamic>> getResult() async {
     Map<dynamic, dynamic> _result;
-    await startAudioRecognition(
+    await TfliteAudio.startAudioRecognition(
             sampleRate: 16000,
             recordingLength: 16000,
             bufferSize: 1640,

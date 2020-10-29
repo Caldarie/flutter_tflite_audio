@@ -10,8 +10,11 @@ class TfliteAudio {
 //1. recognitionResult - string value
 //2. inferenceTime - int value
 //3. hasPermission - boolean which checks for permission
-  static Future<Map<dynamic, dynamic>> startAudioRecognition(int sampleRate,
-      int recordingLength, int bufferSize, int numOfRecordings) async {
+  static Future<Map<dynamic, dynamic>> startAudioRecognition(
+      {int sampleRate,
+      int recordingLength,
+      int bufferSize,
+      int numOfRecordings}) async {
     return _channel.invokeMethod('startAudioRecognition', {
       'sampleRate': sampleRate,
       'recordingLength': recordingLength,
@@ -23,7 +26,7 @@ class TfliteAudio {
 //Future for loading your model and label
 //a larger num of threads will reduce inferenceTime.
   static Future loadModel(
-      String model, String label, int numThreads, bool isAsset) async {
+      {String model, String label, int numThreads, bool isAsset}) async {
     return _channel.invokeMethod(
       'loadModel',
       {
