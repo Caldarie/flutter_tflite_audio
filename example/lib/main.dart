@@ -13,8 +13,8 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  Future<Map<dynamic, dynamic>> result;
   final isRecording = ValueNotifier<bool>(false);
+  Stream<Map<dynamic, dynamic>> result;
   List<String> labelList = [
     '_silence_',
     '_unknown_',
@@ -41,21 +41,19 @@ class _MyAppState extends State<MyApp> {
         isAsset: true);
   }
 
-  //get result by calling the future startAudioRecognition future
-  Future<Map<dynamic, dynamic>> getResult() async {
-    Map<dynamic, dynamic> _result;
-    TfliteAudio.startAudioRecognition(
-            sampleRate: 16000,
-            recordingLength: 16000,
-            bufferSize: 1640,
-            // 1280,
-            numOfRecordings: 2)
-        .listen((event) => log(event.toString()));
-    //     .then((value) {
-    //   _result = value;
-    //   log(value.toString());
-    // });
-    return _result;
+  // get result by calling the future startAudioRecognition future
+  void getResult() {
+    result = TfliteAudio.startAudioRecognition(
+        sampleRate: 16000,
+        recordingLength: 16000,
+        bufferSize: 1640,
+        // 1280,
+        numOfRecordings: 2);
+
+    //Logs the results and assigns false when stream is finished.
+    result
+        .listen((event) => log(event.toString()))
+        .onDone(() => isRecording.value = false);
   }
 
   @override
@@ -66,8 +64,8 @@ class _MyAppState extends State<MyApp> {
             appBar: AppBar(
               title: const Text('Tflite-audio/speech'),
             ),
-            body: FutureBuilder<Map<dynamic, dynamic>>(
-                future: result,
+            body: StreamBuilder<Map<dynamic, dynamic>>(
+                stream: result,
                 builder: (BuildContext context,
                     AsyncSnapshot<Map<dynamic, dynamic>> snapshot) {
                   switch (snapshot.connectionState) {
@@ -87,11 +85,10 @@ class _MyAppState extends State<MyApp> {
                         Align(
                             alignment: Alignment.bottomRight,
                             child: inferenceTimeWidget(
-                                // snapshot.data['inferenceTime'].toString() +
-                                'ms')),
+                                snapshot.data['inferenceTime'].toString() +
+                                    'ms')),
                         labelListWidget(
-                            // snapshot.data['recognitionResult'].toString()
-                            )
+                            snapshot.data['recognitionResult'].toString())
                       ]);
                   }
                 }),
@@ -107,8 +104,7 @@ class _MyAppState extends State<MyApp> {
                             isRecording.value = true;
                             // value == true;
                             setState(() {
-                              result = getResult().whenComplete(
-                                  () => isRecording.value = false);
+                              getResult();
                             });
                           },
                           backgroundColor: Colors.blue,
