@@ -29,13 +29,6 @@ class TfliteAudio {
         .map((event) => Map<dynamic, dynamic>.from(event));
   }
 
-  //   return _channel.invokeMethod('startAudioRecognition', {
-  //   'sampleRate': sampleRate,
-  //   'recordingLength': recordingLength,
-  //   'bufferSize': bufferSize,
-  //   'numOfRecordings': numOfRecordings,
-  // });
-
 //Future for loading your model and label
 //a larger num of threads will reduce inferenceTime.
   static Future loadModel(
