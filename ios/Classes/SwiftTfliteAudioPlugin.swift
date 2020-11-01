@@ -73,6 +73,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         case "loadModel":
             loadModel(registrar: registrar)
             break 
+        case "stopAudioRecognition":
+            stopAudioRecognition()
         // case "loadResultSmoothingVariables":
         //     foo()
         //     break
@@ -80,6 +82,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         }
     }
     
+
     
     public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         self.events = events
@@ -91,6 +94,15 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     public func onCancel(withArguments arguments: Any?) -> FlutterError? {
         self.events = nil
         return nil
+    }
+
+    func stopAudioRecognition(){
+        print("Recording stopped.")
+        // Closes stream
+        self.events(FlutterEndOfEventStream)
+        // Stop the recording
+        self.audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
     }
     
     func checkPermissions() {
@@ -203,12 +215,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                         print("reached threshold")
                         self.runModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
                         if(recordingBuffer.count >= maxRecordingLength){
-                            print("Recording stopped.")
-                            // Closes stream
-                            self.events(FlutterEndOfEventStream)
-                            // Stop the recording
-                            self.audioEngine.stop()
-                            inputNode.removeTap(onBus: 0)
+                            self.stopAudioRecognition()
                         }else{
                             print("Looping...")
                             recordingCount += recordingLength

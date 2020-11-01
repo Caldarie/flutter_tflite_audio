@@ -8,10 +8,11 @@ class TfliteAudio {
   static const EventChannel _eventChannel =
       EventChannel('startAudioRecognition');
 
-// Future to obtain results. Returns a map with the following values:
+// Streams  event. Can return multiple map objects with the following values:
 //1. recognitionResult - string value
 //2. inferenceTime - int value
 //3. hasPermission - boolean which checks for permission
+//4. numOfRecording - number of inferences you want to make per recording.
   static Stream<Map<dynamic, dynamic>> startAudioRecognition(
       {int sampleRate,
       int recordingLength,
@@ -27,6 +28,12 @@ class TfliteAudio {
     return recognitionStream
         .cast<Map<dynamic, dynamic>>()
         .map((event) => Map<dynamic, dynamic>.from(event));
+  }
+
+  //Future for loading your model and label
+//a larger num of threads will reduce inferenceTime.
+  static Future stopAudioRecognition() async {
+    return _channel.invokeMethod('stopAudioRecognition');
   }
 
 //Future for loading your model and label

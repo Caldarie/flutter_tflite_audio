@@ -56,6 +56,10 @@ class _MyAppState extends State<MyApp> {
         .onDone(() => isRecording.value = false);
   }
 
+  //handles null exception if snapshot is null.
+  String showResult(AsyncSnapshot snapshot, String key) =>
+      snapshot.hasData ? snapshot.data[key].toString() : 'null ';
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -85,10 +89,9 @@ class _MyAppState extends State<MyApp> {
                         Align(
                             alignment: Alignment.bottomRight,
                             child: inferenceTimeWidget(
-                                snapshot.data['inferenceTime'].toString() +
-                                    'ms')),
+                                showResult(snapshot, 'inferenceTime') + 'ms')),
                         labelListWidget(
-                            snapshot.data['recognitionResult'].toString())
+                            showResult(snapshot, 'recognitionResult'))
                       ]);
                   }
                 }),
@@ -113,7 +116,9 @@ class _MyAppState extends State<MyApp> {
                       } else {
                         return FloatingActionButton(
                           onPressed: () {
-                            log('button pressed too many times');
+                            log('Audio Recognition Stopped');
+                            //Press button again to cancel audio recognition
+                            TfliteAudio.stopAudioRecognition();
                           },
                           backgroundColor: Colors.red,
                           child: const Icon(Icons.adjust),
