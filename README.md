@@ -88,22 +88,16 @@ TfliteAudio.stopAudioRecognition();
 ```
 
 5. For a rough guide on the parameters
+  
+  * numThreads -  Higher threads will reduce inferenceTime. However, cpu usage will be higher.
+  
+  * numOfInferences - determines the number of inferences per recording. Will also lengthen recording time as well.
 
-  * numThreads 
-Higher threads will reduce inferenceTime. However, cpu usage will be higher.
+  * sampleRate - determines the number of samples per second
 
-  * sampleRate 
-determines the number of samples per second
+  * recordingLength - determines the max length of the recording buffer. If the value is not below or equal to your tensor input, it will crash.
 
-  * recordingLength 
-determines the max length of the recording buffer. 
-If the value is not below or equal to your tensor input, it will crash.
-
-  * var bufferSize  
-Make sure this value is equal or below your recording length. 
-A very high value may not allow the recording enough time to capture your voice. 
-A lower value will give more time, but it'll be more cpu intensive
-Remember that this value varies depending on your device.
+  * bufferSize - Make sure this value is equal or below your recording length. A very high value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive Remember that this value varies depending on your device.
     
 
 
