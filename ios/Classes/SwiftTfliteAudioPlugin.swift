@@ -75,9 +75,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             break 
         case "stopAudioRecognition":
             stopAudioRecognition()
-        // case "loadResultSmoothingVariables":
-        //     foo()
-        //     break
         default: result(FlutterMethodNotImplemented)
         }
     }
@@ -99,7 +96,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     func stopAudioRecognition(){
         print("Recording stopped.")
         // Closes stream
+        if(events != nil){
         self.events(FlutterEndOfEventStream)
+        }
         // Stop the recording
         self.audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
@@ -114,7 +113,10 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             showAlert(title: "Microphone Permissions", message: "Permission denied. Please accept permission in your settings.")
             let finalResults = Result(recognitionResult: nil, inferenceTime: 0, hasPermission: false)
             let dict = finalResults.dictionary
-            events(dict!)
+            if(events != nil){
+                print(dict!)
+                events(dict!)
+            } 
         case .undetermined:
             print("requesting permission")
             requestPermissions()
@@ -281,9 +283,11 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
         //Convert results to dictionary and then json
         let dict = finalResults.dictionary
-        print("results: \(dict!)")
-        events(dict!)        
-    }
+        if(events != nil){
+            print("results: \(dict!)")
+            events(dict!)        
+        }
+    }   
     
     // private func getResults(withScores scores: [Float]) -> RecognitionResult? {
     private func getResults(withScores scores: [Float]) -> String? {
