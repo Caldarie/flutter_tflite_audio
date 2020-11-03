@@ -257,11 +257,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
             );
             //return false for hasPermission
             Map<String, Object> finalResults = new HashMap();
-            finalResults.put("recognitionResult", null);
-            finalResults.put("inferenceTime", 0);
+            // finalResults.put("recognitionResult", null);
+            // finalResults.put("inferenceTime", 0);
             finalResults.put("hasPermission", false);
             if (events != null) {
                 events.success(finalResults);
+                events.endOfStream();
             }
         }
         return true;
