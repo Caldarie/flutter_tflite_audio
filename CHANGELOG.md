@@ -1,3 +1,9 @@
+## 0.1.4
+* Added a new feature where you can run multiple inferences per recording.
+* Replaced future with stream when getting results from inferences
+* Added a button to cancel the stream / inference
+* Removed unnecessary code for easier reading.
+
 ## 0.1.3+1
 * Used reusable widgets for easier to read code.
 * Added some documentation 

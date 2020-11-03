@@ -1,17 +1,22 @@
 # flutter_tflite_audio
 
-This plugin allows you to use tflite to make audio/speech classifications. Can now support ios and android. 
+This plugin allows you to use tflite to make audio/speech classifications. Can now support ios and android. The plugin can do the follow tasks:
+
+1. Accept custom models and labels.
+2. Run a stream and collect inference results over time
+3. Can run the model multiple times, depending on the user's specifications
+4. Can manually close the inference and/or recording at the user's discretion.
 
 If there are any problems with the plugin, please do not hesistate to create an issue or request features on github.
 
 ![](audio_recognition_example.jpg)
 
 
-## Limitations of this plugin and roadmap
+## Limitations of this plugin 
 
-1. Can only use decoded wave for the tensor input. Will add an ability to use mfcc in the future.
-2. Can only run the model once after recording. Will add a feature to run the model multiple times or indefintely the user's specification.
-3. Fixed tensor input and output shape. Perhaps will add a feature where this can be shaped. 
+1. This plugin relies on the use of taking in raw audio values as a tensor input. It's assumed that your model already uses mfcc. [For more information](https://www.tensorflow.org/api_docs/python/tf/raw_ops/Mfcc?hl=ja)
+2. Can only accept two tensor inputs. float32[16000,1] for raw audio data and int32[1] as the sample rate
+3. Can only accept monochannel. Not stereo.
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
@@ -39,67 +44,68 @@ import 'package:tflite_audio/tflite_audio.dart';
 ```
 
 
-2. To load your model, bascially call the the future loadModel() and assign the appropriate values to the arguments like below:
+2. To load your model:
 
 
 ```dart
-//Create a future from the plugin as shown below:
- Future loadModel({model, label, numThreads, isAsset}) async {
-    return await TfliteAudio.loadModel(model, label, numThreads, isAsset);
-  }
-```
-
-```dart
-//Assign the values and then call the future as shown below
-loadModel(
-        model: "assets/conv_actions_frozen.tflite",
-        label: "assets/conv_actions_labels.txt",
+ //1. call the the future loadModel()
+ //2. assign the appropriate values to the arguments like below:
+   TfliteAudio.loadModel(
+        model: 'assets/conv_actions_frozen.tflite',
+        label: 'assets/conv_actions_labels.txt',
         numThreads: 1,
         isAsset: true);
 ```
 
 
-
-3. To get the results, call the future startAudioRecognition and assign the appropriate values to the arguments. For example:
-
-```dart
-//Create a future from the plugin as shown below
-  Future<Map<dynamic, dynamic>> startAudioRecognition(
-      {int sampleRate, int recordingLength, int bufferSize}) async {
-    return await TfliteAudio.startAudioRecognition(
-        sampleRate, recordingLength, bufferSize);
-  }
-
-```
+3. To get the results: 
 
 ```dart
-//Assign the future to map as shown below. 
-//Remember to assign the appropriate values.
-  Map<dynamic, dynamic> result = await startAudioRecognition(
-            sampleRate: 16000, recordingLength: 16000, bufferSize: 1280);
 
-//use following keys to get the result you want from the map. Such as:
-  var recognitionResult = result['recognitionResult'] 
-  var inferenceTIme = result['inferenceTime']
-  var hasPermission = result['hasPermission']
+//1. call the stream startAudioRecognition
+//2. assign the appropriate values to the arguments
+//3. listen to the stream for data
+//4. onDone if you wish to do something after the stream closes
+TfliteAudio.startAudioRecognition(
+        sampleRate: 16000, 
+        recordingLength: 16000, 
+        bufferSize: 2200,
+        // 1280,
+        numOfRecordings: 2)
+          .listen(
+            //Do something here to collect data
+          )
+          .onDone(
+            //Do something here when stream closes
+          );
+
 ```
 
-4. For a rough guide on the parameters
+4. To forcibly cancel the stream and recognition while executing
 
+```dart
+TfliteAudio.stopAudioRecognition();
 ```
-numThreads - higher threads will reduce inferenceTime. However, cpu usage will be higher.
 
-sampleRate - determines the number of samples per second
+5. For a rough guide on the parameters
 
-recordingLength - determines the max length of the recording buffer. 
+  * numThreads 
+Higher threads will reduce inferenceTime. However, cpu usage will be higher.
+
+  * sampleRate 
+determines the number of samples per second
+
+  * recordingLength 
+determines the max length of the recording buffer. 
 If the value is not below or equal to your tensor input, it will crash.
 
-bufferSize - Make sure this value is equal or below your recording length. 
+  * var bufferSize  
+Make sure this value is equal or below your recording length. 
 A very high value may not allow the recording enough time to capture your voice. 
 A lower value will give more time, but it'll be more cpu intensive
 Remember that this value varies depending on your device.
     
-```    
+
 
 ## Android Installation & Permissions
 Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
