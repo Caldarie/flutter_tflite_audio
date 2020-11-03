@@ -17,13 +17,13 @@ class TfliteAudio {
       {int sampleRate,
       int recordingLength,
       int bufferSize,
-      int numOfRecordings}) {
+      int numOfInferences}) {
     final recognitionStream =
         _eventChannel.receiveBroadcastStream(<String, dynamic>{
       'sampleRate': sampleRate,
       'recordingLength': recordingLength,
       'bufferSize': bufferSize,
-      'numOfRecordings': numOfRecordings,
+      'numOfInferences': numOfInferences,
     });
     return recognitionStream
         .cast<Map<dynamic, dynamic>>()

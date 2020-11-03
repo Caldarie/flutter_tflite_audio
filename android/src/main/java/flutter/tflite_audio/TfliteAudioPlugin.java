@@ -322,9 +322,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         final int bufferSize = (int) arguments.get("bufferSize");
         final int sampleRate = (int) arguments.get("sampleRate");
         final int recordingLength = (int) arguments.get("recordingLength");
-        final int numOfRecordings = (int) arguments.get("numOfRecordings");
+        final int numOfInferences = (int) arguments.get("numOfInferences");
 
-        int maxRecordingLength = recordingLength * numOfRecordings;
+        int maxRecordingLength = recordingLength * numOfInferences;
         short[] recordingFrameBuffer = new short[bufferSize / 2];
 
         //Used to keep count 

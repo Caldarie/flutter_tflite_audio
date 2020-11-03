@@ -46,9 +46,8 @@ class _MyAppState extends State<MyApp> {
     result = TfliteAudio.startAudioRecognition(
         sampleRate: 16000,
         recordingLength: 16000,
-        bufferSize: 1640,
-        // 1280,
-        numOfRecordings: 2);
+        bufferSize: 2000,
+        numOfInferences: 1);
 
     //Logs the results and assigns false when stream is finished.
     result

@@ -71,7 +71,7 @@ TfliteAudio.startAudioRecognition(
         recordingLength: 16000, 
         bufferSize: 2200,
         // 1280,
-        numOfRecordings: 2)
+        numOfInferences: 2)
           .listen(
             //Do something here to collect data
           )

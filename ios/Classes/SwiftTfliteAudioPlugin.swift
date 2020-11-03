@@ -166,9 +166,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let bufferSize = arguments["bufferSize"] as! Int
         let sampleRate = arguments["sampleRate"] as! Int
         let recordingLength = arguments["recordingLength"] as! Int
-        let numOfRecordings = arguments["numOfRecordings"] as! Int
+        let numOfInferences = arguments["numOfInferences"] as! Int
         
-        let maxRecordingLength = recordingLength * numOfRecordings
+        let maxRecordingLength = recordingLength * numOfInferences
         let recordingFrameBuffer = bufferSize/2 
         
         //recording frames are appended and stored in this array
