@@ -5,7 +5,7 @@ This plugin allows you to use tflite to make audio/speech classifications. Can n
 1. Load custom models and labels.
 2. Run a stream and collect inference results over time
 3. Can run the model multiple times by adjusting the numOfInferences parameter
-4. Can manually close the inference and recording when calling he future tflite.stopAudioRecognition()
+4. Can manually close the inference and recording when calling the future tflite.stopAudioRecognition()
 
 If there are any problems with the plugin, please do not hesistate to create an issue or request features on github.
 
