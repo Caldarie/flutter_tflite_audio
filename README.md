@@ -2,10 +2,10 @@
 
 This plugin allows you to use tflite to make audio/speech classifications. Can now support ios and android. The plugin can do the follow tasks:
 
-1. Accept custom models and labels.
+1. Load custom models and labels.
 2. Run a stream and collect inference results over time
-3. Can run the model multiple times, depending on the user's specifications
-4. Can manually close the inference and/or recording at the user's discretion.
+3. Can run the model multiple times by adjusting the numOfInferences variable
+4. Can manually close the inference and recording when calling he future tflite.stopAudioRecognition()
 
 If there are any problems with the plugin, please do not hesistate to create an issue or request features on github.
 
@@ -14,9 +14,9 @@ If there are any problems with the plugin, please do not hesistate to create an 
 
 ## Limitations of this plugin 
 
-1. This plugin relies on the use of taking in raw audio values as a tensor input. It's assumed that your model already uses mfcc. [For more information](https://www.tensorflow.org/api_docs/python/tf/raw_ops/Mfcc?hl=ja)
-2. Can only accept two tensor inputs. float32[16000,1] for raw audio data and int32[1] as the sample rate
-3. Can only accept monochannel. Not stereo.
+1. This plugin relies on the use of taking in raw audio values as a tensor input. It's assumed that your model has audiospectogram and mfcc as a custom op. [For more information](https://www.tensorflow.org/api_docs/python/tf/raw_ops/Mfcc?hl=ja)
+2. Can only accept two tensor inputs. float32[recording_length,1] for raw audio data and int32[1] as the sample rate
+3. Can only accept monochannel. 
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
@@ -70,7 +70,6 @@ TfliteAudio.startAudioRecognition(
         sampleRate: 16000, 
         recordingLength: 16000, 
         bufferSize: 2200,
-        // 1280,
         numOfInferences: 2)
           .listen(
             //Do something here to collect data
