@@ -85,7 +85,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
     private List<String> labels;
 
     //working recognition variables
-    // boolean shouldContinueRecognition = false;
     boolean lastInferenceRun = false;
     private long lastProcessingTimeMs;
     private Thread recognitionThread;
@@ -407,14 +406,84 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
                         new Runnable() {
                             @Override
                             public void run() {
-                                recognize();
+                                String inputType = (String) arguments.get("inputType");
+                                Log.v(LOG_TAG, "inputType: " + inputType);
+                                switch (inputType) {
+                                    case "decodedWav": 
+                                        decodedWaveRecognize();
+                                        break;
+                                    case "single":
+                                        singleInputRecognize();
+                                        break;
+                                }
+                           
                             }
                         });
         recognitionThread.start();
     }
 
 
-    private void recognize() {
+    private void singleInputRecognize() {
+        Log.v(LOG_TAG, "Recognition started.");
+
+        int sampleRate = (int) arguments.get("sampleRate");
+        int recordingLength = (int) arguments.get("recordingLength");
+
+        short[] inputBuffer = new short[recordingLength];
+        float[][] floatInputBuffer = new float[1][recordingLength];
+        float[][] floatOutputBuffer = new float[1][labels.size()];
+        int[] sampleRateList = new int[]{sampleRate};
+
+
+        recordingBufferLock.lock();
+        try {
+            int maxLength = recordingBuffer.length;
+            System.arraycopy(recordingBuffer, 0, inputBuffer, 0, maxLength);
+        } finally {
+            recordingBufferLock.unlock();
+        }
+
+        // We need to feed in float values between -1.0 and 1.0, so divide the
+        // signed 16-bit inputs.
+        for (int i = 0; i < recordingLength; ++i) {
+            floatInputBuffer[0][i] = inputBuffer[i] / 32767.0f;
+        }
+
+        // Calculate inference time
+        long startTime = new Date().getTime();
+        tfLite.run(floatInputBuffer, floatOutputBuffer);
+        lastProcessingTimeMs = new Date().getTime() - startTime;
+
+        // debugging purposes
+        // Log.v(LOG_TAG, "OUTPUT======> " + Arrays.toString(floatOutputBuffer[0]));
+        // Log.v(LOG_TAG, Long.toString(lastProcessingTimeMs));
+
+        labelSmoothing =
+                new LabelSmoothing(
+                        labels,
+                        AVERAGE_WINDOW_DURATION_MS,
+                        DETECTION_THRESHOLD,
+                        SUPPRESSION_MS,
+                        MINIMUM_COUNT,
+                        MINIMUM_TIME_BETWEEN_SAMPLES_MS);
+
+        long currentTime = System.currentTimeMillis();
+        final LabelSmoothing.RecognitionResult recognitionResult =
+                labelSmoothing.processLatestResults(floatOutputBuffer[0], currentTime);
+
+        //Map score and inference time
+        Map<String, Object> finalResults = new HashMap();
+        finalResults.put("recognitionResult", recognitionResult.foundCommand);
+        finalResults.put("inferenceTime", lastProcessingTimeMs);
+        finalResults.put("hasPermission", true);
+
+        getResult(finalResults);
+        stopRecognition();
+    }
+
+
+ 
+    private void decodedWaveRecognize() {
         Log.v(LOG_TAG, "Recognition started.");
 
         int sampleRate = (int) arguments.get("sampleRate");
