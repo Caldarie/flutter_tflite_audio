@@ -44,6 +44,10 @@ class _MyAppState extends State<MyApp> {
   // get result by calling the future startAudioRecognition future
   void getResult() {
     result = TfliteAudio.startAudioRecognition(
+        // inputType: 'single',
+        // sampleRate: 44100,
+        // recordingLength: 44100,
+        inputType: 'decodedWav',
         sampleRate: 16000,
         recordingLength: 16000,
         bufferSize: 2000,

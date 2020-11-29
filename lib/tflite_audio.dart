@@ -14,12 +14,14 @@ class TfliteAudio {
 //3. hasPermission - boolean which checks for permission
 //4. numOfRecording - number of inferences you want to make per recording.
   static Stream<Map<dynamic, dynamic>> startAudioRecognition(
-      {int sampleRate,
+      {String inputType,
+      int sampleRate,
       int recordingLength,
       int bufferSize,
       int numOfInferences}) {
     final recognitionStream =
         _eventChannel.receiveBroadcastStream(<String, dynamic>{
+      'inputType': inputType,
       'sampleRate': sampleRate,
       'recordingLength': recordingLength,
       'bufferSize': bufferSize,
