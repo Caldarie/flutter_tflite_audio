@@ -25,13 +25,11 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     
     /// TensorFlow Lite `Interpreter` object for performing inference on a given model.
     private var interpreter: Interpreter!
-    
+
     //AvAudioEngine used for recording
     private var audioEngine: AVAudioEngine = AVAudioEngine()
     
     //Microphone variables
-    private let audioBufferInputTensorIndex = 0
-    private let sampleRateInputTensorIndex = 1
     private let conversionQueue = DispatchQueue(label: "conversionQueue")
     private let maxInt16AsFloat32: Float32 = 32767.0
     
@@ -167,6 +165,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let sampleRate = arguments["sampleRate"] as! Int
         let recordingLength = arguments["recordingLength"] as! Int
         let numOfInferences = arguments["numOfInferences"] as! Int
+        let inputType = arguments["inputType"] as! String
         
         let maxRecordingLength = recordingLength * numOfInferences
         let recordingFrameBuffer = bufferSize/2 
@@ -215,7 +214,16 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                     
                     if(recordingBuffer.count >= recordingCount){
                         print("reached threshold")
-                        self.runModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
+                        switch inputType{
+                            case "decodedWav":
+                                self.runDecodedWaveModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
+                            case "single":
+                                self.runSingleModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
+                            default:
+                            // TODO throw error here
+                                print("inputType does not match the case.")
+
+                        }
                         if(recordingBuffer.count >= maxRecordingLength){
                             self.stopAudioRecognition()
                         }else{
@@ -243,9 +251,58 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
     }
     
+    func runSingleModel(onBuffer buffer: [Int16]){
+        print("Running model")
+       
+        var interval: TimeInterval!
+        var outputTensor: Tensor!
+        
+        do {
+            //Flatten 2D array into a 1D. Converts the 1D into data for tensor input
+            // let audioBuffer: [Float] = buffer.map { Float($0) / maxInt16AsFloat32 }
+            // let floatInputBuffer: [[Float]] = [[], audioBuffer]
+            // let flatInputArray = floatInputBuffer.flatMap { $0 }
+        
+            // let inputBufferData = Data(copyingBufferOf: flatInputArray)
+            // print(inputBufferData)
+            
+
+            // Copy the `[Int16]` buffer data as an array of `Float`s to the audio buffer input `Tensor`'s.
+            let audioBufferData = Data(copyingBufferOf: buffer.map { Float($0) / maxInt16AsFloat32 })
+            try interpreter.copy(audioBufferData, toInputAt: 0)
+          
+            
+            // Calculate inference time
+            let startDate = Date()
+            try interpreter.invoke() //required!!! Do not touch
+            interval = Date().timeIntervalSince(startDate) * 1000
+            
+            // Get the output `Tensor` to process the inference results.
+            outputTensor = try interpreter.output(at: 0)
+
+        } catch let error {
+            print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
+        }
+        
+        // Gets the formatted and averaged results.
+        let scores = [Float32](unsafeData: outputTensor.data) ?? []
+        let results = getResults(withScores: scores)
+        let roundInterval = interval.rounded();
+        let finalResults = Result(recognitionResult: results, inferenceTime: roundInterval, hasPermission: true)
+        // print(scores.count)
+        // dump(scores)
+
+        // Convert results to dictionary and then json
+        let dict = finalResults.dictionary
+        if(events != nil){
+            print("results: \(dict!)")
+            events(dict!)        
+        }
+    }   
+
     
     // func runModel(onBuffer buffer: [Int16]) -> Result? {
-    func runModel(onBuffer buffer: [Int16]){
+    func runDecodedWaveModel(onBuffer buffer: [Int16]){
         print("Running model")
         let sampleRate = arguments["sampleRate"] as! Int
         var interval: TimeInterval!
@@ -254,12 +311,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         do {
             // Copy the `[Int16]` buffer data as an array of `Float`s to the audio buffer input `Tensor`'s.
             let audioBufferData = Data(copyingBufferOf: buffer.map { Float($0) / maxInt16AsFloat32 })
-            try interpreter.copy(audioBufferData, toInputAt: audioBufferInputTensorIndex)
-            
+            try interpreter.copy(audioBufferData, toInputAt: 0)
+
             // Copy the sample rate data to the sample rate input `Tensor`.
             var rate = Int32(sampleRate)
             let sampleRateData = Data(bytes: &rate, count: MemoryLayout.size(ofValue: rate))
-            try interpreter.copy(sampleRateData, toInputAt: sampleRateInputTensorIndex)
+            try interpreter.copy(sampleRateData, toInputAt: 1)
             
             // Calculate inference time
             let startDate = Date()
@@ -280,7 +337,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let results = getResults(withScores: scores)
         let roundInterval = interval.rounded();
         let finalResults = Result(recognitionResult: results, inferenceTime: roundInterval, hasPermission: true)
-        
+
         //Convert results to dictionary and then json
         let dict = finalResults.dictionary
         if(events != nil){
@@ -291,15 +348,10 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     
     // private func getResults(withScores scores: [Float]) -> RecognitionResult? {
     private func getResults(withScores scores: [Float]) -> String? {
-        
-        var results: [Float] = []
-        for i in 0..<labelArray.count {
-            results.append(scores[i])
-        }
-        
+                
         // Runs results through recognize commands.
         let command = recognitionResult?.process(
-            latestResults: results,
+            latestResults: scores,
             currentTime: Date().timeIntervalSince1970 * 1000
         )
         
