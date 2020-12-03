@@ -71,7 +71,7 @@ import 'package:tflite_audio/tflite_audio.dart';
 
 3. To collect the results from the stream, invoke startAudioRecognition. Depending on the type of model, choose one of the following below:
 
-a) For those using Googles Teachable Machine.
+    a. For those using Googles Teachable Machine.
 
 ```dart
 //For decoded wav, use these parameters
@@ -89,7 +89,7 @@ TfliteAudio.startAudioRecognition(
           );
 ```
 
-b) For those using decoded wav:
+    b. For those using decoded wav:
 
 ```dart
 //For decoded wav, use these parameters
@@ -175,15 +175,15 @@ end
 
 4. If you are using Google Teachable Machine's model, you need to force load Select Ops for Tensorflow. To do that:
 
-  a. Click on runner under "Targets"
+    a. Click on runner under "Targets"
   
-  b. Click on "Build settings" tab
+    b. Click on "Build settings" tab
 
-  c. Click on "All" tab
+    c. Click on "All" tab
 
-  d. Click on the empty space which is on the right side of "Other Links Flag"
+    d. Click on the empty space which is on the right side of "Other Links Flag"
 
-  e. Add: `-force_load $(SRCROOT)/Pods/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps`
+    e. Add: `-force_load $(SRCROOT)/Pods/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps`
 
 ## References
 
