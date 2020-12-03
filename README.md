@@ -21,12 +21,12 @@ If there are any problems with the plugin, please do not hesistate to create an 
 ## Limitations
 
 **BE AWARE:** For iOS users, you need to run your simulation on an actual device. Emulators do not work due to limited support for x86_64 architectures.
-https://github.com/tensorflow/tensorflow/issues/41876
-https://github.com/tensorflow/tensorflow/issues/44997
+  1. https://github.com/tensorflow/tensorflow/issues/41876
+  2. https://github.com/tensorflow/tensorflow/issues/44997
 
 Android devices should work fine on emulators.
 
-**BE AWARE:** For iOS, select ops still do not work seamlessly. Be sure to follow step correct, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
+**BE AWARE:** For iOS, tflite select ops 2.2 and 2.3 do not work seamlessly. To counter this problem, be sure to follow **step 4** correct, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
 
 
 ## How to add tflite_audio as a dependency:
