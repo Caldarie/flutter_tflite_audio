@@ -1,3 +1,8 @@
+## 0.1.5
+* Added support for Google Teachable Machine models.
+* Fixed inaccurate reading with recording
+* Added feature to switch between decodedwav and Google's Teachable machine model.
+
 ## 0.1.4
 * Added a new feature where you can run multiple inferences per recording.
 * Replaced future with stream when getting results from inferences
