@@ -369,12 +369,13 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
                 //Used tp keep count
                 recordingOffset += numberRead;
                 Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + maxRecordingLength);
-                //If 
-                if (recordingOffset + numberRead >= recordingCount) {
+                //if recording buffer exceeeds recording count, it will start the inference.
+                if (recordingOffset >= recordingCount) {
                     Log.v(LOG_TAG, "Exceeded threshold");
                     //inputs the first array
                     System.arraycopy(recordingBufferMax, preRecordingCount, recordingBuffer, 0, recordingLength);
                     startRecognition();
+                    //Closes the recording if number of loops and recording length is exceeded.
                     if (recordingOffset + numberRead >= maxRecordingLength) {
                         Log.v(LOG_TAG, "Stop recording..");
                         stopRecording();
@@ -412,8 +413,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
                                     case "decodedWav": 
                                         decodedWaveRecognize();
                                         break;
-                                    case "single":
-                                        singleInputRecognize();
+                                    case "rawAudio":
+                                        rawAudioRecognize();
                                         break;
                                 }
                            
@@ -423,7 +424,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
     }
 
 
-    private void singleInputRecognize() {
+    private void rawAudioRecognize() {
         Log.v(LOG_TAG, "Recognition started.");
 
         int sampleRate = (int) arguments.get("sampleRate");
