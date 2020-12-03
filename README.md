@@ -69,42 +69,34 @@ import 'package:tflite_audio/tflite_audio.dart';
 ```
 
 
-3. To collect the results from the stream, invoke startAudioRecognition. Depending on the type of model, choose one of the following below:
-
-    a. For those using Googles Teachable Machine.
+3. To collect the results from the stream, invoke startAudioRecognition. The example Below uses teachable machine's parameters. If you need to use decoded wav, just uncomment the decoded wav parameters, and comment the parameters for GTMM.
 
 ```dart
 //For decoded wav, use these parameters
 TfliteAudio.startAudioRecognition(
-        inputType: 'rawAudio'
-        sampleRate: 44100, 
-        recordingLength: 44032, 
-        bufferSize: 22016, //For longer recording time, use a lower number
-        numOfInferences: 1)
-          .listen(
-            //Do something here to collect data
-          )
-          .onDone(
-            //Do something here when stream closes
-          );
+  numOfInferences: 5,
+
+  //parameters for google's teachable machine model
+  inputType: 'rawAudio',
+  sampleRate: 44100,
+  recordingLength: 44032,
+  bufferSize: 22016,
+
+  // parameters for decodedwav models
+  // inputType: 'decodedWav',
+  // sampleRate: 16000,
+  // recordingLength: 16000,
+  // bufferSize: 8000,
+  )
+    .listen(
+      //Do something here to collect data
+      )
+    .onDone(
+       //Do something here when stream closes
+      );
 ```
 
-    b. For those using decoded wav:
 
-```dart
-//For decoded wav, use these parameters
-TfliteAudio.startAudioRecognition(
-        inputType: 'decodedWav'
-        sampleRate: 16000, 
-        recordingLength: 16000, 
-        bufferSize: 8000,
-        numOfInferences: 1)
-          .listen(
-            //Do something here to collect data
-          )
-          .onDone(
-            //Do something here when stream closes
-          );
 ```
 
 4. To forcibly cancel the stream and recognition while executing
