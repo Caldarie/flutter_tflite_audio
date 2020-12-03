@@ -18,17 +18,16 @@ If there are any problems with the plugin, please do not hesistate to create an 
 ![](audio_recognition_example.jpg)
 
 
-## Limitations
+## Please read if you are using Google's Teachable Machine on iOS. 
 
-**BE AWARE:** For iOS users, you need to run your simulation on an actual device. Emulators do not work due to limited support for x86_64 architectures.
+YOu can skip this if you are using a model for decoded wav.
+
+**BE AWARE:** You need to run your simulation on an actual device. Emulators do not work due to limited support for x86_64 architectures.
   1. https://github.com/tensorflow/tensorflow/issues/41876
   2. https://github.com/tensorflow/tensorflow/issues/44997
 
-Android devices should work fine on emulators.
 
-**BE AWARE:** If you are using the model from Google's Teachable Machine, tflite select ops 2.2 and 2.3 do not work seamlessly for iOS. To counter this problem, be sure to follow **step 4** correct, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
-
-If you are using decoded wav, you can skip step 4
+**BE AWARE:** Be sure to follow **step 4** correctly, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
