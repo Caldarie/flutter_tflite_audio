@@ -15,7 +15,12 @@ A new flutter plugin project.
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
-  s.dependency 'TensorFlowLiteSwift'
+  # s.dependency 'TensorFlowLiteSwift'
+  # s.dependency 'TensorFlowLiteSelectTfOps'
+  s.dependency 'TensorFlowLiteSwift', '~> 2.2.0'
+  s.dependency 'TensorFlowLiteSelectTfOps', '~> 2.2.0'
+  # s.dependency 'TensorFlowLiteSwift', '~> 0.0.1-nightly'
+  # s.dependency 'TensorFlowLiteSelectTfOps', '~> 0.0.1-nightly'
   s.platform = :ios, '12.0'
   s.static_framework = true
 
