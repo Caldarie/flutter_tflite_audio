@@ -26,8 +26,9 @@ If there are any problems with the plugin, please do not hesistate to create an 
 
 Android devices should work fine on emulators.
 
-**BE AWARE:** For iOS, tflite select ops 2.2 and 2.3 do not work seamlessly. To counter this problem, be sure to follow **step 4** correct, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
+**BE AWARE:** If you are using the model from Google's Teachable Machine, tflite select ops 2.2 and 2.3 do not work seamlessly. To counter this problem, be sure to follow **step 4** correct, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
 
+If you are using decoded wav, you can skip step 4
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
