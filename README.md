@@ -20,7 +20,7 @@ If there are any problems with the plugin, please do not hesistate to create an 
 
 ## Please read if you are using Google's Teachable Machine on iOS. 
 
-YOu can skip this is you are using decoded wav.
+YOu can skip this if you are using a model for decoded wav.
 
 **BE AWARE:** You need to run your simulation on an actual device. Emulators do not work due to limited support for x86_64 architectures.
   1. https://github.com/tensorflow/tensorflow/issues/41876
