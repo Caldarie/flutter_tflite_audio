@@ -18,7 +18,9 @@ If there are any problems with the plugin, please do not hesistate to create an 
 ![](audio_recognition_example.jpg)
 
 
-## Please read if you are using Google's Teachable Machine on iOS. Skip if this does not apply to you.
+## Please read if you are using Google's Teachable Machine on iOS. 
+
+YOu can skip this is you are using decoded wav.
 
 **BE AWARE:** You need to run your simulation on an actual device. Emulators do not work due to limited support for x86_64 architectures.
   1. https://github.com/tensorflow/tensorflow/issues/41876
