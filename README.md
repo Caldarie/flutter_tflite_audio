@@ -164,15 +164,19 @@ end
 
 4. If you are using Google Teachable Machine's model, you need to force load Select Ops for Tensorflow. To do that:
 
-    a. Click on runner under "Targets"
+    a. Open your project on xcode 
+    
+    b. click on runner under "Targets"
   
-    b. Click on "Build settings" tab
+    c. Click on "Build settings" tab
 
-    c. Click on "All" tab
+    d. Click on "All" tab
 
-    d. Click on the empty space which is on the right side of "Other Links Flag"
+    e. Click on the empty space which is on the right side of "Other Links Flag"
 
-    e. Add: `-force_load $(SRCROOT)/Pods/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps`
+    f. Add: `-force_load $(SRCROOT)/Pods/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps`
+
+![](tflite-select-ops-installation.png)
 
 ## References
 
