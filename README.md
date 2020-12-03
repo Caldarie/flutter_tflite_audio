@@ -2,7 +2,6 @@
 
 This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support two types of models:
 
-<<<<<<< HEAD
 1. **(Beginner)** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  **float32[1, 44032]** as the input.
 2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
@@ -13,12 +12,6 @@ The plugin can do the following tasks:
 2. Run a stream and collect inference results over time
 3. Can loop inferences once or multiple times, which can be specified in the parameters
 4. Can manually close the inference and/or recording at the end user's discretion.
-=======
-1. Load custom models and labels.
-2. Run a stream and collect inference results over time
-3. Can run the model multiple times by adjusting the numOfInferences parameter
-4. Can manually close the inference and recording when calling the future tflite.stopAudioRecognition()
->>>>>>> 1f176d4e3a09851e636a93c8927f83dfb2c0ed06
 
 If there are any problems with the plugin, please do not hesistate to create an issue or request features on github.
 
@@ -33,14 +26,8 @@ YOu can skip this if you are using a model for decoded wav.
   1. https://github.com/tensorflow/tensorflow/issues/41876
   2. https://github.com/tensorflow/tensorflow/issues/44997
 
-<<<<<<< HEAD
 
 **BE AWARE:** Be sure to follow **step 4** correctly, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
-=======
-1. This plugin relies on the use of taking in raw audio values as a tensor input. It's assumed that your model has audiospectogram and mfcc as a custom op. [For more information](https://www.tensorflow.org/api_docs/python/tf/raw_ops/Mfcc?hl=ja)
-2. Can only accept two tensor inputs. float32[recording_length,1] for raw audio data and int32[1] as the sample rate
-3. Can only accept monochannel. 
->>>>>>> 1f176d4e3a09851e636a93c8927f83dfb2c0ed06
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
@@ -87,7 +74,6 @@ import 'package:tflite_audio/tflite_audio.dart';
 ```dart
 //For decoded wav, use these parameters
 TfliteAudio.startAudioRecognition(
-<<<<<<< HEAD
   numOfInferences: 5,
 
   //parameters for google's teachable machine model
@@ -108,19 +94,6 @@ TfliteAudio.startAudioRecognition(
     .onDone(
        //Do something here when stream closes
       );
-=======
-        sampleRate: 16000, 
-        recordingLength: 16000, 
-        bufferSize: 2200,
-        numOfInferences: 2)
-          .listen(
-            //Do something here to collect data
-          )
-          .onDone(
-            //Do something here when stream closes
-          );
-
->>>>>>> 1f176d4e3a09851e636a93c8927f83dfb2c0ed06
 ```
 
 4. To forcibly cancel the stream and recognition while executing
