@@ -1,22 +1,33 @@
 # flutter_tflite_audio
 
-This plugin allows you to use tflite to make audio/speech classifications. Can now support ios and android. The plugin can do the follow tasks:
+This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support two types of models:
 
-1. Accept custom models and labels.
+1. (Beginner) If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  float32[1, 44032] as the input.
+2. (Advanced) Also supports models with decoded wave inputs. If you want to code your own mode, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. float32[recording_length, 1] for raw audio data and int32[1] as the sample rate
+
+
+The plugin can do the following tasks:
+
+1. Change input type of the model
 2. Run a stream and collect inference results over time
-3. Can run the model multiple times, depending on the user's specifications
-4. Can manually close the inference and/or recording at the user's discretion.
+3. Can loop inferences once or multiple times, which can be specified in the parameters
+4. Can manually close the inference and/or recording at the end user's discretion.
 
 If there are any problems with the plugin, please do not hesistate to create an issue or request features on github.
 
 ![](audio_recognition_example.jpg)
 
 
-## Limitations of this plugin 
+## Limitations
 
-1. This plugin relies on the use of taking in raw audio values as a tensor input. It's assumed that your model already uses mfcc. [For more information](https://www.tensorflow.org/api_docs/python/tf/raw_ops/Mfcc?hl=ja)
-2. Can only accept two tensor inputs. float32[16000,1] for raw audio data and int32[1] as the sample rate
-3. Can only accept monochannel. Not stereo.
+BE AWARE: For iOS users, you need to run your simulation on an actual device. Emulators do not work due to limited support for x86_64 architectures.
+https://github.com/tensorflow/tensorflow/issues/41876
+https://github.com/tensorflow/tensorflow/issues/44997
+
+Android devices should work fine on emulators.
+
+BE AWARE: For iOS, select ops still do not work seamlessly. Be sure to follow [step 4](#ios-installation-Permissions) correct, under "iOS Installation & Permissions"
+
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
@@ -58,27 +69,42 @@ import 'package:tflite_audio/tflite_audio.dart';
 ```
 
 
-3. To get the results: 
+3. To collect the results from the stream, invoke startAudioRecognition. Depending on the type of model, choose one of the following below:
+
+a) For those using Googles Teachable Machine.
 
 ```dart
-
-//1. call the stream startAudioRecognition
-//2. assign the appropriate values to the arguments
-//3. listen to the stream for data
-//4. onDone if you wish to do something after the stream closes
+//For decoded wav, use these parameters
 TfliteAudio.startAudioRecognition(
-        sampleRate: 16000, 
-        recordingLength: 16000, 
-        bufferSize: 2200,
-        // 1280,
-        numOfInferences: 2)
+        inputType: 'rawAudio'
+        sampleRate: 44100, 
+        recordingLength: 44032, 
+        bufferSize: 22016, //For longer recording time, use a lower number
+        numOfInferences: 1)
           .listen(
             //Do something here to collect data
           )
           .onDone(
             //Do something here when stream closes
           );
+```
 
+b) For those using decoded wav:
+
+```dart
+//For decoded wav, use these parameters
+TfliteAudio.startAudioRecognition(
+        inputType: 'decodedWav'
+        sampleRate: 16000, 
+        recordingLength: 16000, 
+        bufferSize: 8000,
+        numOfInferences: 1)
+          .listen(
+            //Do something here to collect data
+          )
+          .onDone(
+            //Do something here when stream closes
+          );
 ```
 
 4. To forcibly cancel the stream and recognition while executing
@@ -91,11 +117,11 @@ TfliteAudio.stopAudioRecognition();
   
   * numThreads -  Higher threads will reduce inferenceTime. However, cpu usage will be higher.
   
-  * numOfInferences - determines the number of inferences per recording. Will also lengthen recording time as well.
+  * numOfInferences - determines the number of inferences you want to loop.
 
-  * sampleRate - determines the number of samples per second
+  * sampleRate - determines the number of samples per second. Recommened values are 16000, 22050, 44100
 
-  * recordingLength - determines the max length of the recording buffer. If the value is not below or equal to your tensor input, it will crash.
+  * recordingLength - determines the size of your tensor input. If the value is not below or equal to your tensor input, it will crash.
 
   * bufferSize - Make sure this value is equal or below your recording length. A very high value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive Remember that this value varies depending on your device.
     
@@ -146,6 +172,18 @@ target 'Runner' do
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 ```
+
+4. If you are using Google Teachable Machine's model, you need to force load Select Ops for Tensorflow. To do that:
+
+  a. Click on runner under "Targets"
+  
+  b. Click on "Build settings" tab
+
+  c. Click on "All" tab
+
+  d. Click on the empty space which is on the right side of "Other Links Flag"
+
+  e. Add: `-force_load $(SRCROOT)/Pods/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps`
 
 ## References
 
