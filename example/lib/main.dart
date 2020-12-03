@@ -46,17 +46,17 @@ class _MyAppState extends State<MyApp> {
     result = TfliteAudio.startAudioRecognition(
       numOfInferences: 1,
 
-      //parameters for google's teachable machine model
-      inputType: 'rawAudio',
-      sampleRate: 44100,
-      recordingLength: 44032,
-      bufferSize: 22016,
+      //! parameters for google's teachable machine model
+      // inputType: 'rawAudio',
+      // sampleRate: 44100,
+      // recordingLength: 44032,
+      // bufferSize: 22016,
 
-      // parameters for decodedwave models
-      // inputType: 'decodedWav',
-      // sampleRate: 16000,
-      // recordingLength: 16000,
-      // bufferSize: 8000,
+      //! parameters for decodedwav models
+      inputType: 'decodedWav',
+      sampleRate: 16000,
+      recordingLength: 16000,
+      bufferSize: 8000,
     );
 
     //Logs the results and assigns false when stream is finished.
