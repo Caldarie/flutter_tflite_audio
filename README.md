@@ -2,8 +2,8 @@
 
 This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support two types of models:
 
-1. (Beginner) If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  float32[1, 44032] as the input.
-2. (Advanced) Also supports models with decoded wave inputs. If you want to code your own mode, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. float32[recording_length, 1] for raw audio data and int32[1] as the sample rate
+1. **(Beginner)** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  float32[1, 44032] as the input.
+2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own mode, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. float32[recording_length, 1] for raw audio data and int32[1] as the sample rate
 
 
 The plugin can do the following tasks:
@@ -26,7 +26,7 @@ https://github.com/tensorflow/tensorflow/issues/44997
 
 Android devices should work fine on emulators.
 
-BE AWARE: For iOS, select ops still do not work seamlessly. Be sure to follow [step 4](#ios-installation-Permissions) correct, under "iOS Installation & Permissions"
+BE AWARE: For iOS, select ops still do not work seamlessly. Be sure to follow step correct, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
 
 
 ## How to add tflite_audio as a dependency:
