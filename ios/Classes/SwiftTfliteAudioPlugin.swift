@@ -217,7 +217,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                         switch inputType{
                             case "decodedWav":
                                 self.runDecodedWaveModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
-                            case "single":
+                            case "rawAudio":
                                 self.runSingleModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
                             default:
                             // TODO throw error here
