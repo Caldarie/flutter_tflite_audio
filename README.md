@@ -27,7 +27,7 @@ YOu can skip this if you are using a model for decoded wav.
   2. https://github.com/tensorflow/tensorflow/issues/44997
 
 
-**BE AWARE:** Be sure to follow **step 4** correct, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
+**BE AWARE:** Be sure to follow **step 4** correctly, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
