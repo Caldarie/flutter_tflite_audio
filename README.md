@@ -96,9 +96,6 @@ TfliteAudio.startAudioRecognition(
       );
 ```
 
-
-```
-
 4. To forcibly cancel the stream and recognition while executing
 
 ```dart
