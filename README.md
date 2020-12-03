@@ -178,6 +178,8 @@ end
 
 ![](tflite-select-ops-installation.png)
 
+https://www.tensorflow.org/lite/guide/ops_select#android_aar
+
 ## References
 
 https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands
