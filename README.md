@@ -6,12 +6,12 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
 
-The plugin can do the following tasks:
+## What this plugin can do:
 
-1. Change input type of the model
+1. Switch between decodedwav and rawAudio inputs.
 2. Run a stream and collect inference results over time
-3. Can loop inferences once or multiple times, which can be specified in the parameters
-4. Can manually close the inference and/or recording at the end user's discretion.
+3. Loop inferences multiples at the user's specification.
+4. Manually/forcibly close the inference stream/recording.
 
 If there are any problems with the plugin, please do not hesistate to create an issue or request features on github.
 
@@ -20,7 +20,7 @@ If there are any problems with the plugin, please do not hesistate to create an 
 
 ## Please read if you are using Google's Teachable Machine on iOS. 
 
-YOu can skip this if you are using a model for decoded wav.
+Skip this section if the heading above does not apply to you.
 
 **BE AWARE:** You need to run your simulation on an actual device. Emulators do not work due to limited support for x86_64 architectures.
   1. https://github.com/tensorflow/tensorflow/issues/41876
@@ -59,8 +59,6 @@ import 'package:tflite_audio/tflite_audio.dart';
 
 
 ```dart
- //1. call the the future loadModel()
- //2. assign the appropriate values to the arguments like below:
    TfliteAudio.loadModel(
         model: 'assets/conv_actions_frozen.tflite',
         label: 'assets/conv_actions_labels.txt',
@@ -69,14 +67,13 @@ import 'package:tflite_audio/tflite_audio.dart';
 ```
 
 
-3. To collect the results from the stream, invoke startAudioRecognition. The example Below uses teachable machine's parameters. If you need to use decoded wav, just uncomment the decoded wav parameters, and comment the parameters for GTMM.
+3. To start and listen to the stream startAudioRecognition for inference results:
 
 ```dart
-//For decoded wav, use these parameters
 TfliteAudio.startAudioRecognition(
-  numOfInferences: 5,
+  numOfInferences: 1,
 
-  //parameters for google's teachable machine model
+  //parameters for google's teachable machine model. 
   inputType: 'rawAudio',
   sampleRate: 44100,
   recordingLength: 44032,
@@ -96,7 +93,7 @@ TfliteAudio.startAudioRecognition(
       );
 ```
 
-4. To forcibly cancel the stream and recognition while executing
+4. To forcibly cancel the stream and recognition while executing:
 
 ```dart
 TfliteAudio.stopAudioRecognition();
