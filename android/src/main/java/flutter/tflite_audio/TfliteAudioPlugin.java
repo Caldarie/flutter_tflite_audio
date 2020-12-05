@@ -208,6 +208,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
             while ((line = br.readLine()) != null) {
                 labels.add(line);
             }
+            Log.d(LOG_TAG, "Labels: " + labels.toString());
             br.close();
         } catch (IOException e) {
             throw new RuntimeException("Failed to read label file", e);
