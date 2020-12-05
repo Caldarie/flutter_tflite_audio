@@ -5,7 +5,8 @@ import 'package:tflite_audio/tflite_audio.dart';
 
 void main() => runApp(MyApp());
 
-//This example app showcases how the plugin can be used.
+///This example showcases how to take advantage of all the futures and streams
+///from the plugin.
 class MyApp extends StatefulWidget {
   @override
   _MyAppState createState() => _MyAppState();
@@ -15,6 +16,8 @@ class _MyAppState extends State<MyApp> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   final isRecording = ValueNotifier<bool>(false);
   Stream<Map<dynamic, dynamic>> result;
+
+  //! label list for decodedwav models
   List<String> labelList = [
     '_silence_',
     '_unknown_',
@@ -30,42 +33,53 @@ class _MyAppState extends State<MyApp> {
     'go'
   ];
 
+  //! label list for google's teachable machine model
+  // List<String> labelList = ['0 Background Noise', '1 no', '2 yes'];
+
   @override
   void initState() {
     super.initState();
-    //Initilize the loadModel future
+
     TfliteAudio.loadModel(
-        model: 'assets/conv_actions_frozen.tflite',
-        label: 'assets/conv_actions_labels.txt',
-        numThreads: 1,
-        isAsset: true);
+      numThreads: 1,
+      isAsset: true,
+
+      //! asset location for decodedwav models
+      model: 'assets/decoded_wav_model.tflite',
+      label: 'assets/decoded_wav_label.txt',
+
+      //! asset location for google's teachable machine model
+      // model: 'assets/google_teach_machine_model.tflite',
+      // label: 'assets/google_teach_machine_label.txt'
+    );
   }
 
-  // get result by calling the future startAudioRecognition future
+  /// get result by calling the future startAudioRecognition future
+  /// be sure to comment one of the other to switch model types.
   void getResult() {
     result = TfliteAudio.startAudioRecognition(
       numOfInferences: 1,
 
-      //! parameters for google's teachable machine model
-      // inputType: 'rawAudio',
-      // sampleRate: 44100,
-      // recordingLength: 44032,
-      // bufferSize: 22016,
-
-      //! parameters for decodedwav models
+      //! example value for decodedwav models
       inputType: 'decodedWav',
       sampleRate: 16000,
       recordingLength: 16000,
       bufferSize: 8000,
+
+      //! recommended value for google's teachable machine model
+      // inputType: 'rawAudio',
+      // sampleRate: 44100,
+      // recordingLength: 44032,
+      // bufferSize: 22016,
     );
 
-    //Logs the results and assigns false when stream is finished.
+    ///Logs the results and assigns false when stream is finished.
     result
         .listen((event) => log(event.toString()))
         .onDone(() => isRecording.value = false);
   }
 
-  //handles null exception if snapshot is null.
+  ///handles null exception if snapshot is null.
   String showResult(AsyncSnapshot snapshot, String key) =>
       snapshot.hasData ? snapshot.data[key].toString() : 'null ';
 
@@ -136,7 +150,7 @@ class _MyAppState extends State<MyApp> {
                     }))));
   }
 
-//  If snapshot data matches the label, it will change color
+  ///  If snapshot data matches the label, it will change colour
   Widget labelListWidget([String result]) {
     return Center(
         child: Column(
@@ -166,7 +180,7 @@ class _MyAppState extends State<MyApp> {
             }).toList()));
   }
 
-//If the future isn't completed, shows 'calculating'. Else shows inference time.
+  ///If the future isn't completed, shows 'calculating'. Else shows inference time.
   Widget inferenceTimeWidget(String result) {
     return Padding(
         padding: const EdgeInsets.all(20.0),
