@@ -17,6 +17,7 @@ analyzer:
     - lib/**/*.g.dart
     - lib/intl/arb/*
     - lib/intl/messages/*
+    - 'example/**'
   strong-mode:
     implicit-casts: false
   errors:
