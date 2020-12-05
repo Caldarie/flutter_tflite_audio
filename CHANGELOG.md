@@ -1,3 +1,8 @@
+## 0.1.5+1
+* Added documentation
+* Added example model from Google's Teachable Machine.
+* Fixed iOS crash when loading text file with empty elements.
+
 ## 0.1.5
 * Added support for Google Teachable Machine models.
 * Fixed inaccurate reading with recording
