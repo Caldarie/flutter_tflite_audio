@@ -218,10 +218,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                             case "decodedWav":
                                 self.runDecodedWaveModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
                             case "rawAudio":
-                                self.runSingleModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
+                                self.runRawAudioModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
                             default:
-                            // TODO throw error here
-                                print("inputType does not match the case.")
+                                fatalError("inputType does not match the values decodedWav or rawAudio")
 
                         }
                         if(recordingBuffer.count >= maxRecordingLength){
@@ -251,22 +250,13 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
     }
     
-    func runSingleModel(onBuffer buffer: [Int16]){
+    func runRawAudioModel(onBuffer buffer: [Int16]){
         print("Running model")
        
         var interval: TimeInterval!
         var outputTensor: Tensor!
         
         do {
-            //Flatten 2D array into a 1D. Converts the 1D into data for tensor input
-            // let audioBuffer: [Float] = buffer.map { Float($0) / maxInt16AsFloat32 }
-            // let floatInputBuffer: [[Float]] = [[], audioBuffer]
-            // let flatInputArray = floatInputBuffer.flatMap { $0 }
-        
-            // let inputBufferData = Data(copyingBufferOf: flatInputArray)
-            // print(inputBufferData)
-            
-
             // Copy the `[Int16]` buffer data as an array of `Float`s to the audio buffer input `Tensor`'s.
             let audioBufferData = Data(copyingBufferOf: buffer.map { Float($0) / maxInt16AsFloat32 })
             try interpreter.copy(audioBufferData, toInputAt: 0)
@@ -421,9 +411,11 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         )
     }
     
+    //reads text files and retrieves values to string array
+    //also removes any emptyspaces of nil values in array
     private func loadLabels(labelPath: URL){
         let contents = try! String(contentsOf: labelPath, encoding: .utf8)
-        labelArray = contents.components(separatedBy: CharacterSet.newlines)
+        labelArray = contents.components(separatedBy: CharacterSet.newlines).filter({ $0 != ""})
         print(labelArray)
     }
     
