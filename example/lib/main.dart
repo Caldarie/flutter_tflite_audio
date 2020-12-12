@@ -64,13 +64,13 @@ class _MyAppState extends State<MyApp> {
       inputType: 'decodedWav',
       sampleRate: 16000,
       recordingLength: 16000,
-      bufferSize: 8000,
+      bufferSize: 4000,
 
       //! recommended value for google's teachable machine model
       // inputType: 'rawAudio',
       // sampleRate: 44100,
       // recordingLength: 44032,
-      // bufferSize: 22016,
+      // bufferSize: 11013,
     );
 
     ///Logs the results and assigns false when stream is finished.
