@@ -2,10 +2,10 @@
 
 This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support two types of models:
 
-1. **(Beginner)** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  **float32[1, 44032]** as the input.
-2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
+1. **_(Beginner)_** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  **float32[1, 44032]** as the input.
+2. **_(Advanced)_** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
-If there are any problems with the plugin, please do not hesistate to create an issue on github.
+To keep this project alive, a star or any feedback would be greatly appreciated.
 
 ## What this plugin can do:
 
@@ -27,16 +27,9 @@ Skip this section if the heading above does not apply to you.
   2. https://github.com/tensorflow/tensorflow/issues/44997
 
 
-**BE AWARE:** Google's Teachable Machine requires [select tensorflow operators](https://www.tensorflow.org/lite/guide/ops_select#using_bazel_xcode) to work. 
-
-This feature is experimental and will increase the overall size of your app.
+**BE AWARE:** Google's Teachable Machine requires [select tensorflow operators](https://www.tensorflow.org/lite/guide/ops_select#using_bazel_xcode) to work. This feature is experimental and will increase the overall size of your app. If you wish to reduce the overall footprint of your app, it's recommended that you build your model using the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
 
 Also, you will need to manually implement this feature on your [podfile - step 4](https://github.com/Caldarie/flutter_tflite_audio#ios-installation--permissions) and [build gradle - step 3](https://github.com/Caldarie/flutter_tflite_audio#android-installation--permissions)
-
-If you wish to reduce the overall footprint of your app, it's recommended that you build your model using the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
-
-
- Be sure to follow **step 4** correctly, under 
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
@@ -146,16 +139,20 @@ TfliteAudio.stopAudioRecognition();
 
 2. Edit the following below to your build.gradle. This could be found in <YourApp>/app/src/For example:
 
-```
+```Gradle
 aaptOptions {
         noCompress 'tflite'
 ```
 
-3. **If you are using Google's Teachable Machine, you need to enable select-ops under dependencies:**
+## Android -  ONLY if you are using Google's Teachable Machine
 
+3. Enable select-ops under dependencies in your build gradle.
+
+```Gradle
 dependencies {
     compile 'org.tensorflow:tensorflow-lite-select-tf-ops:+'
 }
+```
 
 ## iOS Installation & Permissions
 1. Add the following key to Info.plist for iOS. This ould be found in <YourApp>/ios/Runner
@@ -179,7 +176,9 @@ dependencies {
 platform :ios, '12.0'
 ```
 
-**If you are using Google's Teachable Machine model, please add `pod 'TensorFlowLiteSelectTfOps' under target.**
+## iOS - ONLY If you are using Google's Teachable Machine model
+
+4. Add `pod 'TensorFlowLiteSelectTfOps' under target.
 
 ```ruby
 target 'Runner' do
@@ -191,7 +190,7 @@ target 'Runner' do
 end
 ```
 
-4. If you are using Google Teachable Machine's model, you need to force load Select Ops for Tensorflow. To do that:
+5. Force load Select Ops for Tensorflow. To do that:
 
     a. Open your project on xcode 
     
