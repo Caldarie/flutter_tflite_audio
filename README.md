@@ -139,7 +139,7 @@ aaptOptions {
         noCompress 'tflite'
 ```
 
-### (Android) If you are using Google's Teachable Machine. Skip otherwise
+### (Android) If you are using Google's Teachable Machine. Otherwise skip the steps below:
 
 3. Enable select-ops under dependencies in your build gradle.
 
@@ -171,7 +171,7 @@ dependencies {
 platform :ios, '12.0'
 ```
 
-### (iOS) If you are using Google's Teachable Machine model. Skip Otherwise
+### (iOS) If you are using Google's Teachable Machine model. Otherwise skip the steps below:
 
 4. Add `pod 'TensorFlowLiteSelectTfOps' under target.
 
