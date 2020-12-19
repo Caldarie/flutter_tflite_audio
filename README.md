@@ -5,26 +5,29 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 1. **(Beginner)** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  **float32[1, 44032]** as the input.
 2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
-To keep this project alive, please give a like or contributing to this project. 
+To keep this project alive, please give a like or consider contributing to this project. 
+
+## What this plugin can do:
+
+1. Switch between decodedwav and rawAudio tensor inputs.
+2. Run a stream and collect inference results over time
+3. Loop inferences as many times from the user's specification.
+4. Manually/forcibly close the inference stream/recording.
+
+
+![](audio_recognition_example.jpg)
 
 ### Known Issues
 
 1. Inference isn't accurate
 
-Its possible that your device doesn't have enough time to record. Simply adjust the bufferSize to a lower value. 
+  Its possible that your device doesn't have enough time to record. Simply adjust the bufferSize to a lower value. 
 
-Likewise, if your bufferSize is too low, the recording length is too long and your model may possibly register it as background noise. Simply adjust the bufferSize to a higher value.
+  Likewise, if your bufferSize is too low, the recording length is too long and your model may possibly register it as background noise. Simply adjust the bufferSize to a higher value.
 
+2. App crashes when runnning model from Google's Teachable Machine.
 
-## What this plugin can do:
-
-1. Switch between decodedwav and rawAudio inputs.
-2. Run a stream and collect inference results over time
-3. Loop inferences multiples at the user's specification.
-4. Manually/forcibly close the inference stream/recording.
-
-
-![](audio_recognition_example.jpg)
+  To reduce your app's footprint, this package has disabled the feature to run GTM's model by default. You need to manually enable it as described in this readme.
 
 
 ## Please read if you are using Google's Teachable Machine. Otherwise skip.
@@ -217,8 +220,11 @@ end
 6. Install the ops-select package to pod. To do this:
 
     a. cd into iOS folder
+
     b. Run `flutter pub get` on terminal
+
     c. Run `pod install` on terminal
+
     d. Run `flutter clean` on terminal
 
 ## References
