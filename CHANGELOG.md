@@ -1,3 +1,7 @@
+## 0.1.5+2
+* Disabled Google's Teachable Machine by default to reduce app footprint. (This can be enabled manually)
+* Adjusted example's values to improve inference accuracy
+
 ## 0.1.5+1
 * Added documentation
 * Added example model from Google's Teachable Machine.
