@@ -2,8 +2,8 @@
 
 This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support two types of models:
 
-1. **_(Beginner)_** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  **float32[1, 44032]** as the input.
-2. **_(Advanced)_** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
+1. **[Beginner]** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  **float32[1, 44032]** as the input.
+2. **[Advanced]** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
 To keep this project alive, a star or any feedback would be greatly appreciated.
 
@@ -18,21 +18,16 @@ To keep this project alive, a star or any feedback would be greatly appreciated.
 ![](audio_recognition_example.jpg)
 
 
-## Please read if you are using Google's Teachable Machine. 
+## Please read if you are using Google's Teachable Machine. Otherwise skip.
 
-Skip this section if the heading above does not apply to you.
-
-**BE AWARE:** You need to run your simulation on an actual device. Emulators do not work due to limited support for x86_64 architectures.
+**[BE AWARE:]** You need to run your simulation on an actual device. Emulators do not work due to limited support for x86_64 architectures.
   1. https://github.com/tensorflow/tensorflow/issues/41876
   2. https://github.com/tensorflow/tensorflow/issues/44997
 
 
-**BE AWARE:** Google's Teachable Machine requires [select tensorflow operators](https://www.tensorflow.org/lite/guide/ops_select#using_bazel_xcode) to work. This feature is experimental and will increase the overall size of your app. If you wish to reduce the overall footprint of your app, it's recommended that you build your model using the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
+**[BE AWARE:]** Google's Teachable Machine requires [select tensorflow operators](https://www.tensorflow.org/lite/guide/ops_select#using_bazel_xcode) to work. This feature is experimental and will increase the overall size of your app. If you wish to reduce the overall footprint of your app, it's recommended that you build your model using the [tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
 
-Also, you will need to manually implement this feature on your [podfile - step 4](https://github.com/Caldarie/flutter_tflite_audio#ios-installation--permissions) and [build gradle - step 3](https://github.com/Caldarie/flutter_tflite_audio#android-installation--permissions)
-
-## How to add tflite_audio as a dependency:
-1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
+**[BE AWARE:]** To reduce app footprint, this package will by default disable compatability with Google's Teachable Machine. You will need to manually implement ops-select on your [podfile - step 4](https://github.com/Caldarie/flutter_tflite_audio#ios-installation--permissions) and [build gradle - step 3](https://github.com/Caldarie/flutter_tflite_audio#android-installation--permissions)
 
 
 ## How to add tflite model and label to flutter:
@@ -41,8 +36,8 @@ Also, you will need to manually implement this feature on your [podfile - step 4
 
 ```
   assets:
-    - assets/conv_actions_frozen.tflite
-    - assets/conv_actions_labels.txt
+    - assets/decoded_wav_model.tflite
+    - assets/decoded_wav_label.txt
 
 ```
 
