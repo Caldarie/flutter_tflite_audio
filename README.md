@@ -27,7 +27,7 @@ To keep this project alive, a star or any feedback would be greatly appreciated.
 
 **BE AWARE:** Google's Teachable Machine requires [select tensorflow operators](https://www.tensorflow.org/lite/guide/ops_select#using_bazel_xcode) to work. This feature is experimental and will increase the overall size of your app. If you wish to reduce the overall footprint of your app, it's recommended that you build your model using the [tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
 
-**BE AWARE:** To reduce app footprint, this package will by default disable compatability with Google's Teachable Machine. You will need to manually implement ops-select on your [podfile - step 4](https://github.com/Caldarie/flutter_tflite_audio#ios-installation--permissions) and [build gradle - step 3](https://github.com/Caldarie/flutter_tflite_audio#android-installation--permissions)
+**BE AWARE:** To reduce app footprint, this package will by default disable compatability with Google's Teachable Machine. You will need to manually implement ops-select on your [podfile - step 4 & Xcode - step 5](https://github.com/Caldarie/flutter_tflite_audio#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](https://github.com/Caldarie/flutter_tflite_audio#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
 
 ## How to add tflite model and label to flutter:
@@ -139,7 +139,7 @@ aaptOptions {
         noCompress 'tflite'
 ```
 
-### (Android) If you are using Google's Teachable Machine. Otherwise skip the steps below:
+### (Android) If you are using Google's Teachable Machine. Otherwise skip.
 
 3. Enable select-ops under dependencies in your build gradle.
 
@@ -171,7 +171,7 @@ dependencies {
 platform :ios, '12.0'
 ```
 
-### (iOS) If you are using Google's Teachable Machine model. Otherwise skip the steps below:
+### (iOS) If you are using Google's Teachable Machine model. Otherwise skip.
 
 4. Add `pod 'TensorFlowLiteSelectTfOps' under target.
 
