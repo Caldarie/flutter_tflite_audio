@@ -18,7 +18,7 @@ If there are any problems with the plugin, please do not hesistate to create an 
 ![](audio_recognition_example.jpg)
 
 
-## Please read if you are using Google's Teachable Machine on iOS. 
+## Please read if you are using Google's Teachable Machine. 
 
 Skip this section if the heading above does not apply to you.
 
@@ -27,7 +27,16 @@ Skip this section if the heading above does not apply to you.
   2. https://github.com/tensorflow/tensorflow/issues/44997
 
 
-**BE AWARE:** Be sure to follow **step 4** correctly, under [iOS Installation & Permissions](https://github.com/Caldarie/flutter_tflite_audio/tree/feature/google_teachable_machine_compatability#ios-installation--permissions)
+**BE AWARE:** Google's Teachable Machine requires [select tensorflow operators](https://www.tensorflow.org/lite/guide/ops_select#using_bazel_xcode) to work. 
+
+This feature is experimental and will increase the overall size of your app.
+
+Also, you will need to manually implement this feature on your [podfile - step 4](https://github.com/Caldarie/flutter_tflite_audio#ios-installation--permissions) and [build gradle - step 3](https://github.com/Caldarie/flutter_tflite_audio#android-installation--permissions)
+
+If you wish to reduce the overall footprint of your app, it's recommended that you build your model using the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
+
+
+ Be sure to follow **step 4** correctly, under 
 
 ## How to add tflite_audio as a dependency:
 1. Add `tflite_audio` as a [dependency in your pubspec.yaml file]
@@ -67,23 +76,35 @@ import 'package:tflite_audio/tflite_audio.dart';
 ```
 
 
-3. To start and listen to the stream startAudioRecognition for inference results:
+3. To start and listen to the stream for inference results:
+
+Example for Google's Teachable Machine models
 
 ```dart
 TfliteAudio.startAudioRecognition(
   numOfInferences: 1,
-
-  //parameters for google's teachable machine model. 
   inputType: 'rawAudio',
   sampleRate: 44100,
   recordingLength: 44032,
   bufferSize: 22016,
+  )
+    .listen(
+      //Do something here to collect data
+      )
+    .onDone(
+       //Do something here when stream closes
+      );
+```
 
-  // parameters for decodedwav models
-  // inputType: 'decodedWav',
-  // sampleRate: 16000,
-  // recordingLength: 16000,
-  // bufferSize: 8000,
+Example for decodedwav models
+
+```dart
+TfliteAudio.startAudioRecognition(
+  numOfInferences: 1,
+  inputType: 'decodedWav',
+  sampleRate: 16000,
+  recordingLength: 16000,
+  bufferSize: 8000,
   )
     .listen(
       //Do something here to collect data
@@ -103,30 +124,38 @@ TfliteAudio.stopAudioRecognition();
   
   * numThreads -  Higher threads will reduce inferenceTime. However, cpu usage will be higher.
   
-  * numOfInferences - determines the number of inferences you want to loop.
+  * numOfInferences - determines how many times you want to repeat the inference.
 
-  * sampleRate - determines the number of samples per second. Recommened values are 16000, 22050, 44100
+  * sampleRate - A higher sample rate will improve accuracy. Recommened values are 16000, 22050, 44100
 
-  * recordingLength - determines the size of your tensor input. If the value is not below or equal to your tensor input, it will crash.
+  * recordingLength - determines the size of your tensor input. If the value is not equal to your tensor input, it will crash.
 
-  * bufferSize - Make sure this value is equal or below your recording length. A very high value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive Remember that this value varies depending on your device.
+  * bufferSize - Make sure this value is equal or below your recording length. To lower bufferSize, its important to divide its recording_length by 2. For example 44032, 22016, 11008, 5504... 
+  
+   Be aware that a higher value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive. Remember that the optimal value varies depending on the device.
     
 
 
 ## Android Installation & Permissions
-Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
+1. Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
 
 ```
 <uses-permission android:name="android.permission.RECORD_AUDIO" />
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 ```
 
-Edit the following below to your build.gradle. This could be found in <YourApp>/app/src/For example:
+2. Edit the following below to your build.gradle. This could be found in <YourApp>/app/src/For example:
 
 ```
 aaptOptions {
         noCompress 'tflite'
 ```
+
+3. **If you are using Google's Teachable Machine, you need to enable select-ops under dependencies:**
+
+dependencies {
+    compile 'org.tensorflow:tensorflow-lite-select-tf-ops:+'
+}
 
 ## iOS Installation & Permissions
 1. Add the following key to Info.plist for iOS. This ould be found in <YourApp>/ios/Runner
@@ -144,16 +173,19 @@ aaptOptions {
     c. Under the info tab, change the iOS deployment target to 12.0
     
 
-3. Open your podfile in your iOS folder and change platform ios to 12. Also make sure that use_frameworks! is under runner. For example
+3. Open your podfile in your iOS folder and change platform ios to 12. 
 
-```
+```ruby
 platform :ios, '12.0'
 ```
 
+**If you are using Google's Teachable Machine model, please add `pod 'TensorFlowLiteSelectTfOps' under target.**
+
 ```ruby
 target 'Runner' do
-  use_frameworks! #Make sure you have this line
+  use_frameworks! 
   use_modular_headers!
+  pod 'TensorFlowLiteSelectTfOps' #Add this line here. 
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
