@@ -171,7 +171,7 @@ dependencies {
 platform :ios, '12.0'
 ```
 
-## (iOS) ONLY If you are using Google's Teachable Machine model
+#### (iOS) ONLY If you are using Google's Teachable Machine model
 
 4. Add `pod 'TensorFlowLiteSelectTfOps' under target.
 
