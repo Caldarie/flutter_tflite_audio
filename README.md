@@ -5,7 +5,16 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 1. **(Beginner)** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  **float32[1, 44032]** as the input.
 2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
-To keep this project alive, a star or any feedback would be greatly appreciated.
+To keep this project alive, please give a like or contributing to this project. 
+
+### Known Issues
+
+1. Inference isn't accurate
+
+Its possible that your device doesn't have enough time to record. Simply adjust the bufferSize to a lower value. 
+
+Likewise, if your bufferSize is too low, the recording length is too long and your model may possibly register it as background noise. Simply adjust the bufferSize to a higher value.
+
 
 ## What this plugin can do:
 
@@ -203,6 +212,14 @@ end
 
     For more details, please visit this site:
     https://www.tensorflow.org/lite/guide/ops_select#ios
+
+
+6. Install the ops-select package to pod. To do this:
+
+    a. cd into iOS folder
+    b. Run `flutter pub get` on terminal
+    c. Run `pod install` on terminal
+    d. Run `flutter clean` on terminal
 
 ## References
 
