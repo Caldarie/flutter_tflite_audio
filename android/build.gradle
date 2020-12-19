@@ -16,6 +16,7 @@ rootProject.allprojects {
     repositories {
         google()
         jcenter()
+        mavenLocal()
     }
 }
 
@@ -25,8 +26,12 @@ android {
     compileSdkVersion 28
 
     defaultConfig {
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
         minSdkVersion 19
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
     }
 
     aaptOptions {
@@ -45,12 +50,12 @@ android {
     dependencies{
         implementation "androidx.appcompat:appcompat:1.1.0"
         implementation 'androidx.annotation:annotation:1.1.0'
-
-        //Tflite
-        implementation "org.tensorflow:tensorflow-lite:2.3.0"
-        implementation "org.tensorflow:tensorflow-lite-select-tf-ops:2.3.0"
-        implementation "org.tensorflow:tensorflow-lite-support:0.1.0-rc1"
-        implementation "org.tensorflow:tensorflow-lite-metadata:0.1.0-rc2"
+        compile 'org.tensorflow:tensorflow-lite:+'
+        // compile 'org.tensorflow:tensorflow-lite-select-tf-ops:+'
+        // implementation 'org.tensorflow:tensorflow-lite:0.1.100'
+        // implementation 'org.tensorflow:tensorflow-lite-select-tf-ops:0.1.100'
+        // implementation "org.tensorflow:tensorflow-lite-support:0.1.0-rc1"
+        // implementation "org.tensorflow:tensorflow-lite-metadata:0.1.0-rc2"
     
     }
 }
