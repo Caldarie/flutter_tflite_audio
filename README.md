@@ -19,7 +19,7 @@ To keep this project alive, please give a like, star or consider making your own
  * [Please read if you are using Google's Teachable Machine. Otherwise skip.](#please-read-if-you-are-using-googles-teachable-machine-otherwise-skip)
  * [How to add tflite model and label to flutter](#how-to-add-tflite-model-and-label-to-flutter)
  * [How to use this plugin](#how-to-use-this-plugin)
- * [Rough guide on parameters](#rough-guide-on-parameters)
+ * [Rough guide on parameters](#rough-guide-on-the-parameters)
  * [Android Installation & Permissions](#android-installation--permissions)
    * [If you are using Google's Teachable Machine. Otherwise skip.](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
  * [iOS Installation & Permissions](#ios-installation--permissions)
@@ -146,9 +146,7 @@ TfliteAudio.stopAudioRecognition();
 
   * recordingLength - determines the size of your tensor input. If the value is not equal to your tensor input, it will crash.
 
-  * bufferSize - Make sure this value is equal or below your recording length. To lower bufferSize, its important to divide its recording_length by 2. For example 44032, 22016, 11008, 5504... 
-  
-   Be aware that a higher value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive. Remember that the optimal value varies depending on the device.
+  * bufferSize - Make sure this value is equal or below your recording length. To lower bufferSize, its important to divide its recording_length by 2. For example 44032, 22016, 11008, 5504... Be aware that a higher value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive. Remember that the optimal value varies depending on the device.
     
 <br>
 
@@ -167,7 +165,9 @@ aaptOptions {
         noCompress 'tflite'
 ```
 
-### (Android) If you are using Google's Teachable Machine. Otherwise skip.
+<br>
+
+#### (Android) If you are using Google's Teachable Machine. Otherwise skip.
 
 3. Enable select-ops under dependencies in your build gradle.
 
@@ -201,7 +201,9 @@ dependencies {
 platform :ios, '12.0'
 ```
 
-### (iOS) If you are using Google's Teachable Machine model. Otherwise skip.
+<br>
+
+#### (iOS) If you are using Google's Teachable Machine model. Otherwise skip.
 
 4. Add `pod 'TensorFlowLiteSelectTfOps' under target.
 
