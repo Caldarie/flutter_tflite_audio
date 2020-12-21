@@ -5,42 +5,56 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 1. **(Beginner)** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  **float32[1, 44032]** as the input.
 2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
-To keep this project alive, please give a like or consider contributing to this project. 
+To keep this project alive, please give a like, star or consider making your own contributions to this project. 
 
-## What this plugin can do:
-
-1. Switch between decodedwav and rawAudio tensor inputs.
-2. Run a stream and collect inference results over time
-3. Loop inferences as many times from the user's specification.
-4. Manually/forcibly close the inference stream/recording.
-
+<br>
 
 ![](audio_recognition_example.jpg)
 
-### Known Issues
+<br>
+
+## Table of Contents
+
+ * [Known Issues](#known-issues)
+ * [Please read if you are using Google's Teachable Machine. Otherwise skip.](#please-read-if-you-are-using-googles-teachable-machine-otherwise-skip)
+ * [How to add tflite model and label to flutter](#how-to-add-tflite-model-and-label-to-flutter)
+ * [How to use this plugin](#how-to-use-this-plugin)
+ * [Rough guide on parameters](#rough-guide-on-parameters)
+ * [Android Installation & Permissions](#android-installation--permissions)
+   * [If you are using Google's Teachable Machine. Otherwise skip.](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
+ * [iOS Installation & Permissions](#ios-installation--permissions)
+   * [If you are using Google's Teachable Machine. Otherwise skip.](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip)
+ * [References](#references)
+ 
+<br>
+
+## Known Issues
 
 1. Inference isn't accurate
 
-  Its possible that your device doesn't have enough time to record. Simply adjust the bufferSize to a lower value. 
+Its possible that your device doesn't have enough time to record. Simply adjust the bufferSize to a lower value. 
 
-  Likewise, if your bufferSize is too low, the recording length is too long and your model may possibly register it as background noise. Simply adjust the bufferSize to a higher value.
+Likewise, if your bufferSize is too low, the recording length is too long and your model may possibly register it as background noise. Simply adjust the bufferSize to a higher value.
 
 2. App crashes when runnning model from Google's Teachable Machine.
 
-  To reduce your app's footprint, this package has disabled the feature to run GTM's model by default. You need to manually enable it as described in this readme.
+To reduce your app's footprint, this package has disabled the feature to run GTM's model by default. You will need to manually implement ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
+<br>
 
 ## Please read if you are using Google's Teachable Machine. Otherwise skip.
 
-**BE AWARE:** You need to run your simulation on an actual device. Emulators do not work due to limited support for x86_64 architectures.
-  1. https://github.com/tensorflow/tensorflow/issues/41876
-  2. https://github.com/tensorflow/tensorflow/issues/44997
+**BE AWARE:** Google's Teachable Machine requires [select tensorflow operators](https://www.tensorflow.org/lite/guide/ops_select#using_bazel_xcode) to work. This feature is experimental and will cause the following issues:
 
+1. Increase the overall size of your app. If this is unnacceptable for you, it's recommended that you build your own custom model using the [tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
 
-**BE AWARE:** Google's Teachable Machine requires [select tensorflow operators](https://www.tensorflow.org/lite/guide/ops_select#using_bazel_xcode) to work. This feature is experimental and will increase the overall size of your app. If you wish to reduce the overall footprint of your app, it's recommended that you build your model using the [tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
+2. Emulators for iOS do not work due to limited support for x86_64 architectures. You need to run your simulation on an actual device. 
+  * https://github.com/tensorflow/tensorflow/issues/41876
+  * https://github.com/tensorflow/tensorflow/issues/44997
+  
+3. You will need to manually implement ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
-**BE AWARE:** To reduce app footprint, this package will by default disable compatability with Google's Teachable Machine. You will need to manually implement ops-select on your [podfile - step 4 & Xcode - step 5](https://github.com/Caldarie/flutter_tflite_audio#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](https://github.com/Caldarie/flutter_tflite_audio#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
-
+<br>
 
 ## How to add tflite model and label to flutter:
 1. Place your custom tflite model and labels into the asset folder. 
@@ -52,6 +66,8 @@ To keep this project alive, please give a like or consider contributing to this 
     - assets/decoded_wav_label.txt
 
 ```
+
+<br>
 
 ## How to use this plugin
 Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
@@ -104,7 +120,7 @@ TfliteAudio.startAudioRecognition(
   inputType: 'decodedWav',
   sampleRate: 16000,
   recordingLength: 16000,
-  bufferSize: 8000,
+  bufferSize: 2000,
   )
     .listen(
       //Do something here to collect data
@@ -120,7 +136,7 @@ TfliteAudio.startAudioRecognition(
 TfliteAudio.stopAudioRecognition();
 ```
 
-5. For a rough guide on the parameters
+## Rough guide on the parameters
   
   * numThreads -  Higher threads will reduce inferenceTime. However, cpu usage will be higher.
   
@@ -134,7 +150,7 @@ TfliteAudio.stopAudioRecognition();
   
    Be aware that a higher value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive. Remember that the optimal value varies depending on the device.
     
-
+<br>
 
 ## Android Installation & Permissions
 1. Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
@@ -160,6 +176,8 @@ dependencies {
     compile 'org.tensorflow:tensorflow-lite-select-tf-ops:+'
 }
 ```
+
+<br>
 
 ## iOS Installation & Permissions
 1. Add the following key to Info.plist for iOS. This ould be found in <YourApp>/ios/Runner
@@ -226,6 +244,8 @@ end
     c. Run `pod install` on terminal
 
     d. Run `flutter clean` on terminal
+    
+<br>
 
 ## References
 
