@@ -2,14 +2,21 @@
 
 This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support two types of models:
 
-1. **(Beginner)** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses a raw audio  **float32[1, 44032]** as the input.
-2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
+1. **(Beginner)** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding.
 
-To keep this project alive, please give a like, star or consider making your own contributions to this project. 
+This model uses raw audio  **float32[1, 44032]** as the input.
+
+2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. 
+
+This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
 <br>
 
 ![](audio_recognition_example.jpg)
+
+<br>
+
+To keep this project alive, please give a like, star or consider making your own contributions to this project. 
 
 <br>
 
