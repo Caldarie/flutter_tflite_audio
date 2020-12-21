@@ -30,15 +30,9 @@ To keep this project alive, please give a like, star or consider making your own
 
 ## Known Issues
 
-1. Inference isn't accurate
+1. **Inference isn't accurate** - Its possible that your device doesn't have enough time to record. Simply adjust the bufferSize to a lower value. Likewise, if your bufferSize is too low, the recording length is too long and your model may possibly register it as background noise. Simply adjust the bufferSize to a higher value.
 
-Its possible that your device doesn't have enough time to record. Simply adjust the bufferSize to a lower value. 
-
-Likewise, if your bufferSize is too low, the recording length is too long and your model may possibly register it as background noise. Simply adjust the bufferSize to a higher value.
-
-2. App crashes when runnning model from Google's Teachable Machine.
-
-To reduce your app's footprint, this package has disabled the feature to run GTM's model by default. You will need to manually implement ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
+2. **App crashes when runnning model from Google's Teachable Machine** - To reduce your app's footprint, this package has disabled the feature to run GTM's model by default. You will need to manually implement ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
 <br>
 
