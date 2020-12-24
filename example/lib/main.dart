@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:developer';
 import 'package:tflite_audio/tflite_audio.dart';
+import 'package:flutter/services.dart';
+import 'dart:convert';
 
 void main() => runApp(MyApp());
 
@@ -17,40 +19,32 @@ class _MyAppState extends State<MyApp> {
   final isRecording = ValueNotifier<bool>(false);
   Stream<Map<dynamic, dynamic>> result;
 
-  //! label list for decodedwav models
-  List<String> labelList = [
-    '_silence_',
-    '_unknown_',
-    'yes',
-    'no',
-    'up',
-    'down',
-    'left',
-    'right',
-    'on',
-    'off',
-    'stop',
-    'go'
-  ];
+  //!example values for decodedwav models
+  final String model = 'assets/decoded_wav_model.tflite';
+  final String label = 'assets/decoded_wav_label.txt';
+  final String inputType = 'decodedWav';
+  final int sampleRate = 16000;
+  final int recordingLength = 16000;
+  final int bufferSize = 2000;
+  final int numOfInferences = 1;
 
-  //! label list for google's teachable machine model
-  // List<String> labelList = ['0 Background Noise', '1 no', '2 yes'];
+  //!example values for google's teachable machine model
+  // final String model = 'assets/google_teach_machine_model.tflite';
+  // final String label = 'assets/google_teach_machine_label.txt';
+  // final String inputType = 'rawAudio';
+  // final int sampleRate = 44100;
+  // final int recordingLength = 44032;
+  // final int bufferSize = 22016;
+  // final int numOfInferences = 1;
 
   @override
   void initState() {
     super.initState();
-
     TfliteAudio.loadModel(
       numThreads: 1,
       isAsset: true,
-
-      //! asset location for decodedwav models
-      model: 'assets/decoded_wav_model.tflite',
-      label: 'assets/decoded_wav_label.txt',
-
-      //! asset location for google's teachable machine model
-      // model: 'assets/google_teach_machine_model.tflite',
-      // label: 'assets/google_teach_machine_label.txt'
+      model: this.model,
+      label: this.label,
     );
   }
 
@@ -58,25 +52,28 @@ class _MyAppState extends State<MyApp> {
   /// be sure to comment one of the other to switch model types.
   void getResult() {
     result = TfliteAudio.startAudioRecognition(
-      numOfInferences: 1,
-
-      //! example value for decodedwav models
-      inputType: 'decodedWav',
-      sampleRate: 16000,
-      recordingLength: 16000,
-      bufferSize: 2000,
-
-      //! recommended value for google's teachable machine model
-      // inputType: 'rawAudio',
-      // sampleRate: 44100,
-      // recordingLength: 44032,
-      // bufferSize: 22016,
+      numOfInferences: this.numOfInferences,
+      inputType: this.inputType,
+      sampleRate: this.sampleRate,
+      recordingLength: this.recordingLength,
+      bufferSize: this.bufferSize,
     );
 
     ///Logs the results and assigns false when stream is finished.
     result
         .listen((event) => log(event.toString()))
         .onDone(() => isRecording.value = false);
+  }
+
+  //fetches the labels from the text file in assets
+  Future<List<String>> fetchLabelList() async {
+    List<String> _labelList = [];
+    await rootBundle.loadString(this.label).then((q) {
+      for (String i in LineSplitter().convert(q)) {
+        _labelList.add(i);
+      }
+    });
+    return _labelList;
   }
 
   ///handles null exception if snapshot is null.
@@ -91,32 +88,49 @@ class _MyAppState extends State<MyApp> {
             appBar: AppBar(
               title: const Text('Tflite-audio/speech'),
             ),
+            //Streambuilder for inference results
             body: StreamBuilder<Map<dynamic, dynamic>>(
                 stream: result,
                 builder: (BuildContext context,
-                    AsyncSnapshot<Map<dynamic, dynamic>> snapshot) {
-                  switch (snapshot.connectionState) {
-                    case ConnectionState.none:
-                      return labelListWidget();
-                      break;
-                    case ConnectionState.waiting:
-                      return Stack(children: <Widget>[
-                        Align(
-                            alignment: Alignment.bottomRight,
-                            child: inferenceTimeWidget('calculating..')),
-                        labelListWidget(),
-                      ]);
-                      break;
-                    default:
-                      return Stack(children: <Widget>[
-                        Align(
-                            alignment: Alignment.bottomRight,
-                            child: inferenceTimeWidget(
-                                showResult(snapshot, 'inferenceTime') + 'ms')),
-                        labelListWidget(
-                            showResult(snapshot, 'recognitionResult'))
-                      ]);
-                  }
+                    AsyncSnapshot<Map<dynamic, dynamic>> inferenceSnapshot) {
+                  //futurebuilder for getting the label list
+                  return FutureBuilder(
+                      future: fetchLabelList(),
+                      builder: (BuildContext context,
+                          AsyncSnapshot<List<String>> labelSnapshot) {
+                        switch (inferenceSnapshot.connectionState) {
+                          case ConnectionState.none:
+                            //Loads the asset file.
+                            if (labelSnapshot.hasData) {
+                              return labelListWidget(labelSnapshot.data);
+                            } else {
+                              return CircularProgressIndicator();
+                            }
+                            break;
+                          case ConnectionState.waiting:
+                            //Widets will let the user know that its loading when waiting for results
+                            return Stack(children: <Widget>[
+                              Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: inferenceTimeWidget('calculating..')),
+                              labelListWidget(labelSnapshot.data),
+                            ]);
+                            break;
+                          //Widgets will display the final results.
+                          default:
+                            return Stack(children: <Widget>[
+                              Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: inferenceTimeWidget(showResult(
+                                          inferenceSnapshot, 'inferenceTime') +
+                                      'ms')),
+                              labelListWidget(
+                                  labelSnapshot.data,
+                                  showResult(
+                                      inferenceSnapshot, 'recognitionResult'))
+                            ]);
+                        }
+                      });
                 }),
             floatingActionButtonLocation:
                 FloatingActionButtonLocation.centerFloat,
@@ -128,7 +142,6 @@ class _MyAppState extends State<MyApp> {
                         return FloatingActionButton(
                           onPressed: () {
                             isRecording.value = true;
-                            // value == true;
                             setState(() {
                               getResult();
                             });
@@ -151,7 +164,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   ///  If snapshot data matches the label, it will change colour
-  Widget labelListWidget([String result]) {
+  Widget labelListWidget(List<String> labelList, [String result]) {
     return Center(
         child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
