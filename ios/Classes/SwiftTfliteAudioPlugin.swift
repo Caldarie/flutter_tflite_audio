@@ -252,6 +252,11 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     
     func runRawAudioModel(onBuffer buffer: [Int16]){
         print("Running model")
+
+        if(events == nil){
+            print("events is null. Breaking recognition")
+            return
+        }
        
         var interval: TimeInterval!
         var outputTensor: Tensor!
@@ -294,6 +299,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     // func runModel(onBuffer buffer: [Int16]) -> Result? {
     func runDecodedWaveModel(onBuffer buffer: [Int16]){
         print("Running model")
+
+        if(events == nil){
+            print("events is null. Breaking recognition")
+            return
+        }
+
         let sampleRate = arguments["sampleRate"] as! Int
         var interval: TimeInterval!
         var outputTensor: Tensor!
