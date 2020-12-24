@@ -37,7 +37,7 @@ To keep this project alive, please consider contributing to this project, provid
 
 2. **App crashes when runnning GTM model on both android and iOS** - To reduce your app's footprint, this package has disabled GTM feature by default. You will need to manually enable ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
-3. **App crashes when running GTM model on iOS emulator** - please run your simulation on actual iOS device. Tensorflow support for x86_64 architectures have limited support.
+3. **App crashes when running GTM model on iOS emulator** - please run your simulation on actual iOS device. Tflite for x86_64 architectures have limited support.
 
 <br>
 
