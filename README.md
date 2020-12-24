@@ -6,8 +6,9 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 
 2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
+3, **(Future feature)**  Will support audio embeddings models in the future.
 
-To keep this project alive, please give a like, star or consider making your own contributions to this project. 
+To keep this project alive, please consider contributing to this project, providing constructive feedback or making future requests. A like or a star would also be greatly appreciated too.
 
 <br>
 
@@ -44,8 +45,8 @@ To keep this project alive, please give a like, star or consider making your own
 
 1. Increase the overall size of your app. If this is unnacceptable for you, it's recommended that you build your own custom model using the [tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
 
-2. Emulators for iOS do not work due to limited support for x86_64 architectures. You need to run your simulation on an actual device. 
-  * https://github.com/tensorflow/tensorflow/issues/41876
+2. Emulators for iOS do not work due to limited support for x86_64 architectures. You need to run your simulation on an actual device. Issue can be found below:
+
   * https://github.com/tensorflow/tensorflow/issues/44997
   
 3. You will need to manually implement ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
