@@ -426,7 +426,13 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
 
 
     private void rawAudioRecognize() {
-        Log.v(LOG_TAG, "Recognition started.");
+        Log.v(LOG_TAG, "events is null. Breaking recognition");
+
+         //catches null exception.
+         if(events == null){
+            Log.v(LOG_TAG, "events is null");
+            return;
+        }
 
         int sampleRate = (int) arguments.get("sampleRate");
         int recordingLength = (int) arguments.get("recordingLength");
@@ -487,6 +493,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
  
     private void decodedWaveRecognize() {
         Log.v(LOG_TAG, "Recognition started.");
+        
+        //catches null exception.
+        if(events == null){
+            Log.v(LOG_TAG, "events is null. Breaking recognition");
+            return;
+        }
 
         int sampleRate = (int) arguments.get("sampleRate");
         int recordingLength = (int) arguments.get("recordingLength");
@@ -585,15 +597,17 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
     }
 
     public void stopRecording() {
-        shouldContinue = false;
-
-        if (recordingThread == null) {
+        
+        if (recordingThread == null || shouldContinue == false ) {
+            Log.d(LOG_TAG, "Recording has already stopped. Breaking stopRecording()");
             return;
         }
 
+        shouldContinue = false;
+
         record.stop();
         record.release();
-
+ 
         recordingOffset = 0; //reset recordingOffset
         recordingThread = null;//closes recording
         Log.d(LOG_TAG, "Recording stopped.");
