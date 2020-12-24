@@ -2,7 +2,7 @@
 
 This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support two types of models:
 
-1. **(Beginner)** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses raw audio  **float32[1, 44032]** as the input.
+1. **(Beginner)** If you are new to machine learning, this package supports audio models from [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding. This model uses only one input, i.e.  **float32[1, 44032]** for raw audio.
 
 2. **(Advanced)** Also supports models with decoded wave inputs. If you want to code your own model, use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses decodedwav, which uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
@@ -47,9 +47,7 @@ To keep this project alive, please consider contributing to this project, provid
 
 1. Increase the overall size of your app. If this is unnacceptable for you, it's recommended that you build your own custom model using the [tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
 
-2. Emulators for iOS do not work due to limited support for x86_64 architectures. You need to run your simulation on an actual device. Issue can be found below:
-
-  * https://github.com/tensorflow/tensorflow/issues/44997
+2. Emulators for iOS do not work due to limited support for x86_64 architectures. You need to run your simulation on an actual device. Issue can be found [here](https://github.com/tensorflow/tensorflow/issues/44997)
   
 3. You will need to manually implement ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
