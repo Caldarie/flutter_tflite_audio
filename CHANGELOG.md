@@ -1,6 +1,6 @@
 ## 0.1.5+3
-* Fixed major android crash when forcibly stopping the stream causes recorder.stop() to prematurely be called before recorder.start()
-* Fixed minor iOS crash when forcibly stopping the stream returns a nil exception in the arguments.
+* Fixed major android crash, where forcibly stopping the stream causes recorder.stop() to be called before recorder.start() prematurely.
+* Fixed minor iOS crash, where forcibly stopping the stream during recognition returns a nil exception in the arguments.
 * Cleaned up example for easy switch between decodedWav and Google's Teachable Machine model
 
 ## 0.1.5+2
