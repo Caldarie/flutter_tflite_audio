@@ -8,8 +8,6 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 
 3. **(Future feature)**  Will support audio embeddings models in the future.
 
-To keep this project alive, please consider contributing to this project, providing constructive feedback or making future requests. A like or a star would also be greatly appreciated too.
-
 <br>
 
 ![](audio_recognition_example.jpg)
