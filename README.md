@@ -230,9 +230,6 @@ end
 
 ![](tflite-select-ops-installation.png)
 
-    For more details, please visit this site:
-    https://www.tensorflow.org/lite/guide/ops_select#ios
-
 
 6. Install the ops-select package to pod. To do this:
 
@@ -248,4 +245,5 @@ end
 
 ## References
 
-https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands
+1. https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands
+2. https://www.tensorflow.org/lite/guide/ops_select
