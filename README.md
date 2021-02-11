@@ -37,7 +37,7 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 
 2. **App crashes when runnning Google's Teschable Machine model on both android and iOS** - Please make sure that you have enabled ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
-3. **App crashes when running Googke's Teachable Machine model on an iOS emulator** - please run your simulation on actual iOS device. As of this moment, there's [limited support](https://github.com/tensorflow/tensorflow/issues/44997#issuecomment-734001671) for x86_64 architectures from Tensorflow select-ops frameworl. If you absolutely need to run it on an emulator, you can consider building the select ops framework yourself. Instructions can be provided [here](https://www.tensorflow.org/lite/guide/ops_select#ios)
+3. **App crashes when running Googke's Teachable Machine model on an iOS emulator** - please run your simulation on actual iOS device. As of this moment, there's [limited support](https://github.com/tensorflow/tensorflow/issues/44997#issuecomment-734001671) for x86_64 architectures from the Tensorflow Lite select-ops framework. If you absolutely need to run it on an emulator, you can consider building the select ops framework yourself. Instructions can be found [here](https://www.tensorflow.org/lite/guide/ops_select#ios)
 
 <br>
 
