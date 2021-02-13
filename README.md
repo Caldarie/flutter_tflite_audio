@@ -6,9 +6,9 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 
 2. **(Advanced)** Supports models with decoded wave inputs. Use the [Tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) as a guide. This model uses two inputs. **float32[recording_length, 1]** for raw audio data and **int32[1]** as the sample rate
 
-3. **(Future feature)**  Audio embeddings models 
+3. **(Future feature)**  Model with mutliple outputs
 
-4. **(Future feature)**  Transfer learning (Yamnet) models in the future
+4. **(Future feature)**  Audio Embeddings
 
 <br>
 
