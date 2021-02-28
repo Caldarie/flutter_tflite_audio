@@ -43,7 +43,9 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 
 4. **(iOS) App crashes when running Google's Teachable Machine model** - please run your simulation on actual iOS device. As of this moment, there's [limited support](https://github.com/tensorflow/tensorflow/issues/44997#issuecomment-734001671) for x86_64 architectures from the Tensorflow Lite select-ops framework. If you absolutely need to run it on an emulator, you can consider building the select ops framework yourself. Instructions can be found [here](https://www.tensorflow.org/lite/guide/ops_select#ios)
 
-5. **(Android) Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xfffffff4 in tid 5403 ** - it seems like the latest tflite package for android is causing this issue. Until this issue is fixed, olease run this package on an actual Android Device. 
+5. **(Android) Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xfffffff4 in tid 5403** - it seems like the latest tflite package for android is causing this issue. Until this issue is fixed, olease run this package on an actual Android Device. 
+
+6. **Failed to invoke the interpreter with error: Provided data count (number) must match the required count (number).** - please make that your recording length matches your model input size. For example, google's teachable machine requires recording length is 44032
 
 <br>
 
