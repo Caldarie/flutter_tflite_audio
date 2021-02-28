@@ -47,6 +47,8 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 
 6. **Failed to invoke the interpreter with error: Provided data count (number) must match the required count (number).** - please make that your recording length matches your model input size. For example, google's teachable machine requires recording length is 44032
 
+If you have found any other issues not listed above, please create a new issue.
+
 <br>
 
 ## Please read if you are using Google's Teachable Machine. Otherwise skip.
