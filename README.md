@@ -33,17 +33,17 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 
 ## Known Issues
 
-1. **Model won't load** 
+### **Model won't load** 
 
 You need to configures permissions and dependencies to use this plugin. Please follow the steps below:
 * [Android installation & permissions](#android-installation--permissions)
 * [iOS installation & permissions](#ios-installation--permissions)
 
-2. **Inference isn't accurate** 
+### **Inference isn't accurate** 
 
 Its possible that your device doesn't have enough time to record. Simply adjust the bufferSize to a lower value. Likewise, if your bufferSize is too low, the recording length will be too long and your model may possibly register it as background noise. Simply adjust the bufferSize to a higher value.
 
-3. **TensorFlow Lite Error: Regular TensorFlow ops are not supported by this interpreter. Make sure you apply/link the Flex delegate before inference** 
+### **TensorFlow Lite Error: Regular TensorFlow ops are not supported by this interpreter. Make sure you apply/link the Flex delegate before inference** 
 
 Please make sure that you have enabled ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
@@ -51,15 +51,15 @@ If you tried above, please run the example on a device (not emulator). If you re
 
 If you only recieve this error from only your custom model, its likely that theres something wrong with your code. Please search for more details [here](https://github.com/tensorflow/tensorflow/issues/44543)
 
-4. **(iOS) App crashes when running Google's Teachable Machine model** 
+### **(iOS) App crashes when running Google's Teachable Machine model** 
 
 Please run your simulation on actual iOS device. As of this moment, there's [limited support](https://github.com/tensorflow/tensorflow/issues/44997#issuecomment-734001671) for x86_64 architectures from the Tensorflow Lite select-ops framework. If you absolutely need to run it on an emulator, you can consider building the select ops framework yourself. Instructions can be found [here](https://www.tensorflow.org/lite/guide/ops_select#ios)
 
-5. **(Android) Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xfffffff4 in tid 5403** 
+### **(Android) Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xfffffff4 in tid 5403** 
 
 It seems like the latest tflite package for android is causing this issue. Until this issue is fixed, please run this package on an actual Android Device. 
 
-6. **Failed to invoke the interpreter with error: Provided data count (number) must match the required count (number).** 
+### **Failed to invoke the interpreter with error: Provided data count (number) must match the required count (number).** 
 
 Please make that your recording length matches your model input size. For example, google's teachable machine requires recording length is 44032
 
