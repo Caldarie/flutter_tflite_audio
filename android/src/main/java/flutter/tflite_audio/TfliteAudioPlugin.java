@@ -419,8 +419,19 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
 
                     stopRecording();
                     lastInferenceRun = true;
+
+                    //Used when theres only one inference, as the above if statements are used for multiple inferences
+                    //Case occurs when buffersize is divisible to recording length
+                    //Apends the last recordingFrame to recordingLength
                 } else {
-                    Log.v(LOG_TAG, "Something weird happened. Please report this issue");
+
+                    System.arraycopy(recordingFrame, 0, maxRecordingBuffer, recordingOffset, numberRead);
+                    recordingOffset += numberRead;
+                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + maxRecordingLength); 
+
+                    System.arraycopy(maxRecordingBuffer, recordingStart, recordingBuffer, 0, recordingLength);
+                    startRecognition();
+
                     stopRecording();
                     lastInferenceRun = true;
                 }
