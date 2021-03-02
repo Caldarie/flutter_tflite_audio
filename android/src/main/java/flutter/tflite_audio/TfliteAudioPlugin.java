@@ -75,7 +75,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
     //working recording variables
     AudioRecord record;
     short[] recordingBuffer;
-    short[] recordingBufferMax;
+    short[] maxRecordingBuffer;
     int recordingOffset = 0;
     boolean shouldContinue = true;
     private Thread recordingThread;
@@ -324,14 +324,17 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         final int recordingLength = (int) arguments.get("recordingLength");
         final int numOfInferences = (int) arguments.get("numOfInferences");
 
+        //Adjust recording length should numOfiNferences increase
         int maxRecordingLength = recordingLength * numOfInferences;
-        short[] recordingFrameBuffer = new short[bufferSize / 2];
+        short[] recordingFrame = new short[bufferSize / 2];
 
-        //Used to keep count 
+        //define float values for input
         recordingBuffer = new short[recordingLength]; //16000
-        recordingBufferMax = new short[maxRecordingLength]; //32000
-        int preRecordingCount = 0;
-        int recordingCount = recordingLength;
+        maxRecordingBuffer = new short[maxRecordingLength]; //recordingLength * numOfInferences;
+        
+        //Used to keep track of multiple inferences for multiple inferences
+        int recordingStart = 0;
+        int recordingEnd = recordingLength; //16000
 
         // Estimate the buffer size we'll need for this device.
         // int bufferSize =
@@ -361,33 +364,67 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
 
 
         while (shouldContinue) {
-            //numberRead = represents the length of RecordingFrameBuffer (1280)
-            int numberRead = record.read(recordingFrameBuffer, 0, recordingFrameBuffer.length);
+            //Reads audio data and records it into redcordFrame
+            int numberRead = record.read(recordingFrame, 0, recordingFrame.length);
+
             recordingBufferLock.lock();
             try {
-                //Appends recordingFrameBuffer (length: 1280) to recordingBuffer (length: 16000)
-                System.arraycopy(recordingFrameBuffer, 0, recordingBufferMax, recordingOffset, numberRead);
-                //Used tp keep count
-                recordingOffset += numberRead;
-                Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + maxRecordingLength);
-                //if recording buffer exceeeds recording count, it will start the inference.
-                if (recordingOffset >= recordingCount) {
-                    Log.v(LOG_TAG, "Exceeded threshold");
-                    //inputs the first array
-                    System.arraycopy(recordingBufferMax, preRecordingCount, recordingBuffer, 0, recordingLength);
+                
+                //Continue to append frame until it reaches recording length
+                //(recordingOffset + numberRead < maxRecordingLength) prevent out of index when buffer exceeds max record length
+                if(recordingOffset < recordingEnd && recordingOffset + numberRead < maxRecordingLength){
+
+                    System.arraycopy(recordingFrame, 0, maxRecordingBuffer, recordingOffset, numberRead);
+                    recordingOffset += numberRead;
+                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + maxRecordingLength); 
+
+                //When buffer reaches recording length inference starts. Resets inference loop
+                } else if (recordingOffset >= recordingEnd && recordingOffset + numberRead < maxRecordingLength) {
+                    Log.v(LOG_TAG, "Recording reached threshold");
+
+                    System.arraycopy(recordingFrame, 0, maxRecordingBuffer, recordingOffset, numberRead);
+                    recordingOffset += numberRead;
+                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + maxRecordingLength); 
+                    
+                    System.arraycopy(maxRecordingBuffer, recordingStart, recordingBuffer, 0, recordingLength);
                     startRecognition();
-                    //Closes the recording if number of loops and recording length is exceeded.
-                    if (recordingOffset + numberRead >= maxRecordingLength) {
-                        Log.v(LOG_TAG, "Stop recording..");
-                        stopRecording();
-                        //set variable for stream to close, after recognition is finished.
-                        lastInferenceRun = true;
-                    } else {
-                        Log.v(LOG_TAG, "looping...");
-                        recordingCount += recordingLength;
-                        preRecordingCount += recordingLength;
-                    }
+
+                    Log.v(LOG_TAG, "Creating new threshold");
+                    recordingStart += recordingLength;
+                    recordingEnd += recordingLength;
+                   
+                //when buffer reaches max record length (recordingLength * numOfInference) start inference and stop recording
+                } else if  (recordingOffset >= recordingEnd && recordingOffset + numberRead == maxRecordingLength){
+                    Log.v(LOG_TAG, "Recording reached maximum threshold");
+
+                    System.arraycopy(maxRecordingBuffer, recordingStart, recordingBuffer, 0, recordingLength);
+                    startRecognition();
+
+                    stopRecording();
+                    lastInferenceRun = true;
+
+                //when buffer exeeds max record length, trim and resize the buffer, append, and then start inference
+                } else if(recordingOffset + numberRead > maxRecordingLength) {
+                    Log.v(LOG_TAG, "Recording exceeded maximum threshold");
+
+                    Log.v(LOG_TAG, "Trimming recording frame and appending to recordingLength");
+                    int missingRecordingLength = maxRecordingLength - recordingOffset - 1; 
+                    short [] resizedRecordingFrame = Arrays.copyOf(recordingFrame, missingRecordingLength);
+                    System.arraycopy(resizedRecordingFrame, 0, maxRecordingBuffer, recordingOffset, missingRecordingLength);
+                    Log.v(LOG_TAG, "Recording trimmed and appended at length: " + missingRecordingLength);
+                    Log.v(LOG_TAG, "recordingOffset: " + (recordingOffset + missingRecordingLength)+ "/" + maxRecordingLength); 
+
+                    System.arraycopy(maxRecordingBuffer, recordingStart, recordingBuffer, 0, recordingLength);
+                    startRecognition();
+
+                    stopRecording();
+                    lastInferenceRun = true;
+                } else {
+                    Log.v(LOG_TAG, "Something weird happened. Please report this issue");
+                    stopRecording();
+                    lastInferenceRun = true;
                 }
+
             } finally {
                 recordingBufferLock.unlock();
 
