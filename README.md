@@ -14,7 +14,7 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 
 4. **(Future feature)**  Audio Embeddings
 
-To keep this project alive, please consider maintaining or contributing new features for this project. A star is also appreciated.
+To keep this project alive, please consider maintaining or contributing new features to this project. A star is also appreciated.
 
 <br>
 
