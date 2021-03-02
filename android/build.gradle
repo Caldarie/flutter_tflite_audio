@@ -16,7 +16,7 @@ rootProject.allprojects {
     repositories {
         google()
         jcenter()
-        // mavenLocal()
+        mavenLocal()
     }
 }
 
@@ -26,9 +26,9 @@ android {
     compileSdkVersion 28
 
     defaultConfig {
-        // ndk {
-        //     abiFilters 'armeabi-v7a', 'arm64-v8a'
-        // }
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
         minSdkVersion 19
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
