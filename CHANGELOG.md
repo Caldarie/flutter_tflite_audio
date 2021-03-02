@@ -2,7 +2,7 @@
 * bufferSize no longer needs to be divisible to recording length. You can now use any number for bufferSize that you deem fit.
 
 ## 0.1.5+3
-* Fixed major android crash, where forcibly stopping the stream causes recorder.stop() to be prematurely called before recorder.start().
+* Fixed major android crash, where forcibly stopping the stream causes recorder.stop() to be prematurely called.
 * Fixed minor iOS crash, where forcibly stopping the stream during recognition returns a nil exception.
 * Cleaned up example for easy switch between decodedWav and Google's Teachable Machine model
 
