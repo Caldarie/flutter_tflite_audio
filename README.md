@@ -177,7 +177,7 @@ TfliteAudio.stopAudioRecognition();
 
   * recordingLength - determines the size of your tensor input. If the value is not equal to your tensor input, it will crash.
 
-  * bufferSize - Make sure this value is equal or below your recording length. To lower bufferSize, its important to divide its recording_length by 2. For example 44032, 22016, 11008, 5504... Be aware that a higher value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive. Remember that the optimal value varies depending on the device.
+  * bufferSize - Make sure this value is equal or below your recording length. Be aware that a higher value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive. Remember that the optimal value varies depending on the device.
     
 <br>
 
