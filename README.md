@@ -271,7 +271,7 @@ end
 
     f. Add: `-force_load $(SRCROOT)/Pods/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps`
 
-![](tflite-select-ops-installation.png)
+![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/tflite-select-ops-installation.png)
 
 
 6. Install the ops-select package to pod. To do this:
