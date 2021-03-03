@@ -411,8 +411,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
                     int missingRecordingLength = maxRecordingLength - recordingOffset - 1; 
                     short [] resizedRecordingFrame = Arrays.copyOf(recordingFrame, missingRecordingLength);
                     System.arraycopy(resizedRecordingFrame, 0, maxRecordingBuffer, recordingOffset, missingRecordingLength);
-                    Log.v(LOG_TAG, "Recording trimmed and appended at length: " + missingRecordingLength);
-                    Log.v(LOG_TAG, "recordingOffset: " + (recordingOffset + missingRecordingLength)+ "/" + maxRecordingLength); 
+                    Log.v(LOG_TAG, "Recording trimmed and appended at length: " + missingRecordingLength + 1);
+                    Log.v(LOG_TAG, "recordingOffset: " + (recordingOffset + missingRecordingLength + 1) + "/" + maxRecordingLength); 
 
                     System.arraycopy(maxRecordingBuffer, recordingStart, recordingBuffer, 0, recordingLength);
                     startRecognition();
