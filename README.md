@@ -53,7 +53,7 @@ Its possible that your device doesn't have enough time to record. Simply adjust 
 
 Please make sure that you have enabled ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
-If you tried above, please run the example on a device (not emulator). If you recieve this error on your own model and the one from tge example, its very likely that tgeres an issue with cocospod or Xcode configuratiom. Please check the issue [here](https://github.com/Caldarie/flutter_tflite_audio/issues/7)
+If you tried above, please run the example on a device (not emulator). If you still recieved this error, its very likely that theres an issue with cocoapod or Xcode configuration. Please check the [issue #7](https://github.com/Caldarie/flutter_tflite_audio/issues/7)
 
 If you recieved this error from your custom model (not GTM), its likely that you're using unsupported tensorflow features for tflite, as found in [issue #5](https://github.com/Caldarie/flutter_tflite_audio/issues/5#issuecomment-789260402). Forr more details, search [here](https://github.com/tensorflow/tensorflow/issues/44543)
 
