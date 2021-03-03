@@ -18,6 +18,8 @@ To keep this project alive, please consider being a contributer. Technology is a
 
 <br>
 
+Recording            |  Inference result
+:-------------------------:|:-------------------------:
 ![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/start.png) | ![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/finish.png)
 
 <br>
