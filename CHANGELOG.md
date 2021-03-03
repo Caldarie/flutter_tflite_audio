@@ -1,5 +1,8 @@
+## 0.1.6+1
+* Hotfixed missing value for recording.
+
 ## 0.1.6
-* bufferSize no longer needs to be divisible to recording length. You can now use any number for bufferSize that you deem fit.
+* bufferSize no longer needs to be divisible to recording length. 
 
 ## 0.1.5+3
 * Fixed major android crash, where forcibly stopping the stream causes recorder.stop() to be prematurely called.
