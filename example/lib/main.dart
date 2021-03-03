@@ -34,7 +34,7 @@ class _MyAppState extends State<MyApp> {
   // final String inputType = 'rawAudio';
   // final int sampleRate = 44100;
   // final int recordingLength = 44032;
-  // final int bufferSize = 22016;
+  // final int bufferSize = 22050;
   // final int numOfInferences = 1;
 
   @override
