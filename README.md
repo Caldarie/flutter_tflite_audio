@@ -1,5 +1,10 @@
 # TFlite Audio Plugin for Flutter
 
+[![pub package](https://img.shields.io/pub/v/tflite_audio.svg?label=version&color=blue)](https://pub.dev/packages/tflite_audio)
+[![likes](https://badges.bar/tflite_audio/likes)](https://pub.dev/packages/tflite_audio/score)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![style: effective dart](https://img.shields.io/badge/style-effective_dart-40c4ff.svg)](https://pub.dev/packages/effective_dart)
+
 This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support several model types:
 
 1. **(Beginner)** [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding.
