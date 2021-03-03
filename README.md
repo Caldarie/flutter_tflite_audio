@@ -5,10 +5,10 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 1. **(Beginner)** [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding.
 
 2. **(Advanced)** Supports models with decoded wave inputs. For more information on how to train your own model:
-* For a simple guide, take a look [here](https://www.tensorflow.org/tutorials/audio/simple_audio). (Model in tutorial not compatabile with this plugin)
-* For a detailed guide, take a look [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
-* To train a decoded wave with MFCC, take a look at the example [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
-* To train a raw model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
+   * For a simple guide, take a look [here](https://www.tensorflow.org/tutorials/audio/simple_audio). (Model in tutorial not compatabile with this plugin)
+   * For a detailed guide, take a look [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
+   * To train a decoded wave with MFCC, take a look at the example [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
+   * To train a raw model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
 
 3. **(Future feature)**  Model with mutliple outputs
 
