@@ -7,7 +7,7 @@
 
 <br>
 
-This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android.
+Audio classification Tflite package for flutter (iOS & Android). Can support Google Teachable Machine models. 
 
 To keep this project alive, please consider being a contributer. Technology is always evolving, and constant maintenance is required. A star is also appreciated.
 
