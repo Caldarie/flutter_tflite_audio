@@ -5,24 +5,6 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![style: effective dart](https://img.shields.io/badge/style-effective_dart-40c4ff.svg)](https://pub.dev/packages/effective_dart)
 
-This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support several model types:
-
-1. **(Beginner)** [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding.
-
-2. **(Advanced)** Supports models with decoded wave inputs. For more information on how to train your own model:
-   * For a simple guide, take a look [here](https://www.tensorflow.org/tutorials/audio/simple_audio). (Model in tutorial not compatabile with this plugin)
-   * For a detailed guide, take a look [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
-   * To train a decoded wave with MFCC, take a look at the example [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
-   * To train a raw model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
-
-3. **(Future feature)**  Adjustable input size
-
-4. **(Future feature)**  Model with mutliple outputs
-
-5. **(Future feature)**  Audio Embeddings
-
-To keep this project alive, please consider being a contributer. Technology is always evolving, and constant maintenance is required. A star is also appreciated.
-
 <br>
 
 Recording            |  Inference result
@@ -33,6 +15,7 @@ Recording            |  Inference result
 
 ## Table of Contents
 
+ * [About this plugin](#about-this-plugin)
  * [Known Issues](#known-issues)
  * [Please read if you are using Google's Teachable Machine. Otherwise skip.](#please-read-if-you-are-using-googles-teachable-machine-otherwise-skip)
  * [How to add tflite model and label to flutter](#how-to-add-tflite-model-and-label-to-flutter)
@@ -45,6 +28,30 @@ Recording            |  Inference result
  * [References](#references)
  
 <br>
+
+## About This Plugin
+
+This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support several model types:
+
+1. **(Beginner)** [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding.
+
+3. **(Intermediate)** Supports models with raw audio inputs. For more information on how to train your own model:
+  
+   * Simple guide [here](https://www.tensorflow.org/tutorials/audio/simple_audio). (Model in tutorial not compatabile with this plugin)
+   * To train a raw model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
+
+3. **(Advanced)** Supports models with decoded wave inputs. For more information on how to train your own model:
+
+   * Detailed guide [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
+   * To train a decoded wave with MFCC, take a look [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
+
+4. **(Future feature)**  Adjustable input size
+
+5. **(Future feature)**  Model with mutliple outputs
+
+6. **(Future feature)**  Audio Embeddings
+
+To keep this project alive, please consider being a contributer. Technology is always evolving, and constant maintenance is required. A star is also appreciated.
 
 ## Known Issues
 
