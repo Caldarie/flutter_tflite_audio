@@ -7,6 +7,12 @@
 
 <br>
 
+This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android.
+
+To keep this project alive, please consider being a contributer. Technology is always evolving, and constant maintenance is required. A star is also appreciated.
+
+<br>
+
 Recording            |  Inference result
 :-------------------------:|:-------------------------:
 ![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/finish.png) | ![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/start.png) 
@@ -31,7 +37,7 @@ Recording            |  Inference result
 
 ## About This Plugin
 
-This plugin allows you to use tflite to make audio/speech classifications. Supports iOS and Android. The plugin can support several model types:
+The plugin can support several model types:
 
 1. **(Beginner)** [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding.
 
@@ -50,8 +56,6 @@ This plugin allows you to use tflite to make audio/speech classifications. Suppo
 5. **(Future feature)**  Model with mutliple outputs
 
 6. **(Future feature)**  Audio Embeddings
-
-To keep this project alive, please consider being a contributer. Technology is always evolving, and constant maintenance is required. A star is also appreciated.
 
 ## Known Issues
 
