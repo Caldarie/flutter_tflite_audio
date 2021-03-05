@@ -99,7 +99,7 @@ Please make that your recording length matches your model input size. For exampl
 
 **BE AWARE:** Google's Teachable Machine requires [select tensorflow operators](https://www.tensorflow.org/lite/guide/ops_select#using_bazel_xcode) to work. This feature is experimental and will cause the following issues:
 
-1. Increase the overall size of your app. If this is unnacceptable for you, it's recommended that you build your own custom model using the [tutorial here](https://www.tensorflow.org/tutorials/audio/simple_audio) 
+1. Increase the overall size of your app. If this is unnacceptable for you, it's recommended that you build your own custom model. Tutorials can be found in the [About this plugin section](#about-this-plugin)
 
 2. Emulators for iOS do not work due to limited support for x86_64 architectures. You need to run your simulation on an actual device. Issue can be found [here](https://github.com/tensorflow/tensorflow/issues/44997)
   
