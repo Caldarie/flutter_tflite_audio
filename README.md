@@ -53,9 +53,11 @@ The plugin can support several model types:
 
 4. **(Future feature)**  Adjustable input size
 
-5. **(Future feature)**  Model with mutliple outputs
+5. **(Future feature)**  Spectogram as an input type
 
-6. **(Future feature)**  Audio Embeddings
+6. **(Future feature)**  Model with mutliple outputs
+
+7. **(Future feature)**  Audio Embeddings
 
 ## Known Issues
 
