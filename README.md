@@ -41,10 +41,7 @@ The plugin can support several model types:
 
 1. **(Beginner)** [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding.
 
-3. **(Intermediate)** Supports models with raw audio inputs. For more information on how to train your own model:
-  
-   * Simple guide [here](https://www.tensorflow.org/tutorials/audio/simple_audio). (Model in tutorial not compatabile with this plugin)
-   * To train a raw model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
+3. **(Intermediate)** Supports models with raw audio inputs. For more information on how to train your own model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
 
 3. **(Advanced)** Supports models with decoded wave inputs. For more information on how to train your own model:
 
@@ -53,7 +50,7 @@ The plugin can support several model types:
 
 4. **(Future feature)**  Adjustable input size
 
-5. **(Future feature)**  Spectogram as an input type
+5. **(Future feature)**  Spectogram as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
 
 6. **(Future feature)**  Model with mutliple outputs
 
