@@ -9,7 +9,9 @@
 
 Audio classification Tflite package for flutter (iOS & Android). Can support Google Teachable Machine models. 
 
-To keep this project alive, please consider being a contributer. Technology is always evolving, and constant maintenance is required. A star is also appreciated.
+If you are a complete newbie to audio classification, you can read the tutorial [here](https://carolinamalbuquerque.medium.com/audio-recognition-using-tensorflow-lite-in-flutter-application-8a4ad39964ae). Credit to [Carolina](https://github.com/cmalbuquerque) for writing a comprehensive article.
+
+To keep this project alive, please consider being a contributor. A star is also appreciated.
 
 <br>
 
@@ -41,9 +43,9 @@ The plugin can support several model types:
 
 1. **(Beginner)** [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding.
 
-3. **(Intermediate)** Supports models with raw audio inputs. For more information on how to train your own model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
+2. Supports models with raw audio inputs. For more information on how to train your own model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
 
-3. **(Advanced)** Supports models with decoded wave inputs. For more information on how to train your own model:
+3. Supports models with decoded wave inputs. For more information on how to train your own model:
 
    * Detailed guide [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
    * To train a decoded wave with MFCC, take a look [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
