@@ -9,7 +9,7 @@
 
 Audio classification Tflite package for flutter (iOS & Android). Can support Google Teachable Machine models. 
 
-If you are new to audio classification and would like to implement Google Teachable Machine models to your app, you can read the tutorial [here](https://carolinamalbuquerque.medium.com/audio-recognition-using-tensorflow-lite-in-flutter-application-8a4ad39964ae). Credit to [Carolina](https://github.com/cmalbuquerque) for writing a comprehensive article.
+If you are a complete newbie to audio classification, you can read the tutorial [here](https://carolinamalbuquerque.medium.com/audio-recognition-using-tensorflow-lite-in-flutter-application-8a4ad39964ae). Credit to [Carolina](https://github.com/cmalbuquerque) for writing a comprehensive article.
 
 To keep this project alive, please consider being a contributor. A star is also appreciated.
 
