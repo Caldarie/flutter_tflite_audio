@@ -1,3 +1,7 @@
+## 0.1.6+2
+* Fixed podsec error
+* Fixed iOS incompatability with fluter 2.0.0
+
 ## 0.1.6+1
 * Hotfixed missing value for recording.
 
