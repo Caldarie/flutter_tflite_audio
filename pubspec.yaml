@@ -1,6 +1,6 @@
 name: tflite_audio
 maintainer: Michael Nguyen
-description: Audio classification Tflite package for flutter (iOS & Android). Can support Google Teachable Machine models and decoded wave inputs. 
+description: Audio classification Tflite package for flutter (iOS & Android). Can support Google Teachable Machine models. 
 version: 0.1.6+2
 homepage: https://github.com/Caldarie/flutter_tflite_audio
 
