@@ -114,6 +114,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             if(events != nil){
                 print(dict!)
                 events(dict!)
+                self.events(FlutterEndOfEventStream)
             } 
         case .undetermined:
             print("requesting permission")
