@@ -1,3 +1,6 @@
+## 0.1.6+3
+* Fixed iOS bug where stream wont close when permission has been denied.
+
 ## 0.1.6+2
 * Fixed podsec error
 * Fixed iOS incompatability with fluter 2.0.0
