@@ -37,6 +37,14 @@ class _MyAppState extends State<MyApp> {
   // final int bufferSize = 22050;
   // final int numOfInferences = 1;
 
+  //!For advance users. Adjust this if your model has trouble picking up sounds
+  // final double detectionThreshold = 0.3;
+  // final int averageWindowDuration = 1000,
+  // final double detectionThreshold = 0.3,
+  // final int minimumTimeBetweenSamples = 30,
+  // final int suppressionTime = 1500,
+  // final int minimumCount = 3
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +65,11 @@ class _MyAppState extends State<MyApp> {
       sampleRate: this.sampleRate,
       recordingLength: this.recordingLength,
       bufferSize: this.bufferSize,
+      // detectionThreshold: this.detectionThreshold,
+      // averageWindowDuration: this.averageWindowDuration,
+      // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
+      // suppressionTime: this.suppressionTime,
+      // minimumCount: this.minimumCount,
     );
 
     ///Logs the results and assigns false when stream is finished.

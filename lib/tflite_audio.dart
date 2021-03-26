@@ -17,7 +17,12 @@ class TfliteAudio {
       int sampleRate,
       int recordingLength,
       int bufferSize,
-      int numOfInferences}) {
+      int numOfInferences,
+      int averageWindowDuration = 1000,
+      double detectionThreshold = 0.3,
+      int minimumTimeBetweenSamples = 30,
+      int suppressionTime = 1500,
+      int minimumCount = 3}) {
     final recognitionStream =
         _eventChannel.receiveBroadcastStream(<String, dynamic>{
       'inputType': inputType,
@@ -25,6 +30,11 @@ class TfliteAudio {
       'recordingLength': recordingLength,
       'bufferSize': bufferSize,
       'numOfInferences': numOfInferences,
+      'averageWindowDuration': averageWindowDuration,
+      'detectionThreshold': detectionThreshold,
+      'minimumTimeBetweenSamples': minimumTimeBetweenSamples,
+      'suppressionTime': suppressionTime,
+      'minimumCount': minimumCount
     });
 
     ///cast the result of the stream a map object.

@@ -53,20 +53,6 @@ import io.flutter.plugin.common.EventChannel.StreamHandler;
 
 public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, PluginRegistry.RequestPermissionsResultListener {
 
-    //constants that control the behaviour of the recognition code and model settings
-    //private static final int recordingLength = 16000;
-
-    // private static final int sampleRate = 16000;
-    //private static final int SAMPLE_DURATION_MS = 1000;
-    // private static final int recordingLength = (int) (sampleRate * SAMPLE_DURATION_MS / 1000);
-
-    //label smoothing variables
-    private static final long AVERAGE_WINDOW_DURATION_MS = 1000;
-    private static final float DETECTION_THRESHOLD = 0.50f;
-    private static final int SUPPRESSION_MS = 1500;
-    private static final int MINIMUM_COUNT = 3;
-    private static final long MINIMUM_TIME_BETWEEN_SAMPLES_MS = 30;
-
     //ui elements
     private static final String LOG_TAG = "Tflite_audio";
     private static final int REQUEST_RECORD_AUDIO = 13;
@@ -490,6 +476,18 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         float[][] floatOutputBuffer = new float[1][labels.size()];
         int[] sampleRateList = new int[]{sampleRate};
 
+        // get objects to convert to float and long
+        double detectObj = (double) arguments.get("detectionThreshold");
+        int avgWinObj = (int) arguments.get("averageWindowDuration");
+        int minTimeObj = (int) arguments.get("minimumTimeBetweenSamples");
+        
+        //labelsmoothing variables 
+        float detectionThreshold = (float)detectObj;
+        long averageWindowDuration = (long)avgWinObj;
+        long minimumTimeBetweenSamples = (long)minTimeObj;
+        int suppressionTime = (int) arguments.get("suppressionTime");
+        int minimumCount = (int) arguments.get("minimumCount");
+
 
         recordingBufferLock.lock();
         try {
@@ -517,11 +515,13 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         labelSmoothing =
                 new LabelSmoothing(
                         labels,
-                        AVERAGE_WINDOW_DURATION_MS,
-                        DETECTION_THRESHOLD,
-                        SUPPRESSION_MS,
-                        MINIMUM_COUNT,
-                        MINIMUM_TIME_BETWEEN_SAMPLES_MS);
+                        averageWindowDuration,
+                        detectionThreshold,
+                        suppressionTime,
+                        minimumCount,
+                        minimumTimeBetweenSamples);
+
+        
 
         long currentTime = System.currentTimeMillis();
         final LabelSmoothing.RecognitionResult recognitionResult =
@@ -556,7 +556,18 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         float[][] outputScores = new float[1][labels.size()];
         int[] sampleRateList = new int[]{sampleRate};
 
-
+        // get objects to convert to float and long
+        double detectObj = (double) arguments.get("detectionThreshold");
+        int avgWinObj = (int) arguments.get("averageWindowDuration");
+        int minTimeObj = (int) arguments.get("minimumTimeBetweenSamples");
+        
+        //labelsmoothing variables 
+        float detectionThreshold = (float)detectObj;
+        long averageWindowDuration = (long)avgWinObj;
+        long minimumTimeBetweenSamples = (long)minTimeObj;
+        int suppressionTime = (int) arguments.get("suppressionTime");
+        int minimumCount = (int) arguments.get("minimumCount");
+   
         recordingBufferLock.lock();
         try {
             int maxLength = recordingBuffer.length;
@@ -588,11 +599,11 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         labelSmoothing =
                 new LabelSmoothing(
                         labels,
-                        AVERAGE_WINDOW_DURATION_MS,
-                        DETECTION_THRESHOLD,
-                        SUPPRESSION_MS,
-                        MINIMUM_COUNT,
-                        MINIMUM_TIME_BETWEEN_SAMPLES_MS);
+                        averageWindowDuration,
+                        detectionThreshold,
+                        suppressionTime,
+                        minimumCount,
+                        minimumTimeBetweenSamples);
 
         long currentTime = System.currentTimeMillis();
         final LabelSmoothing.RecognitionResult recognitionResult =
