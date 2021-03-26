@@ -1,3 +1,6 @@
+## 0.1.7+1
+* Hotfixed iOS crash when casting double to float for detectionThreshold
+
 ## 0.1.7
 * Fixed iOS bug where stream wont close when permission has been denied.
 * Added feature to fix issue where models are insensitive to sound.

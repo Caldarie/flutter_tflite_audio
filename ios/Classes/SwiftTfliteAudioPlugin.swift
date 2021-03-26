@@ -274,10 +274,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
         }
         
+        let detectObj = arguments["detectionThreshold"] as! Double
+        let detectionThreshold = Float(detectObj)
         
         recognitionResult = LabelSmoothing(
             averageWindowDuration: arguments["averageWindowDuration"] as! Double,
-            detectionThreshold: arguments["detectionThreshold"] as! Float,
+            detectionThreshold: detectionThreshold,
             minimumTimeBetweenSamples: arguments["minimumTimeBetweenSamples"] as! Double,
             suppressionTime: arguments["suppressionTime"] as! Double,
             minimumCount: arguments["minimumCount"] as! Int,
