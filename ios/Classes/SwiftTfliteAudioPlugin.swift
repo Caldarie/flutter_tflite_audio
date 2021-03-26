@@ -36,14 +36,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     //label smooth variables
     private var recognitionResult: LabelSmoothing?
     private var labelArray: [String] = []
-    private let averageWindowDuration = 1000.0
-    private let minTimeBetweenSamples = 30.0
-    private let suppressionMs = 1500.0
-    private let minimumCount = 3
-    private let labelOffset = 2
-    
-    
-    
+
+
     init(registrar: FlutterPluginRegistrar) {
         self.registrar = registrar
     }
@@ -280,6 +274,16 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
         }
         
+        
+        recognitionResult = LabelSmoothing(
+            averageWindowDuration: arguments["averageWindowDuration"] as! Double,
+            detectionThreshold: arguments["detectionThreshold"] as! Float,
+            minimumTimeBetweenSamples: arguments["minimumTimeBetweenSamples"] as! Double,
+            suppressionTime: arguments["suppressionTime"] as! Double,
+            minimumCount: arguments["minimumCount"] as! Int,
+            classLabels: labelArray
+        )
+
         // Gets the formatted and averaged results.
         let scores = [Float32](unsafeData: outputTensor.data) ?? []
         let results = getResults(withScores: scores)
@@ -329,10 +333,18 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             outputTensor = try interpreter.output(at: 0)
             
             
-            
         } catch let error {
             print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
         }
+
+        recognitionResult = LabelSmoothing(
+            averageWindowDuration: arguments["averageWindowDuration"] as! Double,
+            detectionThreshold: arguments["detectionThreshold"] as! Float,
+            minimumTimeBetweenSamples: arguments["minimumTimeBetweenSamples"] as! Double,
+            suppressionTime: arguments["suppressionTime"] as! Double,
+            minimumCount: arguments["minimumCount"] as! Int,
+            classLabels: labelArray
+        )
         
         // Gets the formatted and averaged results.
         let scores = [Float32](unsafeData: outputTensor.data) ?? []
@@ -413,14 +425,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                 loadLabels(labelPath: labelPath!)
             }
         }
-        recognitionResult = LabelSmoothing(
-            averageWindowDuration: averageWindowDuration,
-            detectionThreshold: 0.3,
-            minimumTimeBetweenSamples: minTimeBetweenSamples,
-            suppressionTime: suppressionMs,
-            minimumCount: minimumCount,
-            classLabels: labelArray
-        )
+
     }
     
     //reads text files and retrieves values to string array

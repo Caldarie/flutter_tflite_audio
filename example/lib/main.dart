@@ -56,8 +56,8 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  /// get result by calling the future startAudioRecognition future
-  /// be sure to comment one of the other to switch model types.
+  /// get result by calling the stream startAudioRecognition
+  /// Uncomment the parameters below if you wish to adjust the values
   void getResult() {
     result = TfliteAudio.startAudioRecognition(
       numOfInferences: this.numOfInferences,
