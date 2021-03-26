@@ -182,6 +182,30 @@ TfliteAudio.startAudioRecognition(
       );
 ```
 
+Example for models that are too sensitive to sound or has trouble picking up sounds
+
+```dart
+TfliteAudio.startAudioRecognition(
+  numOfInferences: 1,
+  inputType: 'rawAudio',
+  sampleRate: 44100,
+  recordingLength: 44032,
+  bufferSize: 22016,
+  detectionThreshold: 0.3, //The higher the value, the less sensitive your model is to sound
+  averageWindowDuration = 1000,
+  minimumTimeBetweenSamples = 30,
+  suppressionTime = 1500,
+  minimumCount = 3
+  )
+    .listen(
+      //Do something here to collect data
+      )
+    .onDone(
+       //Do something here when stream closes
+      );
+```
+
+
 4. To forcibly cancel the stream and recognition while executing:
 
 ```dart
