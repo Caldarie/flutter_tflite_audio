@@ -11,7 +11,7 @@ Audio classification Tflite package for flutter (iOS & Android). Can support Goo
 
 If you are a complete newbie to audio classification, you can read the tutorial [here](https://carolinamalbuquerque.medium.com/audio-recognition-using-tensorflow-lite-in-flutter-application-8a4ad39964ae). Credit to [Carolina](https://github.com/cmalbuquerque) for writing a comprehensive article.
 
-To keep this project alive, please consider being a contributor. A star is also appreciated.
+To keep this project alive, consider giving a star or a like. Contributors are also welcome.
 
 <br>
 
