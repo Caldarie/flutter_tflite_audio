@@ -90,6 +90,16 @@ It seems like the latest tflite package for android is causing this issue. Until
 
 Please make that your recording length matches your model input size. For example, google's teachable machine requires recording length is 44032
 
+### **g) Inference always matches the sound to the first category/label listed
+
+Most likely, the detection threshold from this package is ignoring any predictions where it’s probability doesn’t exceed the set value. 
+
+For example:
+
+Given that your model's prediction for the label "yes" (40%) and "no" (10%) is lower than the detection threshold (50%), your prediction will be ignored. Hence the problem where the label matches the first label.
+
+To rectify this issue, you need to train more data into your model to improve its inference performance, or reduce the detection threshold to a lower value.
+
 <br>
 
 **If you have found any other issues not listed above, please create a new issue.**
@@ -150,11 +160,10 @@ Example for Google's Teachable Machine models
 
 ```dart
 TfliteAudio.startAudioRecognition(
-  numOfInferences: 1,
   inputType: 'rawAudio',
   sampleRate: 44100,
   recordingLength: 44032,
-  bufferSize: 22016,
+  bufferSize: 22050,
   )
     .listen(
       //Do something here to collect data
@@ -168,7 +177,6 @@ Example for decodedwav models
 
 ```dart
 TfliteAudio.startAudioRecognition(
-  numOfInferences: 1,
   inputType: 'decodedWav',
   sampleRate: 16000,
   recordingLength: 16000,
@@ -182,16 +190,16 @@ TfliteAudio.startAudioRecognition(
       );
 ```
 
-Example for models that are too sensitive to sound or has trouble picking up sounds
+Example for advanced users who want to utilise all parameters from this package. Note the values are default.
 
 ```dart
 TfliteAudio.startAudioRecognition(
-  numOfInferences: 1,
   inputType: 'rawAudio',
   sampleRate: 44100,
   recordingLength: 44032,
-  bufferSize: 22016,
-  detectionThreshold: 0.3, //The higher the value, the less sensitive your model is to sound
+  bufferSize: 22050,
+  numOfInferences: 1,
+  detectionThreshold: 0.3, 
   averageWindowDuration = 1000,
   minimumTimeBetweenSamples = 30,
   suppressionTime = 1500,
@@ -214,9 +222,9 @@ TfliteAudio.stopAudioRecognition();
 
 ## Rough guide on the parameters
   
-  * numThreads -  Higher threads will reduce inferenceTime. However, cpu usage will be higher.
+  * numThreads -  Higher threads will reduce inferenceTime. However, will utilise the more cpu resource.
   
-  * numOfInferences - determines how many times you want to repeat the inference.
+  * numOfInferences - determines how many times you want to repeat the inference per recording.
 
   * sampleRate - A higher sample rate will improve accuracy. Recommened values are 16000, 22050, 44100
 
@@ -224,6 +232,8 @@ TfliteAudio.stopAudioRecognition();
 
   * bufferSize - Make sure this value is equal or below your recording length. Be aware that a higher value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive. Remember that the optimal value varies depending on the device.
     
+  * detectionThreshold - Will ignore any predictions where its probability does not exceed the detection threshold. Useful for situations where you pickup unwanted/unintentional sounds. Lower the value if your model's performance isn't doing too well.
+
 <br>
 
 ## Android Installation & Permissions
