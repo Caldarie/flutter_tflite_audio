@@ -94,7 +94,7 @@ Please make that your recording length matches your model input size. For exampl
 
 Most likely, the detection threshold from this package is ignoring any predictions where it’s probability doesn’t exceed the set value. For example:
 
-Given that your model's prediction for the label "yes" (40%) and "no" (10%) is lower than the detection threshold (50%), your prediction will be ignored. Hence the problem where the label matches the first label.
+If your model's prediction for the label "yes" (40%) and "no" (10%) is lower than the detection threshold (50%), the output will be ignored. Hence the problem where the label matches the first label.
 
 To rectify this issue, you need to train more data into your model to improve its inference performance, or reduce the detection threshold to a lower value.
 
