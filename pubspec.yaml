@@ -1,11 +1,11 @@
 name: tflite_audio
 maintainer: Michael Nguyen
 description: Audio classification Tflite package for flutter (iOS & Android). Can support Google Teachable Machine models. 
-version: 0.1.7+1
+version: 0.1.8
 homepage: https://github.com/Caldarie/flutter_tflite_audio
 
 environment:
-  sdk: ">=2.1.0 <3.0.0"
+  sdk: '>=2.12.0 <3.0.0'
   flutter: ">=1.10.0 <2.0.0"
 
 dependencies:
@@ -13,7 +13,7 @@ dependencies:
     sdk: flutter
 
 dev_dependencies:
-  effective_dart: ^1.0.0
+  effective_dart: ^1.3.1
   
 flutter:
   plugin:

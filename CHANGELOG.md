@@ -1,3 +1,6 @@
+## 0.1.8
+* Added null safety compatability
+
 ## 0.1.7+1
 * Hotfixed iOS crash when casting double to float for detectionThreshold
 

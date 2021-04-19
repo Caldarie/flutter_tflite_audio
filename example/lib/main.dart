@@ -26,7 +26,6 @@ class _MyAppState extends State<MyApp> {
   final int sampleRate = 16000;
   final int recordingLength = 16000;
   final int bufferSize = 2000;
-  final int numOfInferences = 1;
 
   //!example values for google's teachable machine model
   // final String model = 'assets/google_teach_machine_model.tflite';
@@ -35,9 +34,13 @@ class _MyAppState extends State<MyApp> {
   // final int sampleRate = 44100;
   // final int recordingLength = 44032;
   // final int bufferSize = 22050;
-  // final int numOfInferences = 1;
 
-  //!For advance users. Adjust this if your model has trouble picking up sounds
+  //!Optional - Adjust values below to customise your inference
+  // final int numOfInferences = 1;
+  // numThreads: 1,
+  // isAsset: true,
+
+  //!Optional - Adjust the values below if your model's accuracy is performing poorly
   // final double detectionThreshold = 0.3;
   // final int averageWindowDuration = 1000,
   // final double detectionThreshold = 0.3,
@@ -49,8 +52,8 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     TfliteAudio.loadModel(
-      numThreads: 1,
-      isAsset: true,
+      // numThreads: this.numThreads,
+      // isAsset: this.isAsset,
       model: this.model,
       label: this.label,
     );
@@ -60,7 +63,7 @@ class _MyAppState extends State<MyApp> {
   /// Uncomment the parameters below if you wish to adjust the values
   void getResult() {
     result = TfliteAudio.startAudioRecognition(
-      numOfInferences: this.numOfInferences,
+      // numOfInferences: this.numOfInferences,
       inputType: this.inputType,
       sampleRate: this.sampleRate,
       recordingLength: this.recordingLength,

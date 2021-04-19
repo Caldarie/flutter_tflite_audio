@@ -13,11 +13,11 @@ class TfliteAudio {
   /// 2. int inferenceTime
   /// 3. bool hasPermission
   static Stream<Map<dynamic, dynamic>> startAudioRecognition(
-      {String inputType,
-      int sampleRate,
-      int recordingLength,
-      int bufferSize,
-      int numOfInferences,
+      {required String inputType,
+      required int sampleRate,
+      required int recordingLength,
+      required int bufferSize,
+      int numOfInferences = 1,
       int averageWindowDuration = 1000,
       double detectionThreshold = 0.3,
       int minimumTimeBetweenSamples = 30,
@@ -51,7 +51,10 @@ class TfliteAudio {
 
   ///initialize [loadModel] before calling any other streams and futures.
   static Future loadModel(
-      {String model, String label, int numThreads, bool isAsset}) async {
+      {required String model,
+      required String label,
+      int numThreads = 1,
+      bool isAsset = true}) async {
     return _channel.invokeMethod(
       'loadModel',
       {
