@@ -92,9 +92,7 @@ Please make that your recording length matches your model input size. For exampl
 
 ### **g) Inference always matches the sound to the first category/label listed.**
 
-Most likely, the detection threshold from this package is ignoring any predictions where it’s probability doesn’t exceed the set value. 
-
-For example:
+Most likely, the detection threshold from this package is ignoring any predictions where it’s probability doesn’t exceed the set value. For example:
 
 Given that your model's prediction for the label "yes" (40%) and "no" (10%) is lower than the detection threshold (50%), your prediction will be ignored. Hence the problem where the label matches the first label.
 
