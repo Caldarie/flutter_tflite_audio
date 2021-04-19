@@ -90,7 +90,7 @@ It seems like the latest tflite package for android is causing this issue. Until
 
 Please make that your recording length matches your model input size. For example, google's teachable machine requires recording length is 44032
 
-### **g) Inference always matches the sound to the first category/label listed
+### **g) Inference always matches the sound to the first category/label listed.**
 
 Most likely, the detection threshold from this package is ignoring any predictions where it’s probability doesn’t exceed the set value. 
 
