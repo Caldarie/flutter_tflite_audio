@@ -66,9 +66,22 @@ You need to configures permissions and dependencies to use this plugin. Please f
 * [Android installation & permissions](#android-installation--permissions)
 * [iOS installation & permissions](#ios-installation--permissions)
 
-### **b) Inference isn't accurate** 
+### **b) Inference always matches the sound to the first category/label listed.**
 
-Its possible that your device doesn't have enough time to record. Simply adjust the bufferSize to a lower value. Likewise, if your bufferSize is too low, the recording length will be too long and your model may possibly register it as background noise. Simply adjust the bufferSize to a higher value.
+There are two possibilties:
+
+#### The first possibility is that the detection threshold from this package is ignoring any predictions where it’s probability doesn’t exceed the set value. For example:
+
+If your model's prediction for the label "yes" (40%) and "no" (10%) is lower than the detection threshold (50%), the output will be ignored. Hence the problem where the label matches the first label.
+
+To rectify this issue, you need to train more data into your model to improve its inference performance, or reduce the detection threshold to a lower value.
+
+#### The second possibility may be due to bufferSize.
+
+Be aware that a higher bufferSize doesn't allow your device enough time to record, hence the problem where it always match the first category. To fix this, simply adjust the bufferSize to a lower value.
+
+Likewise, if your bufferSize is too low, the recording length will be too long and your model may possibly register it as background noise. Simply adjust the bufferSize to a higher value.
+
 
 ### **c) TensorFlow Lite Error: Regular TensorFlow ops are not supported by this interpreter. Make sure you apply/link the Flex delegate before inference** 
 
@@ -89,14 +102,6 @@ It seems like the latest tflite package for android is causing this issue. Until
 ### **f) Failed to invoke the interpreter with error: Provided data count (number) must match the required count (number).** 
 
 Please make that your recording length matches your model input size. For example, google's teachable machine requires recording length is 44032
-
-### **g) Inference always matches the sound to the first category/label listed.**
-
-Most likely, the detection threshold from this package is ignoring any predictions where it’s probability doesn’t exceed the set value. For example:
-
-If your model's prediction for the label "yes" (40%) and "no" (10%) is lower than the detection threshold (50%), the output will be ignored. Hence the problem where the label matches the first label.
-
-To rectify this issue, you need to train more data into your model to improve its inference performance, or reduce the detection threshold to a lower value.
 
 <br>
 
