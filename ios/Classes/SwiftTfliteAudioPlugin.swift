@@ -341,7 +341,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
 
         recognitionResult = LabelSmoothing(
             averageWindowDuration: arguments["averageWindowDuration"] as! Double,
-            detectionThreshold: arguments["detectionThreshold"] as! Float,
+            detectionThreshold: Float(arguments["detectionThreshold"] as! NSNumber),
             minimumTimeBetweenSamples: arguments["minimumTimeBetweenSamples"] as! Double,
             suppressionTime: arguments["suppressionTime"] as! Double,
             minimumCount: arguments["minimumCount"] as! Int,
