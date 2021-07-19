@@ -442,40 +442,67 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
                         new Runnable() {
                             @Override
                             public void run() {
-                                String inputType = (String) arguments.get("inputType");
-                                Log.v(LOG_TAG, "inputType: " + inputType);
-                                switch (inputType) {
-                                    case "decodedWav": 
-                                        decodedWaveRecognize();
-                                        break;
-                                    case "rawAudio":
-                                        rawAudioRecognize();
-                                        break;
-                                }
-                           
+                                recognize();                       
                             }
                         });
         recognitionThread.start();
     }
 
 
-    private void rawAudioRecognize() {
-        Log.v(LOG_TAG, "events is null. Breaking recognition");
+    private void recognize() {
+        Log.v(LOG_TAG, "Recognition started.");
 
          //catches null exception.
          if(events == null){
-            Log.v(LOG_TAG, "events is null");
+            Log.v(LOG_TAG, "events is null. Breaking recognition");
             return;
         }
 
-        int sampleRate = (int) arguments.get("sampleRate");
+        int[] inputShape = tfLite.getInputTensor(0).shape();
+        String inputShapeMsg = Arrays.toString(inputShape);
+        Log.v(LOG_TAG, "Input shape: " + inputShapeMsg);
+
+        String inputType = (String) arguments.get("inputType");
         int recordingLength = (int) arguments.get("recordingLength");
+        int sampleRate = (int) arguments.get("sampleRate");
 
-        short[] inputBuffer = new short[recordingLength];
-        float[][] floatInputBuffer = new float[1][recordingLength];
+       //determine rawAudio or decodedWav input
+        float[][] floatInputBuffer = {};
+        int[] sampleRateList = {};
         float[][] floatOutputBuffer = new float[1][labels.size()];
-        int[] sampleRateList = new int[]{sampleRate};
+        short[] inputBuffer = new short[recordingLength]; 
 
+        //Used for multiple input and outputs (decodedWav)
+        Object[] inputArray = {};
+        Map<Integer, Object> outputMap = new HashMap<>();
+
+        switch (inputType) {
+            case "decodedWav": 
+                Log.v(LOG_TAG, "InputType: " + inputType);
+                floatInputBuffer = new float[recordingLength][1];
+                sampleRateList = new int[]{sampleRate};
+                
+                inputArray = new Object[]{floatInputBuffer, sampleRateList};        
+                outputMap.put(0, floatOutputBuffer);
+            break;
+
+            case "rawAudio":
+                Log.v(LOG_TAG, "InputType: " + inputType);
+                if(inputShape[0] > inputShape[1] && inputShape[1] == 1){
+                    //[recordingLength, 1]
+                    floatInputBuffer = new float[recordingLength][1];
+                   
+                }else if(inputShape[0] < inputShape[1] && inputShape[0] == 1){
+                    //[1, recordingLength]
+                    floatInputBuffer = new float[1][recordingLength];
+                }
+                // else{
+                //     throw new Exception("input shape: " + inputShapeMsg + " does not match with rawAudio");
+                // } 
+            break;
+    }
+
+       
         // get objects to convert to float and long
         double detectObj = (double) arguments.get("detectionThreshold");
         int avgWinObj = (int) arguments.get("averageWindowDuration");
@@ -488,7 +515,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         int suppressionTime = (int) arguments.get("suppressionTime");
         int minimumCount = (int) arguments.get("minimumCount");
 
-
         recordingBufferLock.lock();
         try {
             int maxLength = recordingBuffer.length;
@@ -496,20 +522,35 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         } finally {
             recordingBufferLock.unlock();
         }
+  
 
-        // We need to feed in float values between -1.0 and 1.0, so divide the
-        // signed 16-bit inputs.
-        for (int i = 0; i < recordingLength; ++i) {
-            floatInputBuffer[0][i] = inputBuffer[i] / 32767.0f;
-        }
-
-        // Calculate inference time
         long startTime = new Date().getTime();
-        tfLite.run(floatInputBuffer, floatOutputBuffer);
-        lastProcessingTimeMs = new Date().getTime() - startTime;
+        switch (inputType) {
+            case "decodedWav": 
+                // We need to feed in float values between -1.0 and 1.0, so divide the
+                // signed 16-bit inputs.
+                for (int i = 0; i < recordingLength; ++i) {
+                    floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f;
+                }
+
+                tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
+                lastProcessingTimeMs = new Date().getTime() - startTime;
+            break;
+
+            case "rawAudio":
+                // We need to feed in float values between -1.0 and 1.0, so divide the
+                 // signed 16-bit inputs.
+                for (int i = 0; i < recordingLength; ++i) {
+                    floatInputBuffer[0][i] = inputBuffer[i] / 32767.0f;
+                }
+
+                tfLite.run(floatInputBuffer, floatOutputBuffer);
+                lastProcessingTimeMs = new Date().getTime() - startTime;
+            break;
+    }
 
         // debugging purposes
-        // Log.v(LOG_TAG, "OUTPUT======> " + Arrays.toString(floatOutputBuffer[0]));
+        Log.v(LOG_TAG, "Raw Scores: " + Arrays.toString(floatOutputBuffer[0]));
         // Log.v(LOG_TAG, Long.toString(lastProcessingTimeMs));
 
         labelSmoothing =
@@ -537,88 +578,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         stopRecognition();
     }
 
-
- 
-    private void decodedWaveRecognize() {
-        Log.v(LOG_TAG, "Recognition started.");
-        
-        //catches null exception.
-        if(events == null){
-            Log.v(LOG_TAG, "events is null. Breaking recognition");
-            return;
-        }
-
-        int sampleRate = (int) arguments.get("sampleRate");
-        int recordingLength = (int) arguments.get("recordingLength");
-
-        short[] inputBuffer = new short[recordingLength];
-        float[][] floatInputBuffer = new float[recordingLength][1];
-        float[][] outputScores = new float[1][labels.size()];
-        int[] sampleRateList = new int[]{sampleRate};
-
-        // get objects to convert to float and long
-        double detectObj = (double) arguments.get("detectionThreshold");
-        int avgWinObj = (int) arguments.get("averageWindowDuration");
-        int minTimeObj = (int) arguments.get("minimumTimeBetweenSamples");
-        
-        //labelsmoothing variables 
-        float detectionThreshold = (float)detectObj;
-        long averageWindowDuration = (long)avgWinObj;
-        long minimumTimeBetweenSamples = (long)minTimeObj;
-        int suppressionTime = (int) arguments.get("suppressionTime");
-        int minimumCount = (int) arguments.get("minimumCount");
-   
-        recordingBufferLock.lock();
-        try {
-            int maxLength = recordingBuffer.length;
-            System.arraycopy(recordingBuffer, 0, inputBuffer, 0, maxLength);
-        } finally {
-            recordingBufferLock.unlock();
-        }
-
-        // We need to feed in float values between -1.0 and 1.0, so divide the
-        // signed 16-bit inputs.
-        for (int i = 0; i < recordingLength; ++i) {
-            floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f;
-        }
-
-        //Create the input and output tensors to feed the model
-        Object[] inputArray = {floatInputBuffer, sampleRateList};
-        Map<Integer, Object> outputMap = new HashMap<>();
-        outputMap.put(0, outputScores);
-
-        // Calculate inference time
-        long startTime = new Date().getTime();
-        tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
-        lastProcessingTimeMs = new Date().getTime() - startTime;
-
-        //debugging purposes
-        // Log.v(LOG_TAG, "OUTPUT======> " + Arrays.toString(outputScores[0]));
-        // Log.v(LOG_TAG, Long.toString(lastProcessingTimeMs));
-
-        labelSmoothing =
-                new LabelSmoothing(
-                        labels,
-                        averageWindowDuration,
-                        detectionThreshold,
-                        suppressionTime,
-                        minimumCount,
-                        minimumTimeBetweenSamples);
-
-        long currentTime = System.currentTimeMillis();
-        final LabelSmoothing.RecognitionResult recognitionResult =
-                labelSmoothing.processLatestResults(outputScores[0], currentTime);
-
-        //Map score and inference time
-        Map<String, Object> finalResults = new HashMap();
-        finalResults.put("recognitionResult", recognitionResult.foundCommand);
-        finalResults.put("inferenceTime", lastProcessingTimeMs);
-        finalResults.put("hasPermission", true);
-
-        getResult(finalResults);
-        stopRecognition();
-    }
-
     //passes map to from platform to flutter.
     public void getResult(Map<String, Object> recognitionResult) {
 
@@ -630,8 +589,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
             }
         });
     }
-
-
 
     public void stopRecognition() {
         // if recognitThread hasn't been called. The function will break
