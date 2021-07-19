@@ -35,18 +35,18 @@ class _MyAppState extends State<MyApp> {
   // final int recordingLength = 44032;
   // final int bufferSize = 22050;
 
-  //!Optional - Adjust values below to customise your inference
+  //!Optional parameters you can adjust to modify your interence.
+  // final int numThreads = 1;
   // final int numOfInferences = 1;
-  // numThreads: 1,
-  // isAsset: true,
+  // final bool isAsset = true;
 
-  //!Optional - Adjust the values below if your model's accuracy is performing poorly
+  //!Adjust the values below when tuning model detection.
   // final double detectionThreshold = 0.3;
-  // final int averageWindowDuration = 1000,
-  // final double detectionThreshold = 0.3,
-  // final int minimumTimeBetweenSamples = 30,
-  // final int suppressionTime = 1500,
-  // final int minimumCount = 3
+  // final int averageWindowDuration = 1000;
+  // final double detectionThreshold = 0.3;
+  // final int minimumTimeBetweenSamples = 30;
+  // final int suppressionTime = 1500;
+  // final int minimumCount = 3;
 
   @override
   void initState() {
