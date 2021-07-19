@@ -18,11 +18,11 @@ class TfliteAudio {
       required int recordingLength,
       required int bufferSize,
       int numOfInferences = 1,
-      int averageWindowDuration = 1000,
+      int averageWindowDuration = 0,
       double detectionThreshold = 0.3,
-      int minimumTimeBetweenSamples = 30,
-      int suppressionTime = 1500,
-      int minimumCount = 3}) {
+      int minimumTimeBetweenSamples = 0,
+      int suppressionTime = 0,
+      int minimumCount = 0}) {
     final recognitionStream =
         _eventChannel.receiveBroadcastStream(<String, dynamic>{
       'inputType': inputType,
