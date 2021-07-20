@@ -39,7 +39,6 @@ class LabelSmoothing {
   // MARK: Constants
   private let averageWindowDuration: Double
   private let suppressionTime: Double
-  private let minimumCount: Int
   private let minimumTimeBetweenSamples: Double
   private let detectionThreshold: Float
   private let classLabels: [String]
@@ -54,12 +53,11 @@ class LabelSmoothing {
   /**
    Initializes LabelSmoothing with specified parameters.
    */
-  init(averageWindowDuration: Double, detectionThreshold: Float, minimumTimeBetweenSamples: Double, suppressionTime: Double, minimumCount: Int, classLabels: [String]) {
+  init(averageWindowDuration: Double, detectionThreshold: Float, minimumTimeBetweenSamples: Double, suppressionTime: Double, classLabels: [String]) {
     self.averageWindowDuration = averageWindowDuration
     self.detectionThreshold = detectionThreshold
     self.minimumTimeBetweenSamples = minimumTimeBetweenSamples
     self.suppressionTime = suppressionTime
-    self.minimumCount = minimumCount
     self.classLabels = classLabels
   }
 

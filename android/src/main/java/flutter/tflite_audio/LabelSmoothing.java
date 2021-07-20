@@ -16,7 +16,6 @@ public class LabelSmoothing {
     private long averageWindowDurationMs;
     private float detectionThreshold;
     private int suppressionMs;
-    private int minimumCount;
     private long minimumTimeBetweenSamplesMs;
 
     // Working variables.
@@ -34,13 +33,11 @@ public class LabelSmoothing {
             long inAverageWindowDurationMs,
             float inDetectionThreshold,
             int inSuppressionMS,
-            int inMinimumCount,
             long inMinimumTimeBetweenSamplesMS) {
         labels = inLabels;
         averageWindowDurationMs = inAverageWindowDurationMs;
         detectionThreshold = inDetectionThreshold;
         suppressionMs = inSuppressionMS;
-        minimumCount = inMinimumCount;
         labelsCount = inLabels.size();
         previousTopLabel = SILENCE_LABEL;
         previousTopLabelTime = Long.MIN_VALUE;

@@ -513,7 +513,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         long averageWindowDuration = (long)avgWinObj;
         long minimumTimeBetweenSamples = (long)minTimeObj;
         int suppressionTime = (int) arguments.get("suppressionTime");
-        int minimumCount = (int) arguments.get("minimumCount");
 
         recordingBufferLock.lock();
         try {
@@ -559,7 +558,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
                         averageWindowDuration,
                         detectionThreshold,
                         suppressionTime,
-                        minimumCount,
                         minimumTimeBetweenSamples);
 
         
