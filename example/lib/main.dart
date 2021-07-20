@@ -63,11 +63,11 @@ class _MyAppState extends State<MyApp> {
   /// Uncomment the parameters below if you wish to adjust the values
   void getResult() {
     result = TfliteAudio.startAudioRecognition(
-      // numOfInferences: this.numOfInferences,
       inputType: this.inputType,
       sampleRate: this.sampleRate,
       recordingLength: this.recordingLength,
       bufferSize: this.bufferSize,
+      // numOfInferences: this.numOfInferences,
       // detectionThreshold: this.detectionThreshold,
       // averageWindowDuration: this.averageWindowDuration,
       // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,

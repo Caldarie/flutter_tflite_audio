@@ -17,9 +17,9 @@ class TfliteAudio {
       required int sampleRate,
       required int recordingLength,
       required int bufferSize,
+      double detectionThreshold = 0.3,
       int numOfInferences = 1,
       int averageWindowDuration = 0,
-      double detectionThreshold = 0.3,
       int minimumTimeBetweenSamples = 0,
       int suppressionTime = 0,
       int minimumCount = 0}) {
