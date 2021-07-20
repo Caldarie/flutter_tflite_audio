@@ -160,7 +160,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let sampleRate = arguments["sampleRate"] as! Int
         let recordingLength = arguments["recordingLength"] as! Int
         let numOfInferences = arguments["numOfInferences"] as! Int
-        let inputType = arguments["inputType"] as! String
         
         let maxRecordingLength = recordingLength * numOfInferences
         let recordingFrameBuffer = bufferSize/2 
@@ -209,15 +208,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                     
                     if(recordingBuffer.count >= recordingCount){
                         print("reached threshold")
-                        switch inputType{
-                            case "decodedWav":
-                                self.runDecodedWaveModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
-                            case "rawAudio":
-                                self.runRawAudioModel(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
-                            default:
-                                fatalError("inputType does not match the values decodedWav or rawAudio")
 
-                        }
+                        self.recognize(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
+             
                         if(recordingBuffer.count >= maxRecordingLength){
                             self.stopAudioRecognition()
                         }else{
@@ -245,7 +238,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
     }
     
-    func runRawAudioModel(onBuffer buffer: [Int16]){
+    func recognize(onBuffer buffer: [Int16]){
         print("Running model")
 
         if(events == nil){
@@ -255,13 +248,26 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
        
         var interval: TimeInterval!
         var outputTensor: Tensor!
+        let inputType = arguments["inputType"] as! String
         
         do {
             // Copy the `[Int16]` buffer data as an array of `Float`s to the audio buffer input `Tensor`'s.
             let audioBufferData = Data(copyingBufferOf: buffer.map { Float($0) / maxInt16AsFloat32 })
             try interpreter.copy(audioBufferData, toInputAt: 0)
-          
-            
+
+            if(inputType != "decodedWav" && inputType != "rawAudio"){
+                assertionFailure("Input type does not match decodedWav or rawAudio")
+            }
+
+            if(inputType == "decodedWav"){
+                    let sampleRate = arguments["sampleRate"] as! Int
+
+                     // Copy the sample rate data to the sample rate input `Tensor`.
+                    var rate = Int32(sampleRate)
+                    let sampleRateData = Data(bytes: &rate, count: MemoryLayout.size(ofValue: rate))
+                    try interpreter.copy(sampleRateData, toInputAt: 1)
+            }
+
             // Calculate inference time
             let startDate = Date()
             try interpreter.invoke() //required!!! Do not touch
@@ -273,16 +279,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         } catch let error {
             print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
         }
-        
-        let detectObj = arguments["detectionThreshold"] as! Double
-        let detectionThreshold = Float(detectObj)
-        
+    
         recognitionResult = LabelSmoothing(
             averageWindowDuration: arguments["averageWindowDuration"] as! Double,
-            detectionThreshold: detectionThreshold,
+            detectionThreshold: Float(arguments["detectionThreshold"] as! NSNumber),
             minimumTimeBetweenSamples: arguments["minimumTimeBetweenSamples"] as! Double,
             suppressionTime: arguments["suppressionTime"] as! Double,
-            minimumCount: arguments["minimumCount"] as! Int,
             classLabels: labelArray
         )
 
@@ -291,8 +293,10 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let results = getResults(withScores: scores)
         let roundInterval = interval.rounded();
         let finalResults = Result(recognitionResult: results, inferenceTime: roundInterval, hasPermission: true)
-        // print(scores.count)
-        // dump(scores)
+        
+        // Model testing
+        print("Raw Label Scores:")
+        dump(scores)
 
         // Convert results to dictionary and then json
         let dict = finalResults.dictionary
@@ -302,66 +306,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         }
     }   
 
-    
-    // func runModel(onBuffer buffer: [Int16]) -> Result? {
-    func runDecodedWaveModel(onBuffer buffer: [Int16]){
-        print("Running model")
-
-        if(events == nil){
-            print("events is null. Breaking recognition")
-            return
-        }
-
-        let sampleRate = arguments["sampleRate"] as! Int
-        var interval: TimeInterval!
-        var outputTensor: Tensor!
-        
-        do {
-            // Copy the `[Int16]` buffer data as an array of `Float`s to the audio buffer input `Tensor`'s.
-            let audioBufferData = Data(copyingBufferOf: buffer.map { Float($0) / maxInt16AsFloat32 })
-            try interpreter.copy(audioBufferData, toInputAt: 0)
-
-            // Copy the sample rate data to the sample rate input `Tensor`.
-            var rate = Int32(sampleRate)
-            let sampleRateData = Data(bytes: &rate, count: MemoryLayout.size(ofValue: rate))
-            try interpreter.copy(sampleRateData, toInputAt: 1)
-            
-            // Calculate inference time
-            let startDate = Date()
-            try interpreter.invoke() //required!!! Do not touch
-            interval = Date().timeIntervalSince(startDate) * 1000
-            
-            // Get the output `Tensor` to process the inference results.
-            outputTensor = try interpreter.output(at: 0)
-            
-            
-        } catch let error {
-            print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
-        }
-
-        recognitionResult = LabelSmoothing(
-            averageWindowDuration: arguments["averageWindowDuration"] as! Double,
-            detectionThreshold: Float(arguments["detectionThreshold"] as! NSNumber),
-            minimumTimeBetweenSamples: arguments["minimumTimeBetweenSamples"] as! Double,
-            suppressionTime: arguments["suppressionTime"] as! Double,
-            minimumCount: arguments["minimumCount"] as! Int,
-            classLabels: labelArray
-        )
-        
-        // Gets the formatted and averaged results.
-        let scores = [Float32](unsafeData: outputTensor.data) ?? []
-        let results = getResults(withScores: scores)
-        let roundInterval = interval.rounded();
-        let finalResults = Result(recognitionResult: results, inferenceTime: roundInterval, hasPermission: true)
-
-        //Convert results to dictionary and then json
-        let dict = finalResults.dictionary
-        if(events != nil){
-            print("results: \(dict!)")
-            events(dict!)        
-        }
-    }   
-    
+      
     // private func getResults(withScores scores: [Float]) -> RecognitionResult? {
     private func getResults(withScores scores: [Float]) -> String? {
                 
