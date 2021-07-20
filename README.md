@@ -41,22 +41,27 @@ Recording            |  Inference result
 
 The plugin can support several model types:
 
-1. **(Beginner)** [Google Teachable Machine](https://teachablemachine.withgoogle.com/train/audio), which requires little ML knowledge and coding.
+1. Models from Google Teachable Machine
 
-2. Supports models with raw audio inputs. For more information on how to train your own model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
+   * For beginners with little to no machine learning knowledge. You can read can read the tutorial [here](https://carolinamalbuquerque.medium.com/audio-recognition-using-tensorflow-lite-in-flutter-application-8a4ad39964ae) if you are a newbie.
+   * Training can be done [here](https://teachablemachine.withgoogle.com/train/audio) 
 
-3. Supports models with decoded wave inputs. For more information on how to train your own model:
+2. Raw audio inputs. 
 
-   * Detailed guide [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
+   * Can recognize the following inputs: float32[recordingLength, 1] or float32[1, recordingLength]
+   * For more information on how to train your own model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
+
+3. Supports models with decoded wave inputs. 
+
+   * Supports two inputs: float32[recordingLength, 1] and int32[1]
+   * For more information on how to train your own model. Take a look [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
    * To train a decoded wave with MFCC, take a look [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
 
-4. **(Future feature)**  Adjustable input size
 
-5. **(Future feature)**  Spectogram as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
+4. **(Future feature)**  Spectogram as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
 
-6. **(Future feature)**  Model with mutliple outputs
+5. **(Future feature)**  Yamnet Models
 
-7. **(Future feature)**  Audio Embeddings
 
 ## Known Issues
 
@@ -206,7 +211,6 @@ TfliteAudio.startAudioRecognition(
   averageWindowDuration = 1000,
   minimumTimeBetweenSamples = 30,
   suppressionTime = 1500,
-  minimumCount = 3
   )
     .listen(
       //Do something here to collect data
@@ -227,15 +231,21 @@ TfliteAudio.stopAudioRecognition();
   
   * numThreads -  Higher threads will reduce inferenceTime. However, will utilise the more cpu resource.
   
-  * numOfInferences - determines how many times you want to repeat the inference per recording.
+  * numOfInferences - determines how many times you want to loop the recording and inference. 
 
-  * sampleRate - A higher sample rate will improve accuracy. Recommened values are 16000, 22050, 44100
+  * sampleRate - A higher sample rate may improve accuracy. Recommened values are 16000, 22050, 44100
 
   * recordingLength - determines the size of your tensor input. If the value is not equal to your tensor input, it will crash.
 
   * bufferSize - Make sure this value is equal or below your recording length. Be aware that a higher value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive. Remember that the optimal value varies depending on the device.
     
   * detectionThreshold - Will ignore any predictions where its probability does not exceed the detection threshold. Useful for situations where you pickup unwanted/unintentional sounds. Lower the value if your model's performance isn't doing too well.
+
+  * suppressionMs - If your detection triggers too early, the result may be poor or inaccurate. Adjust the values to avoid this situation.
+
+  * averageWindowDurationMs - Use to remove earlier results that are too old.
+
+  * minimumTimeBetweenSamples - Ignore any results that are coming in too frequently
 
 <br>
 
