@@ -17,23 +17,23 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   final isRecording = ValueNotifier<bool>(false);
-  Stream<Map<dynamic, dynamic>> result;
+  Stream<Map<dynamic, dynamic>>? result;
 
-  //!example values for decodedwav models
-  final String model = 'assets/decoded_wav_model.tflite';
-  final String label = 'assets/decoded_wav_label.txt';
-  final String inputType = 'decodedWav';
-  final int sampleRate = 16000;
-  final int recordingLength = 16000;
-  final int bufferSize = 2000;
+  // //!example values for decodedwav models
+  // final String model = 'assets/decoded_wav_model.tflite';
+  // final String label = 'assets/decoded_wav_label.txt';
+  // final String inputType = 'decodedWav';
+  // final int sampleRate = 16000;
+  // final int recordingLength = 16000;
+  // final int bufferSize = 2000;
 
   //!example values for google's teachable machine model
-  // final String model = 'assets/google_teach_machine_model.tflite';
-  // final String label = 'assets/google_teach_machine_label.txt';
-  // final String inputType = 'rawAudio';
-  // final int sampleRate = 44100;
-  // final int recordingLength = 44032;
-  // final int bufferSize = 22050;
+  final String model = 'assets/google_teach_machine_model.tflite';
+  final String label = 'assets/google_teach_machine_label.txt';
+  final String inputType = 'rawAudio';
+  final int sampleRate = 44100;
+  final int recordingLength = 44032;
+  final int bufferSize = 22050;
 
   //!Optional parameters you can adjust to modify your interence.
   // final int numThreads = 1;
@@ -74,7 +74,7 @@ class _MyAppState extends State<MyApp> {
 
     ///Logs the results and assigns false when stream is finished.
     result
-        .listen((event) => log(event.toString()))
+        ?.listen((event) => log(event.toString()))
         .onDone(() => isRecording.value = false);
   }
 
@@ -177,12 +177,12 @@ class _MyAppState extends State<MyApp> {
   }
 
   ///  If snapshot data matches the label, it will change colour
-  Widget labelListWidget(List<String> labelList, [String result]) {
+  Widget labelListWidget(List<String>? labelList, [String? result]) {
     return Center(
         child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
-            children: labelList.map((labels) {
+            children: labelList!.map((labels) {
               if (labels == result) {
                 return Padding(
                     padding: const EdgeInsets.all(5.0),
