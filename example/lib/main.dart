@@ -20,20 +20,20 @@ class _MyAppState extends State<MyApp> {
   Stream<Map<dynamic, dynamic>>? result;
 
   // //!example values for decodedwav models
-  // final String model = 'assets/decoded_wav_model.tflite';
-  // final String label = 'assets/decoded_wav_label.txt';
-  // final String inputType = 'decodedWav';
-  // final int sampleRate = 16000;
-  // final int recordingLength = 16000;
-  // final int bufferSize = 2000;
+  final String model = 'assets/decoded_wav_model.tflite';
+  final String label = 'assets/decoded_wav_label.txt';
+  final String inputType = 'decodedWav';
+  final int sampleRate = 16000;
+  final int recordingLength = 16000;
+  final int bufferSize = 2000;
 
   //!example values for google's teachable machine model
-  final String model = 'assets/google_teach_machine_model.tflite';
-  final String label = 'assets/google_teach_machine_label.txt';
-  final String inputType = 'rawAudio';
-  final int sampleRate = 44100;
-  final int recordingLength = 44032;
-  final int bufferSize = 22050;
+  // final String model = 'assets/google_teach_machine_model.tflite';
+  // final String label = 'assets/google_teach_machine_label.txt';
+  // final String inputType = 'rawAudio';
+  // final int sampleRate = 44100;
+  // final int recordingLength = 44032;
+  // final int bufferSize = 22050;
 
   //!Optional parameters you can adjust to modify your interence.
   // final int numThreads = 1;
