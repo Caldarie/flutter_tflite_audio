@@ -1,5 +1,8 @@
+## 0.1.8+2
+* Fixed null safety incompatability with example 
+
 ## 0.1.8+1
-* Fix the problem with bridge NSNumber to Float
+* Fixed the problem with bridge NSNumber to Float
 * Merged rawAudioRecognize() and decodedWavRecognize() on native platforms
 * Set detection parameters to 0 for better performance.
 
