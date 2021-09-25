@@ -40,22 +40,28 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.Date;
 
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.view.FlutterMain;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry; //required for onRequestPermissionsResult
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
 
 
-public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, PluginRegistry.RequestPermissionsResultListener {
+public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, FlutterPlugin, ActivityAware, PluginRegistry.RequestPermissionsResultListener {
 
     //ui elements
     private static final String LOG_TAG = "Tflite_audio";
     private static final int REQUEST_RECORD_AUDIO = 13;
+    private static TfliteAudioPlugin instance;
     private Handler handler = new Handler(Looper.getMainLooper());
 
     //working recording variables
@@ -78,27 +84,76 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
     private LabelSmoothing labelSmoothing = null;
 
     //flutter
-    private final Registrar registrar;
+    // private final Registrar registrar;
+    private AssetManager assetManager;
+    private Activity activity;
+    private Context applicationContext;
+    private MethodChannel methodChannel;
+    private EventChannel eventChannel;
+
+    //android to flutter variables
     private HashMap arguments;
     private Result result;
     private EventSink events;
 
+    static Activity getActivity() {
+        return instance.activity;
+      }
+    
+      public TfliteAudioPlugin() {
+        instance = this;
+      }
 
-    //initialises register variable with a constructor
-    private TfliteAudioPlugin(Registrar registrar) {
-        this.registrar = registrar;
+    @Override
+    public void onAttachedToEngine(FlutterPluginBinding binding) {
+      onAttachedToEngine(binding.getApplicationContext(), binding.getBinaryMessenger());
     }
 
-    public static void registerWith(Registrar registrar) {
-        TfliteAudioPlugin tfliteAudioPlugin = new TfliteAudioPlugin(registrar);
+    private void onAttachedToEngine(Context applicationContext, BinaryMessenger messenger) {
+        this.applicationContext = applicationContext;
+        this.assetManager = applicationContext.getAssets();
 
-        final MethodChannel channel = new MethodChannel(registrar.messenger(), "tflite_audio");
-        channel.setMethodCallHandler(tfliteAudioPlugin);
+        this.methodChannel = new MethodChannel(messenger, "tflite_audio");
+        this.methodChannel.setMethodCallHandler(this);
 
-        final EventChannel eventChannel = new EventChannel(registrar.messenger(), "startAudioRecognition");
-        eventChannel.setStreamHandler(tfliteAudioPlugin);
+        this.eventChannel = new EventChannel(messenger, "startAudioRecognition");
+        this.eventChannel.setStreamHandler(this);
 
-        registrar.addRequestPermissionsResultListener(tfliteAudioPlugin);
+    }
+
+    @Override
+    public void onDetachedFromEngine(FlutterPluginBinding binding) {
+        this.applicationContext = null;
+        this.assetManager = null;
+
+        this.methodChannel.setMethodCallHandler(null);
+        this.methodChannel = null;
+
+        this.eventChannel.setStreamHandler(null);
+        this.eventChannel = null;
+    }
+
+
+    public void onAttachedToActivity(ActivityPluginBinding binding) {
+        // onAttachedToActivity(binding.getActivity());
+        this.activity = binding.getActivity();
+        binding.addRequestPermissionsResultListener(this);
+    }
+
+    // @Override
+    public void onDetachedFromActivityForConfigChanges() {
+      this.activity = null;
+    }
+  
+    // @Override
+    public void onReattachedToActivityForConfigChanges(ActivityPluginBinding activityPluginBinding) {
+      this.activity = activityPluginBinding.getActivity();
+      activityPluginBinding.addRequestPermissionsResultListener(this);
+    }
+
+    // @Override
+    public void onDetachedFromActivity() {
+      this.activity = null;
     }
 
 
@@ -145,10 +200,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         boolean isAsset = isAssetObj == null ? false : (boolean) isAssetObj;
         MappedByteBuffer buffer = null;
         String key = null;
-        AssetManager assetManager = null;
         if (isAsset) {
-            assetManager = registrar.context().getAssets();
-            key = registrar.lookupKeyForAsset(model);
+            key = FlutterMain.getLookupKeyForAsset(model);
             AssetFileDescriptor fileDescriptor = assetManager.openFd(key);
             FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
             FileChannel fileChannel = inputStream.getChannel();
@@ -173,7 +226,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
 
         if (labels.length() > 0) {
             if (isAsset) {
-                key = registrar.lookupKeyForAsset(labels);
+                key = FlutterMain.getLookupKeyForAsset(labels);
                 loadLabels(assetManager, key);
             } else {
                 loadLabels(null, labels);
@@ -204,13 +257,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
 
 
     private void checkPermissions() {
-        //int hasStoragePerm = pm.checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, context.getPackageName());
-        //        boolean hasPermissions = hasStoragePerm == PackageManager.PERMISSION_GRANTED
-//                && hasRecordPerm == PackageManager.PERMISSION_GRANTED;
         Log.d(LOG_TAG, "Check for permissions");
-        Context context = registrar.context();
-        PackageManager pm = context.getPackageManager();
-        int hasRecordPerm = pm.checkPermission(Manifest.permission.RECORD_AUDIO, context.getPackageName());
+        PackageManager pm = applicationContext.getPackageManager();
+        int hasRecordPerm = pm.checkPermission(Manifest.permission.RECORD_AUDIO, applicationContext.getPackageName());
         boolean hasPermissions = hasRecordPerm == PackageManager.PERMISSION_GRANTED;
         if (hasPermissions) {
             startRecording();
@@ -222,12 +271,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
 
     private void requestMicrophonePermission() {
         Log.d(LOG_TAG, "Permission requested.");
-        Activity activity = registrar.activity();
+        Activity activity = TfliteAudioPlugin.getActivity();
         ActivityCompat.requestPermissions(activity,
                 new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
     }
 
-    @Override
+    // @Override
     public boolean onRequestPermissionsResult(
             int requestCode, String[] permissions, int[] grantResults) {
         //if request is cancelled, result arrays will be empty
@@ -258,7 +307,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
     public void showRationaleDialog(String title, String message) {
 
         runOnUIThread(() -> {
-            Activity activity = registrar.activity();
+            Activity activity = TfliteAudioPlugin.getActivity();
             AlertDialog.Builder builder = new AlertDialog.Builder(activity);
             builder.setTitle(title);
             builder.setMessage(message);
