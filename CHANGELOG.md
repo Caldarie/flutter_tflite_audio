@@ -1,3 +1,7 @@
+## 0.1.9
+* Added support for android V2 embedding
+* Breaking change - no longer supports deprecated versions of Android (pre 1.12)
+
 ## 0.1.8+2
 * Fixed null safety incompatability with example 
 
