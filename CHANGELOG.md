@@ -1,3 +1,7 @@
+## 0.2.0
+* Fixed crashed on Android when force stopping recognition
+* Improve recognition latency on android by reducing number of event calls.
+
 ## 0.1.9
 * Added support for android V2 embedding
 * Breaking change - no longer supports deprecated versions of Android (pre 1.12)

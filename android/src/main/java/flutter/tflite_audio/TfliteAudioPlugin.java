@@ -84,17 +84,30 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private LabelSmoothing labelSmoothing = null;
 
     //flutter
-    // private final Registrar registrar;
     private AssetManager assetManager;
     private Activity activity;
     private Context applicationContext;
     private MethodChannel methodChannel;
     private EventChannel eventChannel;
-
-    //android to flutter variables
-    private HashMap arguments;
-    private Result result;
     private EventSink events;
+
+    //recording variables
+    private int bufferSize;
+    private int sampleRate;
+    private int recordingLength;
+    private int numOfInferences;
+    private String inputType;
+
+    // get objects to convert to float and long
+    private double detectObj;
+    private int avgWinObj;
+    private int minTimeObj;
+    
+    //labelsmoothing variables 
+    private float detectionThreshold;
+    private long averageWindowDuration;
+    private long minimumTimeBetweenSamples;
+    private int suppressionTime;
 
     static Activity getActivity() {
         return instance.activity;
@@ -158,14 +171,15 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
 
     @Override
-    public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-        this.arguments = (HashMap) call.arguments;
-        this.result = result;
+    public void onMethodCall(@NonNull MethodCall call, @NonNull Result _result) {
+        HashMap arguments = (HashMap) call.arguments;
+        Result result = _result;
+
         switch (call.method) {
             case "loadModel":
                 Log.d(LOG_TAG, "loadModel");
                 try {
-                    loadModel();
+                    loadModel(arguments);
                 } catch (Exception e) {
                     result.error("failed to load model", e.getMessage(), e);
                 }
@@ -181,9 +195,29 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
 
     @Override
-    public void onListen(Object arguments, EventSink events) {
+    public void onListen(Object _arguments, EventSink events) {
+        HashMap arguments = (HashMap) _arguments;
+
         this.events = events;
-        this.arguments = (HashMap) arguments;
+
+        //load recording variables
+        this.bufferSize = (int) arguments.get("bufferSize");
+        this.sampleRate = (int) arguments.get("sampleRate");
+        this.recordingLength = (int) arguments.get("recordingLength");
+        this.numOfInferences = (int) arguments.get("numOfInferences");
+        this.inputType = (String) arguments.get("inputType");
+
+        // get objects to convert to float and long
+        this.detectObj = (double) arguments.get("detectionThreshold");
+        this.avgWinObj = (int) arguments.get("averageWindowDuration");
+        this.minTimeObj = (int) arguments.get("minimumTimeBetweenSamples");
+        
+        //load labelsmoothing variables 
+        this.detectionThreshold = (float)detectObj;
+        this.averageWindowDuration = (long)avgWinObj;
+        this.minimumTimeBetweenSamples = (long)minTimeObj;
+        this.suppressionTime = (int) arguments.get("suppressionTime");
+
         checkPermissions();
     }
 
@@ -193,7 +227,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     }
 
 
-    private void loadModel() throws IOException {
+    private void loadModel(HashMap arguments) throws IOException {
         String model = arguments.get("model").toString();
         Log.d(LOG_TAG, "model name is: " + model);
         Object isAssetObj = arguments.get("isAsset");
@@ -232,6 +266,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 loadLabels(null, labels);
             }
         }
+
     }
 
     private void loadLabels(AssetManager assetManager, String path) {
@@ -353,11 +388,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     private void record() {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
-
-        final int bufferSize = (int) arguments.get("bufferSize");
-        final int sampleRate = (int) arguments.get("sampleRate");
-        final int recordingLength = (int) arguments.get("recordingLength");
-        final int numOfInferences = (int) arguments.get("numOfInferences");
 
         //Adjust recording length should numOfiNferences increase
         int maxRecordingLength = recordingLength * numOfInferences;
@@ -511,10 +541,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         String inputShapeMsg = Arrays.toString(inputShape);
         Log.v(LOG_TAG, "Input shape: " + inputShapeMsg);
 
-        String inputType = (String) arguments.get("inputType");
-        int recordingLength = (int) arguments.get("recordingLength");
-        int sampleRate = (int) arguments.get("sampleRate");
-
        //determine rawAudio or decodedWav input
         float[][] floatInputBuffer = {};
         int[] sampleRateList = {};
@@ -551,17 +577,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             break;
     }
 
-       
-        // get objects to convert to float and long
-        double detectObj = (double) arguments.get("detectionThreshold");
-        int avgWinObj = (int) arguments.get("averageWindowDuration");
-        int minTimeObj = (int) arguments.get("minimumTimeBetweenSamples");
-        
-        //labelsmoothing variables 
-        float detectionThreshold = (float)detectObj;
-        long averageWindowDuration = (long)avgWinObj;
-        long minimumTimeBetweenSamples = (long)minTimeObj;
-        int suppressionTime = (int) arguments.get("suppressionTime");
 
         recordingBufferLock.lock();
         try {
