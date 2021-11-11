@@ -4,9 +4,9 @@ https://github.com/flutter/plugins/blob/f93314bb3779ebb0151bc326a0e515ca5f46533c
 */
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tflite_audio/tflite_audio.dart';
-import 'package:flutter/services.dart';
 
 final List<MethodCall> log = <MethodCall>[];
 const MethodChannel channel = MethodChannel('tflite_audio');
