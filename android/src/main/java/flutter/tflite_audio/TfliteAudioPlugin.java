@@ -21,6 +21,7 @@ import android.os.Handler;
 import androidx.core.app.ActivityCompat;
 import androidx.annotation.NonNull;
 
+import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
 
 import java.util.concurrent.CompletableFuture; //required to get value from thread
@@ -97,6 +98,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private int recordingLength;
     private int numOfInferences;
     private String inputType;
+    private String customInput;
 
     // get objects to convert to float and long
     private double detectObj;
@@ -206,6 +208,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         this.recordingLength = (int) arguments.get("recordingLength");
         this.numOfInferences = (int) arguments.get("numOfInferences");
         this.inputType = (String) arguments.get("inputType");
+        this.customInput = (String) arguments.get("customInput");
 
         // get objects to convert to float and long
         this.detectObj = (double) arguments.get("detectionThreshold");
@@ -217,6 +220,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         this.averageWindowDuration = (long)avgWinObj;
         this.minimumTimeBetweenSamples = (long)minTimeObj;
         this.suppressionTime = (int) arguments.get("suppressionTime");
+
+        Log.d(LOG_TAG, customInput.toString());
 
         checkPermissions();
     }
@@ -537,28 +542,89 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             return;
         }
 
+        //first input 
         int[] inputShape = tfLite.getInputTensor(0).shape();
-        String inputShapeMsg = Arrays.toString(inputShape);
-        Log.v(LOG_TAG, "Input shape: " + inputShapeMsg);
+        Log.v(LOG_TAG, "Recording Input shape: " + Arrays.toString(inputShape));
 
-       //determine rawAudio or decodedWav input
+        //determine rawAudio or decodedWav input
         float[][] floatInputBuffer = {};
         int[] sampleRateList = {};
         float[][] floatOutputBuffer = new float[1][labels.size()];
         short[] inputBuffer = new short[recordingLength]; 
+
+        //second input
+        // Float [] secondFloatInput = {};
+        // int [] secondIntInput = {};
+
+        String[] secondInputToStrArray = {};
+        float[][] floatInputBuffer2 = {};
+        int[] secondInputShape = {};
+        int secondInputLength = 0;
+        DataType secondInputDataType;
 
         //Used for multiple input and outputs (decodedWav)
         Object[] inputArray = {};
         Map<Integer, Object> outputMap = new HashMap<>();
 
         switch (inputType) {
+
+            case "customInput": 
+                Log.v(LOG_TAG, "InputType: " + inputType);
+
+                secondInputShape = tfLite.getInputTensor(1).shape();
+                secondInputToStrArray = customInput.split(",");
+                // secondInputLength = tfLite.getInputTensor(1).shape().length;
+                secondInputLength = secondInputShape[1];
+                secondInputDataType = tfLite.getInputTensor(1).dataType();
+
+                // float[][] floatInputBuffer2 = {};
+                // int[] secondInputShape = tfLite.getInputTensor(1).shape();
+                // int secondInputLength = tfLite.getInputTensor(1).shape().length;
+                // DataType secondInputDataType = tfLite.getInputTensor(1).dataType();
+                // Class inputDataType = tfLite.getInputTensor(1).shape().getClass().getComponentType();
+                // String inputType = tfLite.getInputTensor(1).shape().getClass(); Arrats
+                
+                // //TODO cast float or int
+                // String[] customInputToStrArray = customInput.split(",");
+
+                // // ArrayList<Float> customInputToFloatArray = new ArrayList<>();
+              
+                // for(String strValue : customInputToStrArray ) {
+                //     secondFloatInput.add(Float.valueOf(strValue));
+                // }
+
+    
+                Log.v(LOG_TAG, "Second Input Value: " + Arrays.toString(secondInputToStrArray));
+                Log.v(LOG_TAG, "Second Input shape: " +  Arrays.toString(secondInputShape));
+                Log.v(LOG_TAG, "second Input length: " +  secondInputLength);
+                Log.v(LOG_TAG, "Second Input data type: " +  secondInputDataType);
+                
+
+                    //First Input
+                if(inputShape[0] > inputShape[1] && inputShape[1] == 1){
+                    floatInputBuffer = new float[recordingLength][1];
+                    
+                }else if(inputShape[0] < inputShape[1] && inputShape[0] == 1){
+                    floatInputBuffer = new float[1][recordingLength];
+                }
+
+                //Second Input
+                //Will ignore 1D inputs. e.g. int32[1]. 
+                //Will only work with 2d inputs e.g. [1, 8] or [8, 1]
+                if(secondInputShape[0] > secondInputShape[1] && secondInputShape[1] == 1){
+                    floatInputBuffer2 = new float[secondInputLength][1];
+                   
+                }else if(secondInputShape[0] < secondInputShape[1] && secondInputShape[0] == 1){
+                    floatInputBuffer2 = new float[1][secondInputLength];
+                }
+                
+                
+            break;
+
             case "decodedWav": 
                 Log.v(LOG_TAG, "InputType: " + inputType);
                 floatInputBuffer = new float[recordingLength][1];
                 sampleRateList = new int[]{sampleRate};
-                
-                inputArray = new Object[]{floatInputBuffer, sampleRateList};        
-                outputMap.put(0, floatOutputBuffer);
             break;
 
             case "rawAudio":
@@ -588,7 +654,50 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
   
 
         long startTime = new Date().getTime();
+
         switch (inputType) {
+
+            case "customInput": 
+            // We need to feed in float values between -1.0 and 1.0, so divide the
+            // signed 16-bit inputs.
+            for (int i = 0; i < recordingLength; ++i) {
+                if(inputShape[0] > inputShape[1] && inputShape[1] == 1){
+                    //[recordingLength, 1]
+                    floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f;
+                   
+                }else if(inputShape[0] < inputShape[1] && inputShape[0] == 1){
+                    //[1, recordingLength]
+                    floatInputBuffer[0][i] = inputBuffer[i] / 32767.0f;
+                }
+            }
+
+
+            for (int i = 0; i < secondInputLength; ++i) {
+                if(secondInputShape[0] > secondInputShape[1] && secondInputShape[1] == 1){
+                    //[8, 1]
+                    Log.v(LOG_TAG, "[6,1]");
+                    floatInputBuffer2[i][0] = Float.parseFloat(secondInputToStrArray[i]);
+                    
+
+                }else if(secondInputShape[0] < secondInputShape[1] && secondInputShape[0] == 1){
+                    Log.v(LOG_TAG, "[1,6]");
+                    floatInputBuffer2[0][i] = Float.parseFloat(secondInputToStrArray[i]);
+                
+                }
+            }
+
+            // Log.v(LOG_TAG, "FloatInputBuffer: " +  Arrays.deepToString(floatInputBuffer));
+            Log.v(LOG_TAG, "FloatInputBuffer2: " +  Arrays.deepToString(floatInputBuffer2));
+
+                inputArray = new Object[]{floatInputBuffer, floatInputBuffer2};
+                outputMap.put(0, floatOutputBuffer);  //multiple input and output requires a map
+                //!TODO - add dynamic output (map or float array)
+                //!TODO - add ability to run multiple or single inputs
+                tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
+                // tfLite.run(inputArray, floatOutputBuffer);
+                lastProcessingTimeMs = new Date().getTime() - startTime;
+            break;
+
             case "decodedWav": 
                 // We need to feed in float values between -1.0 and 1.0, so divide the
                 // signed 16-bit inputs.
@@ -596,6 +705,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f;
                 }
 
+                inputArray = new Object[]{floatInputBuffer, sampleRateList};        
+                outputMap.put(0, floatOutputBuffer);  //multiple input and output requires a map
                 tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
                 lastProcessingTimeMs = new Date().getTime() - startTime;
             break;
@@ -604,7 +715,15 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 // We need to feed in float values between -1.0 and 1.0, so divide the
                  // signed 16-bit inputs.
                 for (int i = 0; i < recordingLength; ++i) {
-                    floatInputBuffer[0][i] = inputBuffer[i] / 32767.0f;
+                    
+                    if(inputShape[0] > inputShape[1] && inputShape[1] == 1){
+                        //[recordingLength, 1]
+                        floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f;
+                       
+                    }else if(inputShape[0] < inputShape[1] && inputShape[0] == 1){
+                        //[1, recordingLength]
+                        floatInputBuffer[0][i] = inputBuffer[i] / 32767.0f;
+                    }
                 }
 
                 tfLite.run(floatInputBuffer, floatOutputBuffer);

@@ -19,13 +19,22 @@ class _MyAppState extends State<MyApp> {
   final isRecording = ValueNotifier<bool>(false);
   Stream<Map<dynamic, dynamic>>? result;
 
-  // //!example values for decodedwav models
-  final String model = 'assets/decoded_wav_model.tflite';
-  final String label = 'assets/decoded_wav_label.txt';
-  final String inputType = 'decodedWav';
-  final int sampleRate = 16000;
-  final int recordingLength = 16000;
-  final int bufferSize = 2000;
+  //!example values for customInput models
+  final String model = 'assets/BirdNET_6K_GLOBAL_MODEL.tflite';
+  final String label = 'assets/BirdNET_6K_GLOBAL_MODEL.txt';
+  final String inputType = 'customInput';
+  final int sampleRate = 44000;
+  final int recordingLength = 144000;
+  final int bufferSize = 72000;
+  final String customInput = '53.7958, 13.43394, -1, 1, 1, 0';
+
+  //!example values for decodedwav models
+  // final String model = 'assets/decoded_wav_model.tflite';
+  // final String label = 'assets/decoded_wav_label.txt';
+  // final String inputType = 'decodedWav';
+  // final int sampleRate = 16000;
+  // final int recordingLength = 16000;
+  // final int bufferSize = 2000;
 
   //!example values for google's teachable machine model
   // final String model = 'assets/google_teach_machine_model.tflite';
@@ -65,6 +74,7 @@ class _MyAppState extends State<MyApp> {
       sampleRate: this.sampleRate,
       recordingLength: this.recordingLength,
       bufferSize: this.bufferSize,
+      customInput: this.customInput,
       // numOfInferences: this.numOfInferences,
       // detectionThreshold: this.detectionThreshold,
       // averageWindowDuration: this.averageWindowDuration,
@@ -79,13 +89,20 @@ class _MyAppState extends State<MyApp> {
   }
 
   //fetches the labels from the text file in assets
+  // Future<List<String>> fetchLabelList() async {
+  //   List<String> _labelList = [];
+  //   await rootBundle.loadString(this.label).then((q) {
+  //     for (String i in LineSplitter().convert(q)) {
+  //       _labelList.add(i);
+  //     }
+  //   });
+  //   return _labelList;
+  // }
+
   Future<List<String>> fetchLabelList() async {
-    List<String> _labelList = [];
-    await rootBundle.loadString(this.label).then((q) {
-      for (String i in LineSplitter().convert(q)) {
-        _labelList.add(i);
-      }
-    });
+    List<String> _labelList = [
+      "Abeillia abeillei_Emerald-chinned Hummingbird, Abroscopus albogularis_Rufous-faced Warbler"
+    ];
     return _labelList;
   }
 

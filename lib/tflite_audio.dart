@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+// ignore: avoid_classes_with_only_static_members
 /// Class which manages the future and stream for the plugins
 class TfliteAudio {
   static const MethodChannel _channel = MethodChannel('tflite_audio');
@@ -17,6 +18,7 @@ class TfliteAudio {
       required int sampleRate,
       required int recordingLength,
       required int bufferSize,
+      String customInput = '',
       double detectionThreshold = 0.3,
       int numOfInferences = 1,
       int averageWindowDuration = 0,
@@ -28,6 +30,7 @@ class TfliteAudio {
       'sampleRate': sampleRate,
       'recordingLength': recordingLength,
       'bufferSize': bufferSize,
+      'customInput': customInput,
       'numOfInferences': numOfInferences,
       'averageWindowDuration': averageWindowDuration,
       'detectionThreshold': detectionThreshold,
