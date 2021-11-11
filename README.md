@@ -57,7 +57,13 @@ The plugin can support several model types:
    * For more information on how to train your own model. Take a look [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
    * To train a decoded wave with MFCC, take a look [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
 
-5. **(Currently working on feature)** Raw audio with additional dynamic inputs. [Take a look here for work on progress](https://github.com/Caldarie/flutter_tflite_audio/tree/experimental_dynamic_input)
+4. **(Currently working on feature)** Raw audio with additional dynamic inputs. [Take a look here for work on progress](https://github.com/Caldarie/flutter_tflite_audio/tree/experimental_dynamic_input)
+
+    * Supports two inputs: float32[recordingLength, 1] and float32[dynamic input, 1] 
+    * Also supports reverse inputs: float32[1, recordingLength] and float32[1, dynamic input] 
+    * Will support dynamic outputs
+    * Will add dynamic support for different input/output data types
+    * Add support on iOS
 
 5. **(Future feature)**  Spectogram as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
 
