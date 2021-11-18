@@ -236,7 +236,8 @@ TfliteAudio.stopAudioRecognition();
   
   * numThreads -  Higher threads will reduce inferenceTime. However, will utilise the more cpu resource.
   
-  * numOfInferences - determines how many times you want to loop the recording and inference. 
+  * numOfInferences - determines how many times you want to loop the recording and inference. For example:
+`numOfInference = 3` will repeat the recording three times, so recording length will be (1 to 2 seconds) x 3 = (3 to 6 seconds). Also the model will output the scores three times.
 
   * sampleRate - A higher sample rate may improve accuracy. Recommened values are 16000, 22050, 44100
 
