@@ -169,43 +169,61 @@ import 'package:tflite_audio/tflite_audio.dart';
 
 3. To start and listen to the stream for inference results:
 
-Example for Google's Teachable Machine models
+  * a) Declare stream value
+```dart
+Stream<Map<dynamic, dynamic>> recognitionStream;
+```
+
+   * b) Assign TfliteAudio.startAudioRecognition to stream
+```dart
+recognitionStream = TfliteAudio.startAudioRecognition(
+  inputType: 'rawAudio',
+  sampleRate: 44100,
+  recordingLength: 44032,
+  bufferSize: 22050,
+  )
+```
+
+   * c) Listen for results 
+```dart
+String result = '';
+int inferenceTime = 0;
+
+recognitionStream.listen((event){
+      result = event["inferenceTime"];
+      inferenceTime = event["recognitionResult"];
+      })
+    .onDone(
+       //Do something here when stream closes
+     );
+```
+
+4. To forcibly cancel recognition stream
+```dart
+TfliteAudio.stopAudioRecognition();
+```
+
+5. Adjust parameters according to model type 
 
 ```dart
+//Example for Google's Teachable Machine models
 TfliteAudio.startAudioRecognition(
   inputType: 'rawAudio',
   sampleRate: 44100,
   recordingLength: 44032,
   bufferSize: 22050,
   )
-    .listen(
-      //Do something here to collect data
-      )
-    .onDone(
-       //Do something here when stream closes
-      );
-```
-
-Example for decodedwav models
-
-```dart
+  
+//Example for decodedWav
 TfliteAudio.startAudioRecognition(
   inputType: 'decodedWav',
   sampleRate: 16000,
   recordingLength: 16000,
   bufferSize: 2000,
   )
-    .listen(
-      //Do something here to collect data
-      )
-    .onDone(
-       //Do something here when stream closes
-      );
-```
-
-Example for advanced users who want to utilise all parameters from this package. Note the values are default.
-
-```dart
+  
+//Example for advanced users who want to utilise all parameters from this package. 
+//Note the values are default.
 TfliteAudio.startAudioRecognition(
   inputType: 'rawAudio',
   sampleRate: 44100,
@@ -217,19 +235,6 @@ TfliteAudio.startAudioRecognition(
   minimumTimeBetweenSamples = 30,
   suppressionTime = 1500,
   )
-    .listen(
-      //Do something here to collect data
-      )
-    .onDone(
-       //Do something here when stream closes
-      );
-```
-
-
-4. To forcibly cancel the stream and recognition while executing:
-
-```dart
-TfliteAudio.stopAudioRecognition();
 ```
 
 ## Rough guide on the parameters
