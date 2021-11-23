@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+// ignore: avoid_classes_with_only_static_members
 /// Class which manages the future and stream for the plugins
 class TfliteAudio {
   static const MethodChannel _channel = MethodChannel('tflite_audio');
@@ -13,8 +14,7 @@ class TfliteAudio {
   /// 2. int inferenceTime
   /// 3. bool hasPermission
   static Stream<Map<dynamic, dynamic>> startAudioRecognition(
-      {required String inputType,
-      required int sampleRate,
+      {required int sampleRate,
       required int recordingLength,
       required int bufferSize,
       double detectionThreshold = 0.3,
@@ -24,7 +24,6 @@ class TfliteAudio {
       int suppressionTime = 0}) {
     final recognitionStream =
         _eventChannel.receiveBroadcastStream(<String, dynamic>{
-      'inputType': inputType,
       'sampleRate': sampleRate,
       'recordingLength': recordingLength,
       'bufferSize': bufferSize,
@@ -51,6 +50,8 @@ class TfliteAudio {
   static Future loadModel(
       {required String model,
       required String label,
+      required String inputType,
+      bool outputRawScores = false,
       int numThreads = 1,
       bool isAsset = true}) async {
     return _channel.invokeMethod(
@@ -58,6 +59,8 @@ class TfliteAudio {
       {
         'model': model,
         'label': label,
+        'inputType': inputType,
+        'outputRawScores': outputRawScores,
         'numThreads': numThreads,
         'isAsset': isAsset,
       },

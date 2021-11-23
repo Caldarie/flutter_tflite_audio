@@ -36,8 +36,9 @@ class _MyAppState extends State<MyApp> {
   // final int bufferSize = 22050;
 
   //!Optional parameters you can adjust to modify your interence.
+  // final bool outputRawScores = false;
   // final int numThreads = 1;
-  // final int numOfInferences = 1;
+  final int numOfInferences = 100;
   // final bool isAsset = true;
 
   //!Adjust the values below when tuning model detection.
@@ -52,6 +53,8 @@ class _MyAppState extends State<MyApp> {
     TfliteAudio.loadModel(
       // numThreads: this.numThreads,
       // isAsset: this.isAsset,
+      inputType: this.inputType,
+      // outputRawScores: this.outputRawScores,
       model: this.model,
       label: this.label,
     );
@@ -61,11 +64,10 @@ class _MyAppState extends State<MyApp> {
   /// Uncomment the parameters below if you wish to adjust the values
   void getResult() {
     result = TfliteAudio.startAudioRecognition(
-      inputType: this.inputType,
       sampleRate: this.sampleRate,
       recordingLength: this.recordingLength,
       bufferSize: this.bufferSize,
-      // numOfInferences: this.numOfInferences,
+      numOfInferences: this.numOfInferences,
       // detectionThreshold: this.detectionThreshold,
       // averageWindowDuration: this.averageWindowDuration,
       // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
@@ -73,8 +75,12 @@ class _MyAppState extends State<MyApp> {
     );
 
     ///Logs the results and assigns false when stream is finished.
+    ///event["recognitionResult"]
+    ///event["hasPermission"]
+    ///event["inferenceTime"]
     result
-        ?.listen((event) => log(event.toString()))
+        ?.listen((event) =>
+            log("Recognition Result: " + event["recognitionResult"].toString()))
         .onDone(() => isRecording.value = false);
   }
 
