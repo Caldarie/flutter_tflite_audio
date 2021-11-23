@@ -67,7 +67,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     //working recording variables
     AudioRecord record;
     short[] recordingBuffer;
-    short[] maxRecordingBuffer;
+    short[] recordingBufferCache;
+    int countNumOfInferences = 0;
     int recordingOffset = 0;
     boolean shouldContinue = true;
     private Thread recordingThread;
@@ -96,7 +97,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private int sampleRate;
     private int recordingLength;
     private int numOfInferences;
+
+    //Determine input and output
     private String inputType;
+    private boolean outputRawScores;
 
     // get objects to convert to float and long
     private double detectObj;
@@ -178,6 +182,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         switch (call.method) {
             case "loadModel":
                 Log.d(LOG_TAG, "loadModel");
+                this.inputType = (String) arguments.get("inputType");
+                this.outputRawScores = (boolean) arguments.get("outputRawScores");
+
                 try {
                     loadModel(arguments);
                 } catch (Exception e) {
@@ -205,7 +212,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         this.sampleRate = (int) arguments.get("sampleRate");
         this.recordingLength = (int) arguments.get("recordingLength");
         this.numOfInferences = (int) arguments.get("numOfInferences");
-        this.inputType = (String) arguments.get("inputType");
 
         // get objects to convert to float and long
         this.detectObj = (double) arguments.get("detectionThreshold");
@@ -389,17 +395,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private void record() {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
-        //Adjust recording length should numOfiNferences increase
-        int maxRecordingLength = recordingLength * numOfInferences;
+   
         short[] recordingFrame = new short[bufferSize / 2];
-
-        //define float values for input
-        recordingBuffer = new short[recordingLength]; //16000
-        maxRecordingBuffer = new short[maxRecordingLength]; //recordingLength * numOfInferences;
-        
-        //Used to keep track of multiple inferences for multiple inferences
-        int recordingStart = 0;
-        int recordingEnd = recordingLength; //16000
+        recordingBuffer = new short[recordingLength]; //this buffer will be fed into model
+        recordingBufferCache = new short[recordingLength]; //temporary holds recording buffer until recognitionStarts
 
         // Estimate the buffer size we'll need for this device.
         // int bufferSize =
@@ -431,74 +430,120 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         while (shouldContinue) {
             //Reads audio data and records it into redcordFrame
             int numberRead = record.read(recordingFrame, 0, recordingFrame.length);
+            int recordingOffsetCount = recordingOffset + numberRead;
+            Log.v(LOG_TAG, "recordingOffsetCount: " + recordingOffsetCount);
 
             recordingBufferLock.lock();
             try {
                 
                 //Continue to append frame until it reaches recording length
-                //(recordingOffset + numberRead < maxRecordingLength) prevent out of index when buffer exceeds max record length
-                if(recordingOffset < recordingEnd && recordingOffset + numberRead < maxRecordingLength){
-
-                    System.arraycopy(recordingFrame, 0, maxRecordingBuffer, recordingOffset, numberRead);
+                if(countNumOfInferences < numOfInferences && recordingOffsetCount < recordingLength){
+    
+                    System.arraycopy(recordingFrame, 0, recordingBufferCache, recordingOffset, numberRead);
                     recordingOffset += numberRead;
-                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + maxRecordingLength); 
-
-                //When buffer reaches recording length inference starts. Resets inference loop
-                } else if (recordingOffset >= recordingEnd && recordingOffset + numberRead < maxRecordingLength) {
+                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + recordingLength + " inferenceCount: " + countNumOfInferences);
+                
+                //!TODO - NOT BEING CALLED!!
+                //When recording buffer populates, inference starts. Resets recording buffer after iference
+                }else if(countNumOfInferences < numOfInferences  && recordingOffsetCount == recordingLength){
+                 
+          
                     Log.v(LOG_TAG, "Recording reached threshold");
-
-                    System.arraycopy(recordingFrame, 0, maxRecordingBuffer, recordingOffset, numberRead);
+                    System.arraycopy(recordingFrame, 0, recordingBufferCache, recordingOffset, numberRead);
                     recordingOffset += numberRead;
-                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + maxRecordingLength); 
+               
+                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + recordingLength);  
+                    recordingBuffer = recordingBufferCache;
+                    startRecognition();
+
+                    Log.v(LOG_TAG, "Clearing recordingBufferCache..");
+                    recordingBufferCache = new short[recordingLength];
+                    recordingOffset = 0; 
+                    //!TODO assert that recordingBuffer is populated
                     
-                    System.arraycopy(maxRecordingBuffer, recordingStart, recordingBuffer, 0, recordingLength);
-                    startRecognition();
-
-                    Log.v(LOG_TAG, "Creating new threshold");
-                    recordingStart += recordingLength;
-                    recordingEnd += recordingLength;
-                   
-                //when buffer reaches max record length (recordingLength * numOfInference) start inference and stop recording
-                } else if  (recordingOffset >= recordingEnd && recordingOffset + numberRead == maxRecordingLength){
-                    Log.v(LOG_TAG, "Recording reached maximum threshold");
-
-                    System.arraycopy(maxRecordingBuffer, recordingStart, recordingBuffer, 0, recordingLength);
-                    startRecognition();
-
-                    stopRecording();
-                    lastInferenceRun = true;
-
                 //when buffer exeeds max record length, trim and resize the buffer, append, and then start inference
-                } else if(recordingOffset + numberRead > maxRecordingLength) {
-                    Log.v(LOG_TAG, "Recording exceeded maximum threshold");
+                //Resets recording buffer after inference
+                }else if(countNumOfInferences < numOfInferences && recordingOffsetCount > recordingLength){
+                
+                    Log.v(LOG_TAG, "Recording buffer exceeded maximum threshold");
+                    Log.v(LOG_TAG, "Trimming recording frame to remaining recording buffer..");
+                    // int remainingRecordingLength = recordingLength - recordingOffset - 1; 
+                    int remainingRecordingFrame = recordingOffset + numberRead - recordingLength; //16200 -> 200 remaining 
+                    int remainingRecordingLength = recordingLength - recordingOffset; //15800
+                    short [] resizedRecordingFrame = Arrays.copyOf(recordingFrame, remainingRecordingLength);
+                    System.arraycopy(resizedRecordingFrame, 0, recordingBufferCache, recordingOffset, remainingRecordingLength);
+                    recordingOffset += remainingRecordingLength;
+                    //!Todo assert that recordingOffset = 16000
 
-                    Log.v(LOG_TAG, "Trimming recording frame and appending to recordingLength");
-                    int missingRecordingLength = maxRecordingLength - recordingOffset - 1; 
-                    short [] resizedRecordingFrame = Arrays.copyOf(recordingFrame, missingRecordingLength);
-                    System.arraycopy(resizedRecordingFrame, 0, maxRecordingBuffer, recordingOffset, missingRecordingLength);
-                    Log.v(LOG_TAG, "Recording trimmed and appended at length: " + missingRecordingLength + 1);
-                    Log.v(LOG_TAG, "recordingOffset: " + (recordingOffset + missingRecordingLength + 1) + "/" + maxRecordingLength); 
+                    Log.v(LOG_TAG, "Recording trimmed and appended at length: " + remainingRecordingLength);
+                    Log.v(LOG_TAG, "recordingOffset: " + (recordingOffset) + "/" + recordingLength);    //should output max recording length
 
-                    System.arraycopy(maxRecordingBuffer, recordingStart, recordingBuffer, 0, recordingLength);
+                    recordingBuffer = recordingBufferCache;
                     startRecognition();
+                    
+                    Log.v(LOG_TAG, "Clearing recording buffer..");
+                    Log.v(LOG_TAG, "Appending remaining recording frame to new recording buffer..");
+                    recordingBufferCache = new short[recordingLength];
+                    recordingOffset = 0 + remainingRecordingFrame; //200/16000
+                    System.arraycopy(recordingFrame, 0, recordingBufferCache, recordingOffset, numberRead);
+                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + recordingLength);  
+                  
+
+                //when count reaches max numOfInferences, stop all inference and recording
+                //no need to count recordingOffset with numberRead as its final
+                }else if(countNumOfInferences == numOfInferences && recordingOffsetCount > recordingLength){
+                    
+                    Log.v(LOG_TAG, "Reached indicated number of inferences.");
+                    Log.v(LOG_TAG, "Recording buffer exceeded maximum threshold");
+                    Log.v(LOG_TAG, "Trimming recording frame to remaining recording buffer..");
+                    // int remainingRecordingLength = recordingLength - recordingOffset - 1; 
+                    int remainingRecordingFrame = recordingOffset + numberRead - recordingLength; //16200 -> 200 remaining 
+                    int remainingRecordingLength = recordingLength - recordingOffset; //15800
+                    short [] resizedRecordingFrame = Arrays.copyOf(recordingFrame, remainingRecordingLength);
+                    System.arraycopy(resizedRecordingFrame, 0, recordingBufferCache, recordingOffset, remainingRecordingLength);
+                    recordingOffset += remainingRecordingLength;
+                    //!Todo assert that recordingOffset = 16000
+
+                    Log.v(LOG_TAG, "Recording trimmed and appended at length: " + remainingRecordingLength);
+                    Log.v(LOG_TAG, "recordingOffset: " + (recordingOffset + remainingRecordingLength) + "/" + recordingLength);    //should output max recording length
+                    recordingBuffer = recordingBufferCache;
+                    startRecognition();
+                    stopRecording();
+                         
+                //no need to count recordingOffset with numberRead as its final
+                }else if(countNumOfInferences == numOfInferences && recordingOffsetCount == recordingLength){
+
+                    Log.v(LOG_TAG, "Reached indicated number of inferences.");
+                    System.arraycopy(recordingFrame, 0, recordingBufferCache, recordingOffset, numberRead);
+                    
+                    recordingBuffer = recordingBufferCache;
+                    startRecognition();
+                    stopRecording();
+
+                    lastInferenceRun = true;    
+                    countNumOfInferences = 0;
+
+                //when numOfInference is set to one. Stops recording once count reaches to one.
+                }
+                else if(numOfInferences == 1 && countNumOfInferences == 1){
+                
+                    stopRecording();
+                    lastInferenceRun = true;
+                    countNumOfInferences = 0;
+                    
+                }
+                else{
+                    Log.v(LOG_TAG, "something weird has happened"); 
+                    Log.v(LOG_TAG, "countNumOfInference: " + countNumOfInferences); 
+                    Log.v(LOG_TAG, "numOfInference: " + numOfInferences); 
+                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset);
+                    Log.v(LOG_TAG, "recordingOffsetCount " + recordingOffsetCount);
+                    Log.v(LOG_TAG, "recordingLength " + recordingLength);
 
                     stopRecording();
                     lastInferenceRun = true;
-
-                    //Used when theres only one inference, as the above if statements are used for multiple inferences
-                    //Case occurs when buffersize is divisible to recording length
-                    //Apends the last recordingFrame to recordingLength
-                } else {
-
-                    System.arraycopy(recordingFrame, 0, maxRecordingBuffer, recordingOffset, numberRead);
-                    recordingOffset += numberRead;
-                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + maxRecordingLength); 
-
-                    System.arraycopy(maxRecordingBuffer, recordingStart, recordingBuffer, 0, recordingLength);
-                    startRecognition();
-
-                    stopRecording();
-                    lastInferenceRun = true;
+                    countNumOfInferences = 0;
+                
                 }
 
             } finally {
@@ -506,15 +551,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
             }
         }
-        // stopRecording();
-        // startRecognition();
     }
 
     public synchronized void startRecognition() {
         if (recognitionThread != null) {
             return;
         }
-        // shouldContinueRecognition = true;
 
         recognitionThread =
                 new Thread(
@@ -530,6 +572,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     private void recognize() {
         Log.v(LOG_TAG, "Recognition started.");
+        countNumOfInferences += 1;
 
          //catches null exception.
          if(events == null){
@@ -550,6 +593,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         //Used for multiple input and outputs (decodedWav)
         Object[] inputArray = {};
         Map<Integer, Object> outputMap = new HashMap<>();
+        Map<String, Object> finalResults = new HashMap();
 
         switch (inputType) {
             case "decodedWav": 
@@ -616,23 +660,23 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         Log.v(LOG_TAG, "Raw Scores: " + Arrays.toString(floatOutputBuffer[0]));
         // Log.v(LOG_TAG, Long.toString(lastProcessingTimeMs));
 
-        labelSmoothing =
-                new LabelSmoothing(
-                        labels,
-                        averageWindowDuration,
-                        detectionThreshold,
-                        suppressionTime,
-                        minimumTimeBetweenSamples);
+        if(outputRawScores == false){
+            labelSmoothing =
+            new LabelSmoothing(
+                    labels,
+                    averageWindowDuration,
+                    detectionThreshold,
+                    suppressionTime,
+                    minimumTimeBetweenSamples);
 
-        
+            long currentTime = System.currentTimeMillis();
+            final LabelSmoothing.RecognitionResult recognitionResult =
+                    labelSmoothing.processLatestResults(floatOutputBuffer[0], currentTime);
+            finalResults.put("recognitionResult", recognitionResult.foundCommand);
+        }else{
+            finalResults.put("recognitionResult", Arrays.toString(floatOutputBuffer[0]));
+        }
 
-        long currentTime = System.currentTimeMillis();
-        final LabelSmoothing.RecognitionResult recognitionResult =
-                labelSmoothing.processLatestResults(floatOutputBuffer[0], currentTime);
-
-        //Map score and inference time
-        Map<String, Object> finalResults = new HashMap();
-        finalResults.put("recognitionResult", recognitionResult.foundCommand);
         finalResults.put("inferenceTime", lastProcessingTimeMs);
         finalResults.put("hasPermission", true);
 
@@ -660,6 +704,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
         Log.d(LOG_TAG, "Recognition stopped.");
         recognitionThread = null;
+        // countNumOfInferences = 0;
 
         //If last inference run is true, will close stream
         if (lastInferenceRun == true) {
