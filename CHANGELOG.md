@@ -1,3 +1,9 @@
+## 0.2.1
+* Fixed memory crash on android
+* Improved memory performance on iOS
+* Added feature to output raw scores
+* moved inputType to loadModel() instead of startAudioRecognition()
+
 ## 0.2.0
 * Fixed crashed on Android when force stopping recognition
 * Improve recognition latency on android by reducing number of event calls.
