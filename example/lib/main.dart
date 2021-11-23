@@ -36,9 +36,9 @@ class _MyAppState extends State<MyApp> {
   // final int bufferSize = 22050;
 
   //!Optional parameters you can adjust to modify your interence.
-  // final bool outputRawScores = false;
+  final bool outputRawScores = false;
   // final int numThreads = 1;
-  final int numOfInferences = 100;
+  final int numOfInferences = 10;
   // final bool isAsset = true;
 
   //!Adjust the values below when tuning model detection.
@@ -54,7 +54,7 @@ class _MyAppState extends State<MyApp> {
       // numThreads: this.numThreads,
       // isAsset: this.isAsset,
       inputType: this.inputType,
-      // outputRawScores: this.outputRawScores,
+      outputRawScores: this.outputRawScores,
       model: this.model,
       label: this.label,
     );
