@@ -163,7 +163,7 @@ import 'package:tflite_audio/tflite_audio.dart';
    TfliteAudio.loadModel(
         model: 'assets/conv_actions_frozen.tflite',
         label: 'assets/conv_actions_label.txt',
-        inputType: 'rawAudio');
+        inputType: 'decodedWav');
 
 
   //Example for Google's Teachable Machine models
@@ -177,7 +177,7 @@ import 'package:tflite_audio/tflite_audio.dart';
       model: 'assets/conv_actions_frozen.tflite',
       label: 'assets/conv_actions_label.txt',
       inputType: 'decodedWav',
-      outputRawScores: false, //if true, outputs an array of scores in string format.
+      outputRawScores: false, 
       numThreads: 1,
       isAsset: this.isAsset,
     );
@@ -194,7 +194,6 @@ Stream<Map<dynamic, dynamic>> recognitionStream;
    * b) Assign TfliteAudio.startAudioRecognition to stream
 ```dart
 recognitionStream = TfliteAudio.startAudioRecognition(
-  inputType: 'rawAudio',
   sampleRate: 44100,
   recordingLength: 44032,
   bufferSize: 22050,
@@ -253,6 +252,8 @@ TfliteAudio.startAudioRecognition(
 
 ## Rough guide on the parameters
   
+  * outputRawScores - Will output the result as an array in string format. For example `'[0.2, 0.6, 0.1, 0.1]'`
+
   * numThreads -  Higher threads will reduce inferenceTime. However, will utilise the more cpu resource.
   
   * numOfInferences - determines how many times you want to loop the recording and inference. For example:
