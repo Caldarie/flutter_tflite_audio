@@ -159,11 +159,28 @@ import 'package:tflite_audio/tflite_audio.dart';
 
 
 ```dart
+  //Example for decodedWav models
    TfliteAudio.loadModel(
         model: 'assets/conv_actions_frozen.tflite',
-        label: 'assets/conv_actions_labels.txt',
-        numThreads: 1,
-        isAsset: true);
+        label: 'assets/conv_actions_label.txt',
+        inputType: 'rawAudio');
+
+
+  //Example for Google's Teachable Machine models
+    TfliteAudio.loadModel(
+        model: 'assets/google_teach_machine_model.tflite',
+        label: 'assets/google_teach_machine_label.txt',
+        inputType: 'rawAudio');
+
+  //Example if you want to take advantage of all optional parameters from loadModel()
+    TfliteAudio.loadModel(
+      model: 'assets/conv_actions_frozen.tflite',
+      label: 'assets/conv_actions_label.txt',
+      inputType: 'decodedWav',
+      outputRawScores: false, //if true, outputs an array of scores in string format.
+      numThreads: 1,
+      isAsset: this.isAsset,
+    );
 ```
 
 
@@ -206,26 +223,23 @@ TfliteAudio.stopAudioRecognition();
 5. Adjust parameters according to model type 
 
 ```dart
-//Example for Google's Teachable Machine models
+//Example values for Google's Teachable Machine models
 TfliteAudio.startAudioRecognition(
-  inputType: 'rawAudio',
   sampleRate: 44100,
   recordingLength: 44032,
   bufferSize: 22050,
   )
   
-//Example for decodedWav
+//Example values for decodedWav
 TfliteAudio.startAudioRecognition(
-  inputType: 'decodedWav',
   sampleRate: 16000,
   recordingLength: 16000,
   bufferSize: 2000,
   )
   
-//Example for advanced users who want to utilise all parameters from this package. 
+//Example for advanced users who want to utilise all optional parameters from this package. 
 //Note the values are default.
 TfliteAudio.startAudioRecognition(
-  inputType: 'rawAudio',
   sampleRate: 44100,
   recordingLength: 44032,
   bufferSize: 22050,
