@@ -431,7 +431,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             //Reads audio data and records it into redcordFrame
             int numberRead = record.read(recordingFrame, 0, recordingFrame.length);
             int recordingOffsetCount = recordingOffset + numberRead;
-            Log.v(LOG_TAG, "recordingOffsetCount: " + recordingOffsetCount);
+            // Log.v(LOG_TAG, "recordingOffsetCount: " + recordingOffsetCount);
 
             recordingBufferLock.lock();
             try {
@@ -443,7 +443,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     recordingOffset += numberRead;
                     Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + recordingLength + " inferenceCount: " + countNumOfInferences);
                 
-                //!TODO - NOT BEING CALLED!!
                 //When recording buffer populates, inference starts. Resets recording buffer after iference
                 }else if(countNumOfInferences < numOfInferences  && recordingOffsetCount == recordingLength){
                  
@@ -510,9 +509,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     startRecognition();
                     stopRecording();
                          
-                //no need to count recordingOffset with numberRead as its final
-                }else if(countNumOfInferences == numOfInferences && recordingOffsetCount == recordingLength){
-
+                //stop recording once numOfInference is reached.
+                }else if(countNumOfInferences == numOfInferences){
                     Log.v(LOG_TAG, "Reached indicated number of inferences.");
                     System.arraycopy(recordingFrame, 0, recordingBufferCache, recordingOffset, numberRead);
                     
@@ -523,16 +521,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     lastInferenceRun = true;    
                     countNumOfInferences = 0;
 
-                //when numOfInference is set to one. Stops recording once count reaches to one.
-                }
-                else if(numOfInferences == 1 && countNumOfInferences == 1){
-                
-                    stopRecording();
-                    lastInferenceRun = true;
-                    countNumOfInferences = 0;
-                    
-                }
-                else{
+                //For debugging
+                }else{
                     Log.v(LOG_TAG, "something weird has happened"); 
                     Log.v(LOG_TAG, "countNumOfInference: " + countNumOfInferences); 
                     Log.v(LOG_TAG, "numOfInference: " + numOfInferences); 
@@ -733,6 +723,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
  
         recordingOffset = 0; //reset recordingOffset
         recordingThread = null;//closes recording
+        countNumOfInferences = 0;
         Log.d(LOG_TAG, "Recording stopped.");
     }
 
