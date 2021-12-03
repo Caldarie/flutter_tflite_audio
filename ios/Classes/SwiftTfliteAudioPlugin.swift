@@ -268,46 +268,46 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                     let channelDataValueArray = stride(from: 0,
                                                        to: Int(pcmBuffer!.frameLength),
                                                        by: buffer.stride).map{ channelDataValue[$0] }
+                
                     
-                    recordingBuffer.append(contentsOf: channelDataValueArray)
-                    print("recordingBuffer length: \(recordingBuffer.count)")
-                    
-                    
-                    if(recordingBuffer.count == self.recordingLength){
+                    if(recordingBuffer.count < self.recordingLength && countNumOfInference < self.numOfInferences){
+                        recordingBuffer.append(contentsOf: channelDataValueArray)
+                        print("recordingBuffer length: \(recordingBuffer.count) / numOfInference: \(countNumOfInference)")
+                        
+                    }else if(recordingBuffer.count == self.recordingLength && countNumOfInference < self.numOfInferences){
                             
                         print("reached threshold")
-                        
                         self.recognize(onBuffer: Array(recordingBuffer[0..<self.recordingLength]))
+                        
+                        countNumOfInference += 1
+                        recordingBuffer = []
+                        print("Looping recording")
+                        print("Clearing recording buffer")
 
-                        if(countNumOfInference >= self.numOfInferences){
-                            self.stopAudioRecognition()
-                        }else{
-                            print("Looping recording")
-                            print("Clearing recording buffer")
-                            countNumOfInference += 1
-                            recordingBuffer = []
-                        }
-                    }
-                    else if(recordingBuffer.count > self.recordingLength){
-                        print("Exceeded threshold")
+                    }else if(recordingBuffer.count > self.recordingLength && countNumOfInference < self.numOfInferences){
                         
+                        print("Exceeded threshold")
                         self.recognize(onBuffer: Array(recordingBuffer[0..<self.recordingLength]))
                         
-                        if(countNumOfInference >= self.numOfInferences){
-                            self.stopAudioRecognition()
-                        }else{
-                            countNumOfInference += 1
-                            let excessRecordingBuffer: [Int16] = Array(recordingBuffer[self.recordingLength..<recordingBuffer.count])
-                            recordingBuffer = []
-                            recordingBuffer.append(contentsOf: excessRecordingBuffer)
-                            print("Looping recording")
-                            print("trimmed excess recording. Excess count: \(excessRecordingBuffer.count)")
-                            print("Clearing recording buffer")
-                            print("appended excess to recording buffer")
-                        }
-                            
-//
+                        countNumOfInference += 1
+                        let excessRecordingBuffer: [Int16] = Array(recordingBuffer[self.recordingLength..<recordingBuffer.count])
+                        recordingBuffer = []
+                        recordingBuffer.append(contentsOf: excessRecordingBuffer)
+                        print("Looping recording")
+                        print("trimmed excess recording. Excess count: \(excessRecordingBuffer.count)")
+                        print("Clearing recording buffer")
+                        print("appended excess to recording buffer")
                         
+                        
+                    }else if(countNumOfInference == self.numOfInferences){
+                        self.stopAudioRecognition()
+                        
+                    }else{
+                        print("Something weird happened")
+                        print("recording length: \(self.recordingLength)")
+                        print("recording buffer: \(recordingBuffer.count)")
+                        print("countNumOfInference: \(countNumOfInference)")
+                        print("numOfInferences: \(self.numOfInferences)")
                     }
                     
                     
