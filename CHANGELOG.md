@@ -1,4 +1,8 @@
+## 0.2.1+1
+* Fixed inaccurate numOfInference count for iOS and android.
+
 ## 0.2.1
+* Improved recognition accuracy for Google Teachable Machine models
 * Fixed memory crash on android
 * Improved memory performance on iOS
 * Added feature to output raw scores
