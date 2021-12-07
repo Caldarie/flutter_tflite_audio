@@ -68,7 +68,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     AudioRecord record;
     short[] recordingBuffer;
     short[] recordingBufferCache;
-    int countNumOfInferences = 0;
+    int countNumOfInferences = 1;
     int recordingOffset = 0;
     boolean shouldContinue = true;
     private Thread recordingThread;
@@ -437,7 +437,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             try {
                 
                 //Continue to append frame until it reaches recording length
-                if(countNumOfInferences < numOfInferences && recordingOffsetCount < recordingLength){
+                if(countNumOfInferences <= numOfInferences && recordingOffsetCount < recordingLength){
     
                     System.arraycopy(recordingFrame, 0, recordingBufferCache, recordingOffset, numberRead);
                     recordingOffset += numberRead;
@@ -495,45 +495,59 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     Log.v(LOG_TAG, "Reached indicated number of inferences.");
                     Log.v(LOG_TAG, "Recording buffer exceeded maximum threshold");
                     Log.v(LOG_TAG, "Trimming recording frame to remaining recording buffer..");
-                    // int remainingRecordingLength = recordingLength - recordingOffset - 1; 
+                
                     int remainingRecordingFrame = recordingOffset + numberRead - recordingLength; //16200 -> 200 remaining 
                     int remainingRecordingLength = recordingLength - recordingOffset; //15800
                     short [] resizedRecordingFrame = Arrays.copyOf(recordingFrame, remainingRecordingLength);
                     System.arraycopy(resizedRecordingFrame, 0, recordingBufferCache, recordingOffset, remainingRecordingLength);
-                    recordingOffset += remainingRecordingLength;
-                    //!Todo assert that recordingOffset = 16000
-
-                    Log.v(LOG_TAG, "Recording trimmed and appended at length: " + remainingRecordingLength);
                     Log.v(LOG_TAG, "recordingOffset: " + (recordingOffset + remainingRecordingLength) + "/" + recordingLength);    //should output max recording length
+                    Log.v(LOG_TAG, "Unused excess recording length: " + remainingRecordingLength);
+
                     recordingBuffer = recordingBufferCache;
+                    lastInferenceRun = true;
+
                     startRecognition();
                     stopRecording();
+
+                    //reset after recognition and recording. Don't change position!!
+                    recordingOffset = 0;
+                    countNumOfInferences = 1;
+
                          
                 //stop recording once numOfInference is reached.
-                }else if(countNumOfInferences == numOfInferences){
+                }else if(countNumOfInferences == numOfInferences && recordingOffsetCount == recordingLength){
                     Log.v(LOG_TAG, "Reached indicated number of inferences.");
-                    System.arraycopy(recordingFrame, 0, recordingBufferCache, recordingOffset, numberRead);
                     
+                    System.arraycopy(recordingFrame, 0, recordingBufferCache, recordingOffset, numberRead);
                     recordingBuffer = recordingBufferCache;
+                    lastInferenceRun = true;
+
                     startRecognition();
                     stopRecording();
 
-                    lastInferenceRun = true;    
-                    countNumOfInferences = 0;
+                     //reset after recognition and recording. Don't change position!!
+                     recordingOffset = 0;
+                     countNumOfInferences = 1;
 
-                //For debugging
+                //For debugging - Stop recognition/recording for unusual situations
                 }else{
+                    
+                    lastInferenceRun = true;
+                    forceStopRecogniton();
+
                     Log.v(LOG_TAG, "something weird has happened"); 
+                    Log.v(LOG_TAG, "-------------------------------------"); 
                     Log.v(LOG_TAG, "countNumOfInference: " + countNumOfInferences); 
                     Log.v(LOG_TAG, "numOfInference: " + numOfInferences); 
                     Log.v(LOG_TAG, "recordingOffset: " + recordingOffset);
                     Log.v(LOG_TAG, "recordingOffsetCount " + recordingOffsetCount);
                     Log.v(LOG_TAG, "recordingLength " + recordingLength);
+                    Log.v(LOG_TAG, "-------------------------------------"); 
 
-                    stopRecording();
-                    lastInferenceRun = true;
-                    countNumOfInferences = 0;
-                
+                    //reset after recognition and recording. Don't change position!!
+                    recordingOffset = 0;
+                    countNumOfInferences = 1;
+                    
                 }
 
             } finally {
@@ -566,8 +580,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
          //catches null exception.
          if(events == null){
-            Log.v(LOG_TAG, "events is null. Breaking recognition");
-            return;
+            throw new AssertionError("Events is null. Cannot start recognition");
         }
 
         int[] inputShape = tfLite.getInputTensor(0).shape();
@@ -694,9 +707,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
         Log.d(LOG_TAG, "Recognition stopped.");
         recognitionThread = null;
-        // countNumOfInferences = 0;
 
-        //If last inference run is true, will close stream
         if (lastInferenceRun == true) {
             //passing data from platform to flutter requires ui thread
             runOnUIThread(() -> {
@@ -720,10 +731,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
         record.stop();
         record.release();
- 
-        recordingOffset = 0; //reset recordingOffset
-        recordingThread = null;//closes recording
-        countNumOfInferences = 0;
+       
+        recordingThread = null;
         Log.d(LOG_TAG, "Recording stopped.");
     }
 
