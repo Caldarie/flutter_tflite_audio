@@ -1,3 +1,6 @@
+## 0.2.1+2
+* Fixed NaN raw score output for Android.
+
 ## 0.2.1+1
 * Fixed inaccurate numOfInference count for iOS and android.
 
