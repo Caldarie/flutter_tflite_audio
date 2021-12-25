@@ -18,6 +18,9 @@ import android.media.MediaRecorder;
 import android.os.Looper;
 import android.os.Handler;
 
+// import android.media.MediaPlayer; //testing purpose
+
+
 import androidx.core.app.ActivityCompat;
 import androidx.annotation.NonNull;
 
@@ -25,10 +28,15 @@ import org.tensorflow.lite.Interpreter;
 
 import java.util.concurrent.CompletableFuture; //required to get value from thread
 import java.util.concurrent.CountDownLatch;
-import java.io.File;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.BufferedInputStream; //required for preprocessing
+import java.io.ByteArrayOutputStream; //required for preprocessing
+import java.io.DataOutputStream; //required for preprocessing
+import java.io.InputStream; //required for preprocessing
+import java.io.ObjectOutputStream; //required for preprocessing 
+import java.io.InputStreamReader; 
 import java.io.IOException;
+import java.io.File;
 import java.io.FileInputStream;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -61,6 +69,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     //ui elements
     private static final String LOG_TAG = "Tflite_audio";
     private static final int REQUEST_RECORD_AUDIO = 13;
+    private static final int REQUEST_READ_EXTERNAL_STORAGE = 1;
     private static TfliteAudioPlugin instance;
     private Handler handler = new Handler(Looper.getMainLooper());
 
@@ -73,6 +82,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     boolean shouldContinue = true;
     private Thread recordingThread;
     private final ReentrantLock recordingBufferLock = new ReentrantLock();
+
+    //preprocessing variables
+    private Thread preprocessThread;
+    private String audioDir;
 
     //working label variables
     private List<String> labels;
@@ -184,7 +197,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 Log.d(LOG_TAG, "loadModel");
                 this.inputType = (String) arguments.get("inputType");
                 this.outputRawScores = (boolean) arguments.get("outputRawScores");
-
                 try {
                     loadModel(arguments);
                 } catch (Exception e) {
@@ -193,6 +205,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 break;
             case "stopAudioRecognition":
                 forceStopRecogniton();
+                break;
+            case "recogniseAudioFile":
+                this.audioDir = (String) arguments.get("audioDirectory");
+                checkPermissions(REQUEST_READ_EXTERNAL_STORAGE);
                 break;
             default:
                 result.notImplemented();
@@ -224,7 +240,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         this.minimumTimeBetweenSamples = (long)minTimeObj;
         this.suppressionTime = (int) arguments.get("suppressionTime");
 
-        checkPermissions();
+        checkPermissions(REQUEST_RECORD_AUDIO);
     }
 
     @Override
@@ -297,50 +313,99 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     }
 
 
-    private void checkPermissions() {
-        Log.d(LOG_TAG, "Check for permissions");
+    private void checkPermissions(int permissionType) {
+        Log.d(LOG_TAG, "Check for permission. Request code: " + permissionType);
+
         PackageManager pm = applicationContext.getPackageManager();
-        int hasRecordPerm = pm.checkPermission(Manifest.permission.RECORD_AUDIO, applicationContext.getPackageName());
-        boolean hasPermissions = hasRecordPerm == PackageManager.PERMISSION_GRANTED;
-        if (hasPermissions) {
-            startRecording();
-            Log.d(LOG_TAG, "Permission already granted. start recording");
-        } else {
-            requestMicrophonePermission();
+
+        switch(permissionType){
+            case REQUEST_RECORD_AUDIO:
+                int recordPerm = pm.checkPermission(Manifest.permission.RECORD_AUDIO, applicationContext.getPackageName());
+                boolean hasRecordPerm = recordPerm == PackageManager.PERMISSION_GRANTED;
+
+                if (hasRecordPerm) {
+                    startRecording();
+                    Log.d(LOG_TAG, "Permission already granted. start recording");
+                } else {
+                    requestPermission(REQUEST_RECORD_AUDIO);
+                }
+                break;
+
+            case REQUEST_READ_EXTERNAL_STORAGE:
+                int readPerm = pm.checkPermission(Manifest.permission.READ_EXTERNAL_STORAGE, applicationContext.getPackageName());
+                boolean hasReadPerm = readPerm == PackageManager.PERMISSION_GRANTED;
+                if (hasReadPerm) {
+                    loadAudioFile();
+                    Log.d(LOG_TAG, "Permission already granted. Loading audio file..");
+                } else {
+                    requestPermission(REQUEST_READ_EXTERNAL_STORAGE); 
+                }
+                break;
+            default:
+                Log.d(LOG_TAG, "Something weird has happened");
+                
         }
+
+        //Add run time error here for other permissions?
+        
+  
     }
 
-    private void requestMicrophonePermission() {
+    private void requestPermission(int permissionType) {
         Log.d(LOG_TAG, "Permission requested.");
         Activity activity = TfliteAudioPlugin.getActivity();
-        ActivityCompat.requestPermissions(activity,
-                new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
+
+        switch(permissionType){
+            case REQUEST_RECORD_AUDIO:
+                ActivityCompat.requestPermissions(activity,
+                        new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
+                break;
+            case REQUEST_READ_EXTERNAL_STORAGE:
+                ActivityCompat.requestPermissions(activity,
+                        new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_READ_EXTERNAL_STORAGE);
+                break;
+            default:
+                Log.d(LOG_TAG, "Something weird has happened");
+            }
     }
 
     // @Override
     public boolean onRequestPermissionsResult(
             int requestCode, String[] permissions, int[] grantResults) {
-        //if request is cancelled, result arrays will be empty
-        if (requestCode == REQUEST_RECORD_AUDIO
-                && grantResults.length > 0
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startRecording();
-            Log.d(LOG_TAG, "Permission granted. Start recording...");
-        } else {
-            showRationaleDialog(
-                    "Microphone Permissions",
-                    "Permission has been declined. Please accept permissions in your settings"
-            );
-            //return false for hasPermission
-            Map<String, Object> finalResults = new HashMap();
-            // finalResults.put("recognitionResult", null);
-            // finalResults.put("inferenceTime", 0);
-            finalResults.put("hasPermission", false);
-            if (events != null) {
-                events.success(finalResults);
-                events.endOfStream();
-            }
+        switch (requestCode) {
+            case REQUEST_RECORD_AUDIO:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    startRecording();
+                    Log.d(LOG_TAG, "Permission granted. Start recording...");
+                }else{
+                    showRationaleDialog(
+                        "Microphone Permissions",
+                        "Permission has been declined. Please accept permissions in your settings"
+                    );
+                    if (events != null) {
+                        events.endOfStream();
+                    }
+                }
+                break;
+            case REQUEST_READ_EXTERNAL_STORAGE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    loadAudioFile();
+                    Log.d(LOG_TAG, "Permission granted. Loading audio file...");
+                }else{
+                    showRationaleDialog(
+                        "Read External Storage Permissions",
+                        "Permission has been declined. Please accept permissions in your settings"
+                    );
+                    if (events != null) {
+                        events.endOfStream();
+                    }
+                }
+                break;
+            default:
+            Log.d(LOG_TAG, "onRequestPermissionsResult: default error...");
+                break;
         }
+        //placehold value 
         return true;
     }
 
@@ -376,6 +441,88 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     }
 
+    public synchronized void loadAudioFile() {
+        if (preprocessThread != null) {
+            return;
+        }
+        shouldContinue = true;
+        preprocessThread =
+                new Thread(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                preprocessAudioFile();
+                            }
+                        });
+        preprocessThread.start();
+    }
+
+    private void preprocessAudioFile(){
+        Log.d(LOG_TAG, "Preprocessing audio file..");
+        try {
+            String key = FlutterMain.getLookupKeyForAsset(audioDir);
+            AssetFileDescriptor fileDescriptor = assetManager.openFd(key);
+            FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
+
+            FileChannel fileChannel = inputStream.getChannel();
+            long startOffset = fileDescriptor.getStartOffset();
+            long declaredLength = fileDescriptor.getDeclaredLength();
+            MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+
+            int fileSize = buffer.limit();
+            int bufferSize = 44032;
+            int indexCount = 0;
+            int inferenceCount = 0;
+            int numOfInferences = (int) Math.ceil((float) fileSize/bufferSize);
+            Log.d(LOG_TAG, "fileSize: " + fileSize/1000 + " KB");
+            Log.d(LOG_TAG, "numOfInference " + numOfInferences);
+
+            byte[] buf = new byte[bufferSize];
+            byte[] tempBuf = new byte[bufferSize];
+            for (int i = 0; i < fileSize; i++){   
+                
+                //Inferences that is not final
+                if((i+1) % bufferSize == 0 && inferenceCount != numOfInferences){
+                    // Add recognize here
+                    Log.d(LOG_TAG, "Making inference and clearing buffer array");
+                    Log.d(LOG_TAG, "Audio file1: " + Arrays.toString(buf));
+                    buf = new byte[bufferSize];
+
+                    //need to reset index or out of array error
+                    buf[indexCount] = buffer.get(i);
+                    Log.d(LOG_TAG, "Index: " + i);
+                    Log.d(LOG_TAG, "IndexCount: " + indexCount);
+                    indexCount = 0; 
+                    inferenceCount += 1;
+                
+                //Final inference 
+                }else if(i == fileSize-1 && inferenceCount == numOfInferences-1){
+                        Log.d(LOG_TAG, "Making final inference.");
+                        Log.d(LOG_TAG, "Audio file2: " + Arrays.toString(buf));
+                        Log.d(LOG_TAG, "Index: " + i);
+                        Log.d(LOG_TAG, "IndexCount: " + indexCount);
+                        buf = new byte[bufferSize];
+                        break;  //break in case buffer.limit() does not stop the loop
+                
+                //append mappedbytebuffer to inference buffer
+                }else{
+                    buf[indexCount] = buffer.get(i);
+                    //for debugging
+                    // if(inferenceCount == numOfInferences-1){
+                    //     Log.d(LOG_TAG, "Index: " + i);
+                    //     Log.d(LOG_TAG, "IndexCount: " + indexCount);
+                    // }
+                    indexCount += 1;
+                }
+            }
+            
+          } catch(IOException e) {
+            Log.d(LOG_TAG, "Error loading audio file: " + e);
+          }
+
+    }
+
+   
     public synchronized void startRecording() {
         if (recordingThread != null) {
             return;
