@@ -40,6 +40,33 @@ class TfliteAudio {
         .map((event) => Map<dynamic, dynamic>.from(event));
   }
 
+  ///Load stored audio file, preprocess and then fed into model.
+  static Future recogniseAudioFile(
+      {
+      // required int sampleRate,
+      // required int recordingLength,
+      required String audioDirectory,
+      required int bufferSize,
+      double detectionThreshold = 0.3,
+      int numOfInferences = 1,
+      int averageWindowDuration = 0,
+      int minimumTimeBetweenSamples = 0,
+      int suppressionTime = 0}) async {
+    return _channel.invokeMethod(
+      'recogniseAudioFile',
+      {
+        // 'sampleRate': sampleRate,
+        // 'recordingLength': recordingLength,
+        'audioDirectory': audioDirectory,
+        'bufferSize': bufferSize,
+        'averageWindowDuration': averageWindowDuration,
+        'detectionThreshold': detectionThreshold,
+        'minimumTimeBetweenSamples': minimumTimeBetweenSamples,
+        'suppressionTime': suppressionTime
+      },
+    );
+  }
+
   ///call [stopAudioRecognition] to forcibly stop recording, recognition and
   ///stream.
   static Future stopAudioRecognition() async {
