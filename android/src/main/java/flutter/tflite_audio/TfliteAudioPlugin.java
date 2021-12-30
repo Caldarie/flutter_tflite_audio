@@ -18,8 +18,16 @@ import android.media.MediaRecorder;
 import android.os.Looper;
 import android.os.Handler;
 
-// import android.media.MediaPlayer; //testing purpose
-
+//!TESTING PURPOSE FOR PREPROCESSING AUDIO
+import android.media.AudioManager;
+import android.media.AudioTrack;
+import android.media.MediaPlayer; 
+import android.media.MediaExtractor; 
+import android.media.AudioFormat;
+import android.media.MediaCodec;
+import android.media.MediaFormat;
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.core.app.ActivityCompat;
 import androidx.annotation.NonNull;
@@ -38,7 +46,9 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.ByteOrder; //required for preprocessing
 import java.nio.MappedByteBuffer;
+import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -75,8 +85,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     //working recording variables
     AudioRecord record;
-    short[] recordingBuffer;
-    short[] recordingBufferCache;
+    // short[] recordingBuffer;
+    // short[] recordingBufferCache;
     int countNumOfInferences = 1;
     int recordingOffset = 0;
     boolean shouldContinue = true;
@@ -85,7 +95,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     //preprocessing variables
     private Thread preprocessThread;
-    private String audioDir;
+    private String audioDirectory;
+    // short[] audioBuffer;
+    short[][] audioBufferCache;
 
     //working label variables
     private List<String> labels;
@@ -102,7 +114,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private Activity activity;
     private Context applicationContext;
     private MethodChannel methodChannel;
-    private EventChannel eventChannel;
+    private EventChannel audioRecognitionChannel;
+    private EventChannel fileRecognitionChannel;
     private EventSink events;
 
     //recording variables
@@ -115,16 +128,22 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private String inputType;
     private boolean outputRawScores;
 
-    // get objects to convert to float and long
-    private double detectObj;
-    private int avgWinObj;
-    private int minTimeObj;
+    // // get objects to convert to float and long
+    // private double detectObj;
+    // private int avgWinObj;
+    // private int minTimeObj;
     
     //labelsmoothing variables 
     private float detectionThreshold;
     private long averageWindowDuration;
     private long minimumTimeBetweenSamples;
     private int suppressionTime;
+
+    //!Debugging - delete this
+    private MediaCodec mediaCodec;
+    MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+    private AtomicBoolean quit = new AtomicBoolean(false);
+    private AudioTrack audioTrack;
 
     static Activity getActivity() {
         return instance.activity;
@@ -146,9 +165,11 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         this.methodChannel = new MethodChannel(messenger, "tflite_audio");
         this.methodChannel.setMethodCallHandler(this);
 
-        this.eventChannel = new EventChannel(messenger, "startAudioRecognition");
-        this.eventChannel.setStreamHandler(this);
+        this.audioRecognitionChannel = new EventChannel(messenger, "AudioRecognitionStream");
+        this.audioRecognitionChannel.setStreamHandler(this);
 
+        this.fileRecognitionChannel = new EventChannel(messenger, "FileRecognitionStream");
+        this.fileRecognitionChannel.setStreamHandler(this);
     }
 
     @Override
@@ -159,13 +180,15 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         this.methodChannel.setMethodCallHandler(null);
         this.methodChannel = null;
 
-        this.eventChannel.setStreamHandler(null);
-        this.eventChannel = null;
+        this.audioRecognitionChannel.setStreamHandler(null);
+        this.audioRecognitionChannel = null;
+
+        this.fileRecognitionChannel.setStreamHandler(null);
+        this.fileRecognitionChannel = null;
     }
 
 
     public void onAttachedToActivity(ActivityPluginBinding binding) {
-        // onAttachedToActivity(binding.getActivity());
         this.activity = binding.getActivity();
         binding.addRequestPermissionsResultListener(this);
     }
@@ -195,8 +218,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         switch (call.method) {
             case "loadModel":
                 Log.d(LOG_TAG, "loadModel");
-                this.inputType = (String) arguments.get("inputType");
-                this.outputRawScores = (boolean) arguments.get("outputRawScores");
                 try {
                     loadModel(arguments);
                 } catch (Exception e) {
@@ -205,10 +226,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 break;
             case "stopAudioRecognition":
                 forceStopRecogniton();
-                break;
-            case "recogniseAudioFile":
-                this.audioDir = (String) arguments.get("audioDirectory");
-                checkPermissions(REQUEST_READ_EXTERNAL_STORAGE);
                 break;
             default:
                 result.notImplemented();
@@ -220,36 +237,73 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     @Override
     public void onListen(Object _arguments, EventSink events) {
         HashMap arguments = (HashMap) _arguments;
-
         this.events = events;
-
-        //load recording variables
-        this.bufferSize = (int) arguments.get("bufferSize");
-        this.sampleRate = (int) arguments.get("sampleRate");
-        this.recordingLength = (int) arguments.get("recordingLength");
-        this.numOfInferences = (int) arguments.get("numOfInferences");
-
-        // get objects to convert to float and long
-        this.detectObj = (double) arguments.get("detectionThreshold");
-        this.avgWinObj = (int) arguments.get("averageWindowDuration");
-        this.minTimeObj = (int) arguments.get("minimumTimeBetweenSamples");
         
-        //load labelsmoothing variables 
+        Log.d(LOG_TAG, "Parameters: " + arguments);
+
+        // label smoothing variables
+        double detectObj = (double) arguments.get("detectionThreshold");
         this.detectionThreshold = (float)detectObj;
+        int avgWinObj = (int) arguments.get("averageWindowDuration");
         this.averageWindowDuration = (long)avgWinObj;
+        int minTimeObj = (int) arguments.get("minimumTimeBetweenSamples");
         this.minimumTimeBetweenSamples = (long)minTimeObj;
         this.suppressionTime = (int) arguments.get("suppressionTime");
+                
 
-        checkPermissions(REQUEST_RECORD_AUDIO);
+        switch ((String) arguments.get("method")) {
+            case "setAudioRecognitionStream":
+                this.bufferSize = (int) arguments.get("bufferSize");
+                this.sampleRate = (int) arguments.get("sampleRate");
+                this.recordingLength = (int) arguments.get("recordingLength");
+                this.numOfInferences = (int) arguments.get("numOfInferences");
+                checkPermissions(REQUEST_RECORD_AUDIO);
+                break;
+            case "setFileRecognitionStream":
+                // Log.d(LOG_TAG, "setting file recognition listener");
+                this.audioDirectory = (String) arguments.get("audioDirectory");
+                this.recordingLength = (int) arguments.get("recordingLength");
+                checkPermissions(REQUEST_READ_EXTERNAL_STORAGE);
+                break;
+            default:
+                throw new AssertionError("Error with listening to stream.");
+        }
+
+    
     }
 
     @Override
-    public void onCancel(Object arguments) {
+    public void onCancel(Object _arguments) {
         this.events = null;
+
+        // HashMap arguments = (HashMap) _arguments;
+        // this.detectionThreshold = null;
+        // this.averageWindowDuration = null;
+        // this.minimumTimeBetweenSamples = null;
+        // this.suppressionTime = null;
+        
+        // switch ((String) arguments.get("method")) {
+        //     case "setAudioRecognitionStream":
+        //         this.bufferSize = null;
+        //         this.sampleRate = null;
+        //         this.recordingLength = null;
+        //         this.numOfInferences = null;
+        //         break;
+        //     case "setFileRecognitionStream'":
+        //         this.audioDirectory = null;
+        //         this.recordingLength = null;
+        //         break;
+        //     default:
+        //         throw new AssertionError("Error with stream cancellation.");
+        // }
+
+     
     }
 
 
     private void loadModel(HashMap arguments) throws IOException {
+        this.inputType = (String) arguments.get("inputType");
+        this.outputRawScores = (boolean) arguments.get("outputRawScores");
         String model = arguments.get("model").toString();
         Log.d(LOG_TAG, "model name is: " + model);
         Object isAssetObj = arguments.get("isAsset");
@@ -457,63 +511,135 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         preprocessThread.start();
     }
 
+    // public static short[] shortMe(byte[] bytes) {
+    //     short[] out = new short[bytes.length / 2]; // will drop last byte if odd number
+    //     ByteBuffer bb = ByteBuffer.wrap(bytes);
+    //     for (int i = 0; i < out.length; i++) {
+    //         out[i] = bb.getShort();
+    //     }
+    //     return out;
+    // }
+
     private void preprocessAudioFile(){
         Log.d(LOG_TAG, "Preprocessing audio file..");
         try {
-            String key = FlutterMain.getLookupKeyForAsset(audioDir);
+            //Get path from assets
+            String key = FlutterMain.getLookupKeyForAsset(audioDirectory);
             AssetFileDescriptor fileDescriptor = assetManager.openFd(key);
             FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
 
+            //get exact location from storage
             FileChannel fileChannel = inputStream.getChannel();
             long startOffset = fileDescriptor.getStartOffset();
             long declaredLength = fileDescriptor.getDeclaredLength();
-            MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+            // MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
 
-            int fileSize = buffer.limit();
-            int bufferSize = 44032;
-            int indexCount = 0;
-            int inferenceCount = 0;
-            int numOfInferences = (int) Math.ceil((float) fileSize/bufferSize);
-            Log.d(LOG_TAG, "fileSize: " + fileSize/1000 + " KB");
+            //Used for converting byte to short data
+            MediaDecoder decoder = new MediaDecoder(fileDescriptor, startOffset, declaredLength);
+            byte[] byteData = decoder.readByteData(); //!TODO - FIX THIS - not outputing entire length
+            // ByteBuffer byteBuffer = ByteBuffer.wrap(byteData);
+            ShortBuffer shortBuffer = ByteBuffer.wrap(byteData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+           
+            //Calculate number of inferences
+            int inputSize = recordingLength; //!todo - set this as automatic max(inputShape)
+            int shortDataLength = byteData.length/2;  // will drop last byte if odd number
+            int numOfInferences =  numOfInferences =  (int) Math.ceil((float) shortDataLength/inputSize);
+            Log.d(LOG_TAG, "byte length: " + byteData.length);
+            Log.d(LOG_TAG, "short length: " + shortDataLength);
             Log.d(LOG_TAG, "numOfInference " + numOfInferences);
 
-            byte[] buf = new byte[bufferSize];
-            byte[] tempBuf = new byte[bufferSize];
-            for (int i = 0; i < fileSize; i++){   
-                
-                //Inferences that is not final
-                if((i+1) % bufferSize == 0 && inferenceCount != numOfInferences){
-                    // Add recognize here
-                    Log.d(LOG_TAG, "Making inference and clearing buffer array");
-                    Log.d(LOG_TAG, "Audio file1: " + Arrays.toString(buf));
-                    buf = new byte[bufferSize];
+            //this array will be fed into model
+            short [] audioChunk = new short[inputSize]; 
+           
+            //Keep track of preprocessing loop
+            int indexCount = 0;
+            int inferenceCount = 0;
 
-                    //need to reset index or out of array error
-                    buf[indexCount] = buffer.get(i);
-                    Log.d(LOG_TAG, "Index: " + i);
-                    Log.d(LOG_TAG, "IndexCount: " + indexCount);
-                    indexCount = 0; 
-                    inferenceCount += 1;
+            if(shortDataLength <= inputSize){
+                Log.d(LOG_TAG, "Short data is under input size.");
+           
+                short [] out = new short[shortDataLength];
+                for (int i = 0; i < shortDataLength; i++) {
+                    out[i] = shortBuffer.get(i);
+                }
+                System.arraycopy(out, 0, audioChunk, 0, shortDataLength);
+                Arrays.fill(audioChunk, shortDataLength, inputSize-1, (short) 0);   //fills out remaining array with zeros
+                lastInferenceRun = true;
+                // startRecognition(audioChunk);
+
+                //!Debugging - check if short plays sound
+                AudioTrack  at=new AudioTrack(AudioManager.STREAM_MUSIC, 16000, AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT, 16000*2 /* 1 second buffer */,
+                        AudioTrack.MODE_STREAM);
+                at.write(audioChunk, 0, audioChunk.length);
+                at.play();  
+
+                //!Remove - debugging
+                Log.d(LOG_TAG, "audioChunk second last element: " + audioChunk[shortDataLength-2]);
+                Log.d(LOG_TAG, "audioChunk last element: " + audioChunk[shortDataLength-1]);
+                Log.d(LOG_TAG, "audioChunk first remaining element: " + audioChunk[shortDataLength]);
+                Log.d(LOG_TAG, "audioChunk last remaining element: " + audioChunk[inputSize-1]);
+            }else{
+                 for (int i = 0; i < shortDataLength; i++){   
                 
-                //Final inference 
-                }else if(i == fileSize-1 && inferenceCount == numOfInferences-1){
-                        Log.d(LOG_TAG, "Making final inference.");
-                        Log.d(LOG_TAG, "Audio file2: " + Arrays.toString(buf));
+                    //Inferences that is not final
+                    if((i+1) % inputSize == 0 && inferenceCount != numOfInferences){
+                    
+                        Log.d(LOG_TAG, "Making inference. Count: " + inferenceCount);
                         Log.d(LOG_TAG, "Index: " + i);
                         Log.d(LOG_TAG, "IndexCount: " + indexCount);
-                        buf = new byte[bufferSize];
-                        break;  //break in case buffer.limit() does not stop the loop
-                
-                //append mappedbytebuffer to inference buffer
-                }else{
-                    buf[indexCount] = buffer.get(i);
-                    //for debugging
-                    // if(inferenceCount == numOfInferences-1){
-                    //     Log.d(LOG_TAG, "Index: " + i);
-                    //     Log.d(LOG_TAG, "IndexCount: " + indexCount);
-                    // }
-                    indexCount += 1;
+                        Log.d(LOG_TAG, "Audio file " + inferenceCount + ": " + Arrays.toString(audioChunk));
+
+                        startRecognition(audioChunk);
+
+                        // awaits for recogniton thread to finish before looping.
+                        try{
+                            recognitionThread.join();
+                        }catch(InterruptedException ex){
+                            Log.d(LOG_TAG, "Error with recognition thread: " + ex);
+                        }
+                        
+                        //need to reset index or out of array error
+                        audioChunk = new short[bufferSize];
+                        audioChunk[indexCount] = shortBuffer.get(i);
+                        indexCount = 0; 
+                        inferenceCount += 1;
+                    
+                    //Final inference 
+                    }else if(i == shortDataLength-1 && inferenceCount == numOfInferences-1){
+                            Log.d(LOG_TAG, "Making final inference. Count: " + inferenceCount);
+                            Log.d(LOG_TAG, "Index: " + i);
+                            Log.d(LOG_TAG, "IndexCount: " + indexCount);
+                            Log.d(LOG_TAG, "Final audio file: " + Arrays.toString(audioChunk));
+
+                            lastInferenceRun = true;
+                            startRecognition(audioChunk);
+
+                            // awaits for recogniton thread to finish before looping.
+                            try{
+                                recognitionThread.join();
+                            }catch(InterruptedException ex){
+                                Log.d(LOG_TAG, "Error with recognition thread: " + ex);
+                            }
+
+                            //clears out memmory after recognition is done
+                            byteData = null;
+                            audioChunk = null;
+                            indexCount = 0; 
+                            inferenceCount = 0;
+                    
+                    //append mappedbytebuffer to inference buffer
+                    }else{
+                        audioChunk[indexCount] = shortBuffer.get(i);
+                        //for debugging
+                        if(inferenceCount == numOfInferences-1){
+                            Log.d(LOG_TAG, "Index: " + i);
+                            Log.d(LOG_TAG, "IndexCount: " + indexCount);
+                        }
+                        indexCount += 1;
+                    }
                 }
+               
             }
             
           } catch(IOException e) {
@@ -544,8 +670,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
    
         short[] recordingFrame = new short[bufferSize / 2];
-        recordingBuffer = new short[recordingLength]; //this buffer will be fed into model
-        recordingBufferCache = new short[recordingLength]; //temporary holds recording buffer until recognitionStarts
+        // recordingBuffer = new short[recordingLength]; //this buffer will be fed into model
+        short[] recordingBufferCache = new short[recordingLength]; //temporary holds recording buffer until recognitionStarts
 
         // Estimate the buffer size we'll need for this device.
         // int bufferSize =
@@ -599,8 +725,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     recordingOffset += numberRead;
                
                     Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + recordingLength);  
-                    recordingBuffer = recordingBufferCache;
-                    startRecognition();
+                    // recordingBuffer = recordingBufferCache;
+                    startRecognition(recordingBufferCache);
+                    countNumOfInferences += 1;
 
                     Log.v(LOG_TAG, "Clearing recordingBufferCache..");
                     recordingBufferCache = new short[recordingLength];
@@ -624,8 +751,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     Log.v(LOG_TAG, "Recording trimmed and appended at length: " + remainingRecordingLength);
                     Log.v(LOG_TAG, "recordingOffset: " + (recordingOffset) + "/" + recordingLength);    //should output max recording length
 
-                    recordingBuffer = recordingBufferCache;
-                    startRecognition();
+                    // recordingBuffer = recordingBufferCache;
+                    startRecognition(recordingBufferCache);
+                    countNumOfInferences += 1;
                     
                     Log.v(LOG_TAG, "Clearing recording buffer..");
                     Log.v(LOG_TAG, "Appending remaining recording frame to new recording buffer..");
@@ -650,10 +778,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     Log.v(LOG_TAG, "recordingOffset: " + (recordingOffset + remainingRecordingLength) + "/" + recordingLength);    //should output max recording length
                     Log.v(LOG_TAG, "Unused excess recording length: " + remainingRecordingLength);
 
-                    recordingBuffer = recordingBufferCache;
+                    // recordingBuffer = recordingBufferCache;
                     lastInferenceRun = true;
 
-                    startRecognition();
+                    startRecognition(recordingBufferCache);
                     stopRecording();
 
                     //reset after recognition and recording. Don't change position!!
@@ -666,10 +794,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     Log.v(LOG_TAG, "Reached indicated number of inferences.");
                     
                     System.arraycopy(recordingFrame, 0, recordingBufferCache, recordingOffset, numberRead);
-                    recordingBuffer = recordingBufferCache;
+                    // recordingBuffer = recordingBufferCache;
                     lastInferenceRun = true;
 
-                    startRecognition();
+                    startRecognition(recordingBufferCache);
                     stopRecording();
 
                      //reset after recognition and recording. Don't change position!!
@@ -704,7 +832,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         }
     }
 
-    public synchronized void startRecognition() {
+    public synchronized void startRecognition(short[] recordingBuffer) {
         if (recognitionThread != null) {
             return;
         }
@@ -714,18 +842,17 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                         new Runnable() {
                             @Override
                             public void run() {
-                                recognize();                       
+                                recognize(recordingBuffer);                       
                             }
                         });
         recognitionThread.start();
     }
 
 
-    private void recognize() {
+    private void recognize(short[] recordingBuffer) {
         Log.v(LOG_TAG, "Recognition started.");
-        countNumOfInferences += 1;
-
-         //catches null exception.
+ 
+        //  catches null exception.
          if(events == null){
             throw new AssertionError("Events is null. Cannot start recognition");
         }
@@ -750,9 +877,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 Log.v(LOG_TAG, "InputType: " + inputType);
                 floatInputBuffer = new float[recordingLength][1];
                 sampleRateList = new int[]{sampleRate};
-                
-                inputArray = new Object[]{floatInputBuffer, sampleRateList};        
-                outputMap.put(0, floatOutputBuffer);
             break;
 
             case "rawAudio":
@@ -765,21 +889,21 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     //[1, recordingLength]
                     floatInputBuffer = new float[1][recordingLength];
                 }
-                // else{
-                //     throw new Exception("input shape: " + inputShapeMsg + " does not match with rawAudio");
-                // } 
+                else{
+                    throw new AssertionError(inputType + " is an incorrect input type");
+                } 
             break;
-    }
+        }
 
 
         recordingBufferLock.lock();
         try {
             int maxLength = recordingBuffer.length;
             System.arraycopy(recordingBuffer, 0, inputBuffer, 0, maxLength);
+            //  System.arraycopy(recordingBuffer, 0, inputBuffer, 0, recordingLength);
         } finally {
             recordingBufferLock.unlock();
         }
-  
 
         long startTime = new Date().getTime();
         switch (inputType) {
@@ -789,6 +913,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 for (int i = 0; i < recordingLength; ++i) {
                     floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f;
                 }
+
+                inputArray = new Object[]{floatInputBuffer, sampleRateList};        
+                outputMap.put(0, floatOutputBuffer);
 
                 tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
                 lastProcessingTimeMs = new Date().getTime() - startTime;
