@@ -53,6 +53,7 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
@@ -564,7 +565,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             //Keep track of preprocessing loop
             short [] audioChunk = new short[inputSize]; 
             int indexCount = 0;
-            int inferenceCount = 0;
+            int inferenceCount = 1;
 
             //!Debugging - check if short plays sound
             // int sampleRate = 16000;
@@ -610,11 +611,11 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     if((i+1) % inputSize == 0 && inferenceCount != numOfInferences){
                         
                         //!Remove - debugging
-                        Log.d(LOG_TAG, "Inference count: " + (inferenceCount+1) + "/" + numOfInferences);
+                        Log.d(LOG_TAG, "Inference count: " + (inferenceCount) + "/" + numOfInferences);
                         Log.d(LOG_TAG, "Index: " + i);
                         Log.d(LOG_TAG, "IndexCount: " + indexCount);
                         Log.d(LOG_TAG, "Audio file " + inferenceCount + ": " + Arrays.toString(audioChunk));
-
+                        
                         startRecognition(audioChunk);
 
                         // awaits for recogniton thread to finish before looping.
@@ -625,16 +626,17 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                         }
                         
                         //need to reset index or out of array error
-                        audioChunk = new short[inputSize];
-                        audioChunk[indexCount] = shortBuffer.get(i);
+                        //Do not change the positions below!!!!
                         indexCount = 0; 
                         inferenceCount += 1;
+                        audioChunk = new short[inputSize];
+                        audioChunk[indexCount] = shortBuffer.get(i);                
                     
                     //Final inference 
-                    }else if(i == shortDataLength-1 && inferenceCount == numOfInferences-1){
+                    }else if(i == shortDataLength-1 && inferenceCount == numOfInferences){
 
                             //!Remove - debugging
-                            Log.d(LOG_TAG, "Inference count: " + (inferenceCount+1) + "/" + numOfInferences);
+                            Log.d(LOG_TAG, "Inference count: " + (inferenceCount) + "/" + numOfInferences);
                             Log.d(LOG_TAG, "Index: " + i);
                             Log.d(LOG_TAG, "IndexCount: " + indexCount);
                             Log.d(LOG_TAG, "Final audio file: " + Arrays.toString(audioChunk));
@@ -651,7 +653,48 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                                 Log.d(LOG_TAG, "audioChunk second last missing element: " + audioChunk[inputSize-2]);
                                 Log.d(LOG_TAG, "audioChunk last missing element: " + audioChunk[inputSize-1]);
 
-                                Arrays.fill(audioChunk, indexCount, inputSize-1, (short) 0);
+                                //!TESTING PURPOSES
+                                int remain = audioChunk.length-indexCount;
+                                // byte[] pad = new byte [remain*2];
+                                // // byte[] pad = new byte [4];
+                                // Arrays.fill(pad, 0, pad.length, (byte) 0);
+                                //                                //
+                                // ShortBuffer sb = ByteBuffer.wrap(pad).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer(); 
+                             
+                                short[] padding = new short[remain];
+                                Random random = new Random();
+
+                                for(int x = 0; x < remain; x++){
+                                    int rand = random.nextInt(10+10) - 10;
+                                    short value = (short) rand;
+                                    padding[x] = value;
+                                }    
+                                // for(int x = 0; x < remain; x++){
+                                //     padding[x] = sb.get(x);
+                                // }
+                                System.arraycopy(padding, 0, audioChunk, indexCount, remain);
+                                Log.d(LOG_TAG, "Length of remain: " + remain);
+                                // Log.d(LOG_TAG, "Limit of short buffer: " + sb.limit());
+                             
+                                
+
+                                //!TESTING PURPOSES
+                                // int remain = audioChunk.length-indexCount;
+                                // short[] padding = Arrays.copyOfRange(audioChunk, 0, remain);
+                                // System.arraycopy(padding, 0, audioChunk, indexCount, remain);
+
+                                //!Remove - debugging
+                                Log.d(LOG_TAG, "audioChunk first element: " + audioChunk[0]);
+                                Log.d(LOG_TAG, "audioChunk second last element: " + audioChunk[indexCount-2]);
+                                Log.d(LOG_TAG, "audioChunk last element: " + audioChunk[indexCount-1]);
+                                Log.d(LOG_TAG, "audioChunk first missing element: " + audioChunk[indexCount]);
+                                Log.d(LOG_TAG, "audioChunk second missing element: " + audioChunk[indexCount+1]);
+                                Log.d(LOG_TAG, "audioChunk second last missing element: " + audioChunk[inputSize-2]);
+                                Log.d(LOG_TAG, "audioChunk last missing element: " + audioChunk[inputSize-1]);
+                                
+                                // Arrays.fill(audioChunk, indexCount, inputSize-1, (short) 0);
+
+                            
                             }
 
                             lastInferenceRun = true;
@@ -669,19 +712,15 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                             byteData = null;
                             audioChunk = null;
                             indexCount = 0; 
-                            inferenceCount = 0;
+                            inferenceCount = 1;                  
 
-                            //!TODO - THIS IS NOT SHOWING UP - MAY BE THE REASON WHY ITS RETURNING NAN OUTPUT
-                            Log.d(LOG_TAG, "Final audio file: " + Arrays.toString(audioChunk));
-                    
-                    //append mappedbytebuffer to inference buffer
+                    //apend elements to buffer until it reaches the limit
                     }else{
-                        audioChunk[indexCount] = shortBuffer.get(i);
-                        //for debugging
-                        // if(inferenceCount == numOfInferences-1){
+                        // if(inferenceCount == numOfInferences-1 ){
                         //     Log.d(LOG_TAG, "Index: " + i);
                         //     Log.d(LOG_TAG, "IndexCount: " + indexCount);
                         // }
+                        audioChunk[indexCount] = shortBuffer.get(i);
                         indexCount += 1;
                     }
                 }
@@ -903,6 +942,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             throw new AssertionError("Events is null. Cannot start recognition");
         }
 
+        Log.d(LOG_TAG, "Final audio file: " + Arrays.toString(recordingBuffer));
+
         int[] inputShape = tfLite.getInputTensor(0).shape();
         String inputShapeMsg = Arrays.toString(inputShape);
         Log.v(LOG_TAG, "Input shape: " + inputShapeMsg);
@@ -940,7 +981,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 } 
             break;
         }
-
 
         recordingBufferLock.lock();
         try {
