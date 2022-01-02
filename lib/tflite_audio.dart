@@ -16,7 +16,6 @@ class TfliteAudio {
   /// Do not change the parameter 'method'
   static Stream<Map<dynamic, dynamic>> startAudioRecognition(
       {required int sampleRate,
-      required int recordingLength,
       required int bufferSize,
       double detectionThreshold = 0.3,
       int numOfInferences = 1,
@@ -27,7 +26,6 @@ class TfliteAudio {
     final audioRecognitionStream =
         audioRecongitionChannel.receiveBroadcastStream(<String, dynamic>{
       'sampleRate': sampleRate,
-      'recordingLength': recordingLength,
       'bufferSize': bufferSize,
       'numOfInferences': numOfInferences,
       'averageWindowDuration': averageWindowDuration,
@@ -47,7 +45,6 @@ class TfliteAudio {
   ///Do not change the parameter 'method'
   static Stream<Map<dynamic, dynamic>> startFileRecognition(
       {required String audioDirectory,
-      required int recordingLength,
       double detectionThreshold = 0.3,
       int averageWindowDuration = 0,
       int minimumTimeBetweenSamples = 0,
@@ -56,7 +53,6 @@ class TfliteAudio {
     final fileRecognitionStream =
         fileRecognitionChannel.receiveBroadcastStream(<String, dynamic>{
       'audioDirectory': audioDirectory,
-      'recordingLength': recordingLength,
       'averageWindowDuration': averageWindowDuration,
       'detectionThreshold': detectionThreshold,
       'minimumTimeBetweenSamples': minimumTimeBetweenSamples,
