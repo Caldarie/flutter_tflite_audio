@@ -24,7 +24,6 @@ class _MyAppState extends State<MyApp> {
   // final String label = 'assets/decoded_wav_label.txt';
   // final String inputType = 'decodedWav';
   // final int sampleRate = 16000;
-  // final int recordingLength = 16000;
   // final int bufferSize = 2000;
 
   //!example values for google's teachable machine model
@@ -32,14 +31,13 @@ class _MyAppState extends State<MyApp> {
   final String label = 'assets/google_teach_machine_label.txt';
   final String inputType = 'rawAudio';
   final int sampleRate = 44100;
-  final int recordingLength = 44032;
-  final int bufferSize = 22050;
-  // final int bufferSize = 11008;
+  final int bufferSize = 11008;
+  // final int bufferSize = 22050;
 
   //!Optional parameters you can adjust to modify your interence.
   final bool outputRawScores = false;
-  // final int numThreads = 1;
   final int numOfInferences = 5;
+  // final int numThreads = 1;
   // final bool isAsset = true;
 
   //!Adjust the values below when tuning model detection.
@@ -64,9 +62,16 @@ class _MyAppState extends State<MyApp> {
   /// get result by calling the stream startAudioRecognition
   /// Uncomment the parameters below if you wish to adjust the values
   void getResult() {
+    // result = TfliteAudio.startFileRecognition(
+    //   audioDirectory: "assets/sampleAudio.wav",
+    //   // detectionThreshold: this.detectionThreshold,
+    //   // averageWindowDuration: this.averageWindowDuration,
+    //   // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
+    //   // suppressionTime: this.suppressionTime,
+    // );
+
     result = TfliteAudio.startAudioRecognition(
       sampleRate: this.sampleRate,
-      recordingLength: this.recordingLength,
       bufferSize: this.bufferSize,
       numOfInferences: this.numOfInferences,
       // detectionThreshold: this.detectionThreshold,
@@ -75,10 +80,8 @@ class _MyAppState extends State<MyApp> {
       // suppressionTime: this.suppressionTime,
     );
 
-    ///Logs the results and assigns false when stream is finished.
-    ///event["recognitionResult"]
-    ///event["hasPermission"]
-    ///event["inferenceTime"]
+    //Event returns a map. Keys are:
+    //event["recognitionResult"], event["hasPermission"], event["inferenceTime"]
     result
         ?.listen((event) =>
             log("Recognition Result: " + event["recognitionResult"].toString()))
