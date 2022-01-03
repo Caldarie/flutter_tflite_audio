@@ -693,13 +693,14 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             try {
                 
                 //Continue to append frame until it reaches recording length
+                //Do not change inferenceCount <= numOfInferences! - counts last inference
                 if(inferenceCount <= numOfInferences && recordingOffsetCount < inputSize){
     
                     System.arraycopy(recordingFrame, 0, recordingBufferCache, recordingOffset, numberRead);
                     recordingOffset += numberRead;
                     Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + inputSize + " inferenceCount: " + inferenceCount);
                 
-                //When recording buffer populates, inference starts. Resets recording buffer after iference
+                 //Starts recognition when recording bufffer is full. Resest recording buffer for next inference
                 }else if(inferenceCount < numOfInferences  && recordingOffsetCount == inputSize){
                  
           
@@ -772,7 +773,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     inferenceCount = 1;
 
                          
-                //stop recording once numOfInference is reached.
+                //Final inference. Stops recognitions and recording.
                 }else if(inferenceCount == numOfInferences && recordingOffsetCount == inputSize){
                     Log.v(LOG_TAG, "Reached indicated number of inferences.");
                     
