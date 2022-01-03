@@ -1,7 +1,7 @@
 ## 0.2.2
 * Feature: Added ability to recognise stored audio files
-* RecordingLength will no longer be required as a parameter.
-* Improved stability of asyncronous tasks.
+* Breaking Change: RecordingLength will no longer be required as a parameter.
+* Fixes: Improved stability of asyncronous tasks on Android.
 * 
 
 ## 0.2.1+2
