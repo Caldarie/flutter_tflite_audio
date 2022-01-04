@@ -1,8 +1,8 @@
 ## 0.2.2
 * Feature: Added ability to recognise stored audio files
 * Breaking Change: RecordingLength will no longer be required as a parameter.
-* Fixes: Improved stability of asyncronous tasks on Android.
-* 
+* Improved stability of asyncronous tasks on Android.
+* Fixed NaN output for bufferRates that are non divisible to recordingLength 
 
 ## 0.2.1+2
 * Fixed NaN raw score output for Android.
