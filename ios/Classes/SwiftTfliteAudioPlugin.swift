@@ -256,6 +256,31 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     func preprocessAudioFile(){
         print("Preprocessing audio file..")
 
+        var data: Data
+        // var recordingBuffer: [Int16] = []
+        
+        if(isAsset){
+            let audioKey = registrar.lookupKey(forAsset: audioDirectory)
+            let audioPath = Bundle.main.path(forResource: audioKey, ofType: nil)!
+            // data = try! Data(contentsOfFile: audioPath)
+            data = NSData(contentsOfFile: audioPath)! as Data
+            
+        } else {
+            let audioPath = audioDirectory;
+            let url = URL(string: audioPath!)
+            data = try! Data(contentsOf: url!)
+        }
+
+      
+        let format = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 44100, channels: 1, interleaved: true)
+        // let pcmBuffer = AVAudioPCMBuffer(pcmFormat: format!, frameCapacity: AVAudioFrameCount(data.count/2))
+
+        let d = data.convertedTo(format!) 
+        let i16array = data.withUnsafeBytes {
+            UnsafeBufferPointer<Int16>(start: $0, count: data.count/2).map(Int16.init(littleEndian:))
+        }
+        recognize(onBuffer: Array(i16array[0..<inputSize]))
+
     }
 
     
@@ -302,8 +327,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                                                        by: buffer.stride).map{ channelDataValue[$0] }
                 
                     
-
-                    //TODO - cover all conditionals?
 
                     //Append frames onto the recording buffer until it reaches the input size
                     //Do not change inferenceCount <= numOfInferences! - counts last inference
