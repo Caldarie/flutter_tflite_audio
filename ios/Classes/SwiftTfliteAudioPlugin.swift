@@ -127,7 +127,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             self.audioDirectory = arguments["audioDirectory"] as? String
             preprocessAudioFile()
             break
-            // checkPermissions(permissionType: "requestExternalPermission") 
         default:
             print("Unknown method type with listener")
         }
@@ -192,7 +191,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private func loadLabels(labelPath: URL){
         let contents = try! String(contentsOf: labelPath, encoding: .utf8)
         labelArray = contents.components(separatedBy: CharacterSet.newlines).filter({ $0 != ""})
-        print(labelArray)
+        print("labels: \(labelArray)")
     }
 
     func checkPermissions() {
@@ -257,8 +256,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         print("Preprocessing audio file..")
 
         var data: Data
-        // var recordingBuffer: [Int16] = []
-        
+        let inputSize = self.inputSize!
+
         if(isAsset){
             let audioKey = registrar.lookupKey(forAsset: audioDirectory)
             let audioPath = Bundle.main.path(forResource: audioKey, ofType: nil)!
@@ -271,15 +270,80 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             data = try! Data(contentsOf: url!)
         }
 
-      
-        let format = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 44100, channels: 1, interleaved: true)
-        // let pcmBuffer = AVAudioPCMBuffer(pcmFormat: format!, frameCapacity: AVAudioFrameCount(data.count/2))
-
-        let d = data.convertedTo(format!) 
-        let i16array = data.withUnsafeBytes {
+        //TODO - dont need to extract audio data????
+        //TODO - get sample rate and channels
+        //TODO - assert that it has be to be wav file, and mono      
+        //let format = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 44100, channels: 1, interleaved: true)
+        //let rawData = data.convertedTo(format!)
+       
+        //TODO - Fix deprecation
+        let int16Data = data.withUnsafeBytes {
             UnsafeBufferPointer<Int16>(start: $0, count: data.count/2).map(Int16.init(littleEndian:))
         }
-        recognize(onBuffer: Array(i16array[0..<inputSize]))
+        
+ 
+        //If missing samples are more than half, padding will be done. 
+        //Too little samples, is pointless to pad.)
+        let int16DataSize = int16Data.count
+        let remainingSamples = int16DataSize % inputSize
+        let missingSamples = inputSize - remainingSamples
+        let totalWithPad = int16DataSize + missingSamples
+        let totalWithoutPad = int16DataSize - remainingSamples
+        //!To debug requirePadding, simply change > to < before (inputSize/2)
+        let requirePadding: Bool = missingSamples > (inputSize/2) ? true : false //TODO - Make this user controlled?
+        let numOfInferences: Int = requirePadding == true ? Int(totalWithPad/inputSize) : Int(totalWithoutPad/inputSize)
+     
+
+        //!debugging
+        // print("int16DataSize: \(int16DataSize)")
+        // print("inputSize: \(inputSize)")
+        // print("remainingSamples: \(remainingSamples)")
+        // print("missingSamples: \(missingSamples)")
+        // print("totalWithPad: \(totalWithPad)")
+        // print("totalWithoutPad: \(totalWithoutPad)")
+        // print("require padding: \(requirePadding)")
+        // print("true: \(totalWithPad/inputSize)")
+        // print("false: \(totalWithoutPad/inputSize)")
+        // print("numOfInferences: \(numOfInferences)")
+
+                
+        //breaks intData16 array into chunks, so it can be fed to the model
+        var startCount = 0
+        var endCount = inputSize
+        for inferenceCount in 1...numOfInferences{
+            
+            if(inferenceCount != numOfInferences){
+                print("\(inferenceCount)/\(numOfInferences)")
+                recognize(onBuffer: Array(int16Data[startCount..<endCount]))
+                startCount = endCount
+                endCount += inputSize
+            }else{
+                if(requirePadding){
+                    endCount -= missingSamples
+                    let silenceArray: [Int16] = (-10...10).randomElements(missingSamples)
+                    let remainingArray = int16Data[startCount..<endCount]
+                    var paddedArray = remainingArray
+                    paddedArray.append(contentsOf: silenceArray)
+
+                    //!debug
+                    assert(paddedArray.count == inputSize, "Error. Mismatch with paddedArray")
+                    assert(startCount == totalWithoutPad, "Error. startCount mismatc totalWithoutPad")
+                    assert(endCount == totalWithPad, "Error. startCount mismatc totalWithoutPad")
+                    // print(startCount)
+                    // print(endCount)
+                    // print(remainingArray.count)
+                    // print(silenceArray.count)
+                    // print(paddedArray.count)
+                    // print(remainingArray)
+                    // print(silenceArray)
+                }else{
+                    recognize(onBuffer: Array(int16Data[startCount..<endCount]))
+                }
+            }   
+
+        }
+
+        recognize(onBuffer: Array(int16Data[0..<inputSize]))
 
     }
 
@@ -562,5 +626,17 @@ extension Decodable {
         let data = try JSONSerialization.data(withJSONObject: from, options: .prettyPrinted)
         let decoder = JSONDecoder()
         self = try decoder.decode(Self.self, from: data)
+    }
+}
+
+//https://stackoverflow.com/questions/28140145/create-an-array-of-random-numbers-in-swift
+extension RangeExpression where Bound: FixedWidthInteger {
+    func randomElements(_ n: Int) -> [Bound] {
+        precondition(n > 0)
+        switch self {
+        case let range as Range<Bound>: return (0..<n).map { _ in .random(in: range) }
+        case let range as ClosedRange<Bound>: return (0..<n).map { _ in .random(in: range) }
+        default: return []
+        }
     }
 }
