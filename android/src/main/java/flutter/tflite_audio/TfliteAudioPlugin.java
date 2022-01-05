@@ -566,8 +566,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                         // Log.d(LOG_TAG, "Final audio file: " + Arrays.toString(audioChunk));
 
                         if((i+1) % inputSize != 0){
-                            Log.d(LOG_TAG, "Padding missing elements to audioChunk..");
-
+                            Log.d(LOG_TAG, "Missing samples found in audioChunk..");
                             //!Debugging
                             // Log.d(LOG_TAG, "audioChunk first element: " + audioChunk[0]);
                             // Log.d(LOG_TAG, "audioChunk second last element: " + audioChunk[indexCount-2]);
@@ -581,6 +580,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                             short[] padding = new short[remain];
                             Random random = new Random();
 
+                            //TODO - ONLY PAD WHEN THERE IS LESS THAN HALF REMAINING
+
+                            Log.d(LOG_TAG, "Padding " + remain + " samples to audioChunk..");
                             for(int x = 0; x < remain; x++){
                                 int rand = random.nextInt(10+10) - 10;
                                 short value = (short) rand;
