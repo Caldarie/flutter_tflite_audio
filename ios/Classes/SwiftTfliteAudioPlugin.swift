@@ -20,13 +20,14 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private var events: FlutterEventSink!
     private var registrar: FlutterPluginRegistrar!
     private var result: FlutterResult!
-    // private var arguments: [String: AnyObject]! 
-
+    private var interpreter: Interpreter!
+    private var lastInferenceRun: Bool = false
+    
     //recording variables
     private var bufferSize: Int!
     private var sampleRate: Int!
-    private var numOfInferences: Int!
-
+    private var audioEngine: AVAudioEngine = AVAudioEngine()
+    
     //Model variables
     private var inputSize: Int!
     private var inputType: String!
@@ -36,32 +37,31 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private var label: String!
     private var isAsset: Bool!
     private var numThreads: Int!
+    private var numOfInferences: Int!
     
     //preprocessing variable
     private var audioDirectory: String!
+    private var isPreprocessing: Bool = false
+//    private var stopPreprocessing: Bool = false
+    private let maxInt16AsFloat32: Float32 = 32767.0
     
-    //labelsmoothing variables 
+    //labelsmoothing variables
+    private var recognitionResult: LabelSmoothing?
+    private var labelArray: [String] = []
     private var detectionThreshold: NSNumber!
     private var averageWindowDuration: Double!
     private var minimumTimeBetweenSamples: Double!
     private var suppressionTime: Double!
-
     
-    /// TensorFlow Lite `Interpreter` object for performing inference on a given model.
-    private var interpreter: Interpreter!
-
-    //AvAudioEngine used for recording
-    private var audioEngine: AVAudioEngine = AVAudioEngine()
-    
-    //Microphone variables
+    //threads
     private let conversionQueue = DispatchQueue(label: "conversionQueue")
-    private let maxInt16AsFloat32: Float32 = 32767.0
+    private let preprocessQueue = DispatchQueue(label: "preprocessQueue")
+    private let group = DispatchGroup() //notifies whether recognition thread is done
     
-    //label smooth variables
-    private var recognitionResult: LabelSmoothing?
-    private var labelArray: [String] = []
-
-
+    
+    
+    
+    
     init(registrar: FlutterPluginRegistrar) {
         self.registrar = registrar
     }
@@ -73,10 +73,10 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         registrar.addMethodCallDelegate(instance, channel: channel)
         
         let audioRecognitionChannel = FlutterEventChannel(name: "AudioRecognitionStream", binaryMessenger: registrar.messenger())
-        audioRecognitionChannel.setStreamHandler(instance)  
-
+        audioRecognitionChannel.setStreamHandler(instance)
+        
         let fileRecognitionChannel = FlutterEventChannel(name: "FileRecognitionStream", binaryMessenger: registrar.messenger())
-        fileRecognitionChannel.setStreamHandler(instance)  
+        fileRecognitionChannel.setStreamHandler(instance)
         
     }
     
@@ -94,21 +94,20 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             self.label = arguments["label"] as? String
             self.isAsset = arguments["isAsset"] as? Bool
             loadModel(registrar: registrar)
-            break 
+            break
         case "stopAudioRecognition":
-            stopAudioRecognition()
+            forceStopRecognition()
             break
         default: result(FlutterMethodNotImplemented)
         }
     }
     
-
     
     public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-     
+        
         let arguments: [String: AnyObject] = arguments as! [String: AnyObject]
         self.events = events
-
+        
         self.averageWindowDuration = arguments["averageWindowDuration"] as? Double
         self.detectionThreshold = arguments["detectionThreshold"] as? NSNumber
         self.minimumTimeBetweenSamples = arguments["minimumTimeBetweenSamples"] as? Double
@@ -130,7 +129,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         default:
             print("Unknown method type with listener")
         }
-
+        
         return nil
     }
     
@@ -138,7 +137,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         self.events = nil
         return nil
     }
-
+    
     func loadModel(registrar: FlutterPluginRegistrar){
         
         var modelPath: String
@@ -160,19 +159,19 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             // Create the `Interpreter` and allocate memory for the model's input `Tensor`s.
             self.interpreter = try Interpreter(modelPath: modelPath, options: options)
             try interpreter.allocateTensors()
-
+            
             self.inputShape = try interpreter.input(at: 0).shape.dimensions
             self.inputSize = inputShape.max()
             print("Input shape: \(inputShape!)")
             print("Input size \(inputSize!)")
             print("Input type \(inputType!)")
-
+            
         } catch let error {
             print("Failed to create the interpreter with error: \(error.localizedDescription)")
             //return nil
         }
         
-        //Load labels        
+        //Load labels
         if(label.count > 0){
             if(isAsset){
                 let labelKey = registrar.lookupKey(forAsset: label)
@@ -183,7 +182,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                 loadLabels(labelPath: labelPath!)
             }
         }
-
+        
     }
     
     //reads text files and retrieves values to string array
@@ -193,9 +192,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         labelArray = contents.components(separatedBy: CharacterSet.newlines).filter({ $0 != ""})
         print("labels: \(labelArray)")
     }
-
+    
     func checkPermissions() {
-
+        
         switch AVAudioSession.sharedInstance().recordPermission {
         case .granted:
             print("Permission granted")
@@ -216,7 +215,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             print("Something weird just happened")
         }
     }
-
+    
     
     func requestPermissions() {
         AVAudioSession.sharedInstance().requestRecordPermission { (granted) in
@@ -254,10 +253,10 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     
     func preprocessAudioFile(){
         print("Preprocessing audio file..")
-
+        
         var data: Data
         let inputSize = self.inputSize!
-
+        
         if(isAsset){
             let audioKey = registrar.lookupKey(forAsset: audioDirectory)
             let audioPath = Bundle.main.path(forResource: audioKey, ofType: nil)!
@@ -269,84 +268,104 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             let url = URL(string: audioPath!)
             data = try! Data(contentsOf: url!)
         }
-
+        
         //TODO - dont need to extract audio data????
         //TODO - get sample rate and channels
-        //TODO - assert that it has be to be wav file, and mono      
+        //TODO - assert that it has be to be wav file, and mono
         //let format = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 44100, channels: 1, interleaved: true)
         //let rawData = data.convertedTo(format!)
-       
+        
         //TODO - Fix deprecation
         let int16Data = data.withUnsafeBytes {
             UnsafeBufferPointer<Int16>(start: $0, count: data.count/2).map(Int16.init(littleEndian:))
         }
         
- 
-        //If missing samples are more than half, padding will be done. 
+        
+        //If missing samples are more than half, padding will be done.
         //Too little samples, is pointless to pad.)
         let int16DataSize = int16Data.count
         let remainingSamples = int16DataSize % inputSize
         let missingSamples = inputSize - remainingSamples
         let totalWithPad = int16DataSize + missingSamples
         let totalWithoutPad = int16DataSize - remainingSamples
-        //!To debug requirePadding, simply change > to < before (inputSize/2)
-        let requirePadding: Bool = missingSamples > (inputSize/2) ? true : false //TODO - Make this user controlled?
+        //!To debug requirePadding, simply change original [>] to < before (inputSize/2)
+        let requirePadding: Bool = remainingSamples > (inputSize/2) ? true : false //TODO - Make this user controlled?
         let numOfInferences: Int = requirePadding == true ? Int(totalWithPad/inputSize) : Int(totalWithoutPad/inputSize)
-     
-
+        
+        
         //!debugging
-        // print("int16DataSize: \(int16DataSize)")
-        // print("inputSize: \(inputSize)")
-        // print("remainingSamples: \(remainingSamples)")
-        // print("missingSamples: \(missingSamples)")
-        // print("totalWithPad: \(totalWithPad)")
-        // print("totalWithoutPad: \(totalWithoutPad)")
-        // print("require padding: \(requirePadding)")
-        // print("true: \(totalWithPad/inputSize)")
-        // print("false: \(totalWithoutPad/inputSize)")
-        // print("numOfInferences: \(numOfInferences)")
-
-                
+        print("int16DataSize: \(int16DataSize)")
+        print("inputSize: \(inputSize)")
+        print("remainingSamples: \(remainingSamples)")
+        print("missingSamples: \(missingSamples)")
+        print("totalWithPad: \(totalWithPad)")
+        print("totalWithoutPad: \(totalWithoutPad)")
+        print("require padding: \(requirePadding)")
+        print("true: \(totalWithPad/inputSize)")
+        print("false: \(totalWithoutPad/inputSize)")
+        print("numOfInferences: \(numOfInferences)")
+        
+        
         //breaks intData16 array into chunks, so it can be fed to the model
         var startCount = 0
         var endCount = inputSize
-        for inferenceCount in 1...numOfInferences{
+        self.isPreprocessing = true
+        
+        self.conversionQueue.async{ [self] in
+            for inferenceCount in 1...numOfInferences{
             
-            if(inferenceCount != numOfInferences){
-                print("\(inferenceCount)/\(numOfInferences)")
-                recognize(onBuffer: Array(int16Data[startCount..<endCount]))
-                startCount = endCount
-                endCount += inputSize
-            }else{
-                if(requirePadding){
-                    endCount -= missingSamples
-                    let silenceArray: [Int16] = (-10...10).randomElements(missingSamples)
-                    let remainingArray = int16Data[startCount..<endCount]
-                    var paddedArray = remainingArray
-                    paddedArray.append(contentsOf: silenceArray)
-
-                    //!debug
-                    assert(paddedArray.count == inputSize, "Error. Mismatch with paddedArray")
-                    assert(startCount == totalWithoutPad, "Error. startCount mismatc totalWithoutPad")
-                    assert(endCount == totalWithPad, "Error. startCount mismatc totalWithoutPad")
-                    // print(startCount)
-                    // print(endCount)
-                    // print(remainingArray.count)
-                    // print(silenceArray.count)
-                    // print(paddedArray.count)
-                    // print(remainingArray)
-                    // print(silenceArray)
-                }else{
-                    recognize(onBuffer: Array(int16Data[startCount..<endCount]))
+                //used to forcibly stop preprocessing
+                if(self.isPreprocessing == false){
+                    break
                 }
-            }   
+                
+                //TODO - TEST FOR BREAK FUNCTION
 
+                if(inferenceCount != numOfInferences){
+                    print("inference Count: \(inferenceCount)/\(numOfInferences)")
+                    recognize(onBuffer: Array(int16Data[startCount..<endCount]))
+                    startCount = endCount
+                    endCount += inputSize
+                }else{
+                    if(requirePadding){
+                        print("inference count: \(inferenceCount)/\(numOfInferences)")
+                        print("Padding missing samples to audio chunk")
+                        
+                        endCount -= missingSamples
+                        let remainingArray = int16Data[startCount..<endCount]
+                        let silenceArray: [Int16] = (-10...10).randomElements(missingSamples)
+                        var paddedArray: [Int16] = []
+                        paddedArray.append(contentsOf: remainingArray)
+                        paddedArray.append(contentsOf: silenceArray)
+                        
+                        //!debug
+                        assert(paddedArray.count == inputSize, "Error. Mismatch with paddedArray")
+                        assert(startCount == totalWithoutPad, "Error. startCount does not match")
+                        assert(endCount == (totalWithPad-missingSamples), "Error. end count does not match")
+                        //  assert(paddedArray[remainingSamples-1] == remainingArray[remainingSamples-1], "Error, padded array mismatch")
+                        //  print(startCount)
+                        //  print(endCount)
+                        //  print(silenceArray.count)
+                        //  print(paddedArray.count)
+                        
+                        recognize(onBuffer: Array(paddedArray[0..<inputSize]))
+                        self.lastInferenceRun = true
+                        self.isPreprocessing = false
+                        stopRecognition()
+                    }else{
+                        print("inference Count: \(inferenceCount)/\(numOfInferences)")
+                        print("Remaing audio file is too small. Skipping recognition")
+                        self.lastInferenceRun = true
+                        self.isPreprocessing = false
+                        stopRecognition()
+                    }
+                }   
+            }
         }
 
-        recognize(onBuffer: Array(int16Data[0..<inputSize]))
-
+   
     }
-
+    
     
     func startMicrophone(){
         print("start microphone")
@@ -389,18 +408,18 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                     let channelDataValueArray = stride(from: 0,
                                                        to: Int(pcmBuffer!.frameLength),
                                                        by: buffer.stride).map{ channelDataValue[$0] }
-                
                     
-
+                    
+                    
                     //Append frames onto the recording buffer until it reaches the input size
                     //Do not change inferenceCount <= numOfInferences! - counts last inference
                     if(inferenceCount <= numOfInferences! && recordingBuffer.count < inputSize!){
                         recordingBuffer.append(contentsOf: channelDataValueArray)
                         print("recordingBuffer length: \(recordingBuffer.count) | inferenceCount: \(inferenceCount)/\(numOfInferences!)")
-                    
-                    //Starts recognition when recording bufffer is full. Resest recording buffer for next inference
+                        
+                        //Starts recognition when recording bufffer is full. Resest recording buffer for next inference
                     }else if(inferenceCount < numOfInferences! && recordingBuffer.count == inputSize!){
-                            
+                        
                         print("reached threshold")
                         self.recognize(onBuffer: Array(recordingBuffer[0..<inputSize!]))
                         
@@ -408,9 +427,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                         recordingBuffer = []
                         print("Looping recording")
                         print("Clearing recording buffer")
-
-                    //when buffer exeeds max record length, trim and resize the buffer, append, and then start inference
-                    //Resets recording buffer after inference
+                        
+                        //when buffer exeeds max record length, trim and resize the buffer, append, and then start inference
+                        //Resets recording buffer after inference
                     }else if(inferenceCount < numOfInferences! && recordingBuffer.count > inputSize!){
                         
                         print("Exceeded threshold")
@@ -425,14 +444,16 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                         print("Clearing recording buffer")
                         print("appended excess to recording buffer")
                         
-                    //Final inference. Stops recognitions and recording.
-                    //No need to trim excess data as this is the final inference. (not applicable on fixed arrays from android/java)
+                        //Final inference. Stops recognitions and recording.
+                        //No need to trim excess data as this is the final inference. (not applicable on fixed arrays from android/java)
                     }else if(inferenceCount == numOfInferences! && recordingBuffer.count >= inputSize!){
+                      
                         self.recognize(onBuffer: Array(recordingBuffer[0..<inputSize!]))
-                        self.stopAudioRecognition()
-
+                        self.lastInferenceRun = true
+                        self.stopRecognition()
+                        
                         inferenceCount = 1
-                        recordingBuffer = []                    
+                        recordingBuffer = []
                     }else{
                         print("Something weird happened")
                         print("recording buffer: \(recordingBuffer.count)")
@@ -459,33 +480,33 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     
     func recognize(onBuffer buffer: [Int16]){
         print("Running model")
-
+        
         if(events == nil){
             print("events is null. Breaking recognition")
             return
         }
-       
+        
         var interval: TimeInterval!
         var outputTensor: Tensor!
         // print(outputRawScores!)
         // let outputRawScores = true
-        
+           
         do {
             // Copy the `[Int16]` buffer data as an array of `Float`s to the audio buffer input `Tensor`'s.
             let audioBufferData = Data(copyingBufferOf: buffer.map { Float($0) / maxInt16AsFloat32 })
             try interpreter.copy(audioBufferData, toInputAt: 0)
-
+            
             if(inputType != "decodedWav" && inputType != "rawAudio"){
                 assertionFailure("Input type does not match decodedWav or rawAudio")
             }
-
+            
             if(inputType == "decodedWav"){
-                     // Copy the sample rate data to the sample rate input `Tensor`.
-                    var rate = Int32(sampleRate)
-                    let sampleRateData = Data(bytes: &rate, count: MemoryLayout.size(ofValue: rate))
-                    try interpreter.copy(sampleRateData, toInputAt: 1)
+                // Copy the sample rate data to the sample rate input `Tensor`.
+                var rate = Int32(sampleRate)
+                let sampleRateData = Data(bytes: &rate, count: MemoryLayout.size(ofValue: rate))
+                try interpreter.copy(sampleRateData, toInputAt: 1)
             }
-
+            
             // Calculate inference time
             let startDate = Date()
             try interpreter.invoke() //required!!! Do not touch
@@ -493,7 +514,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             
             // Get the output `Tensor` to process the inference results.
             outputTensor = try interpreter.output(at: 0)
-
+            
         } catch let error {
             print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
         }
@@ -507,17 +528,17 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             suppressionTime: suppressionTime!,
             classLabels: labelArray
         )
-
+        
         // Gets the formatted and averaged results.
         let scores = [Float32](unsafeData: outputTensor.data) ?? []
         let finalResults: Result!
         let roundInterval = interval.rounded()
-
+        
         //debugging
         print("Raw Label Scores:")
         dump(scores)
-
-
+        
+        
         if(outputRawScores == false){
             let results = getResults(withScores: scores)
             finalResults = Result(recognitionResult: results, inferenceTime: roundInterval, hasPermission: true)
@@ -532,14 +553,17 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let dict = finalResults.dictionary
         if(events != nil){
             print("results: \(dict!)")
-            events(dict!)        
+            events(dict!)
         }
-    }   
-
-      
+        
+        
+        
+    }
+    
+    
     // private func getResults(withScores scores: [Float]) -> RecognitionResult? {
     private func getResults(withScores scores: [Float]) -> String? {
-                
+        
         // Runs results through recognize commands.
         let command = recognitionResult?.process(
             latestResults: scores,
@@ -556,20 +580,38 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         // }
         return command?.name
     }
+    
+    func forceStopRecognition(){
+        self.lastInferenceRun = true
+    
+        stopPreprocessing()
+        stopRecording()
+        stopRecognition()
+    }
 
-    func stopAudioRecognition(){
-
-        print("Recording stopped.")
-        // Closes stream
-        if(events != nil){
-        self.events(FlutterEndOfEventStream)
+    func stopRecognition(){
+        if(events != nil && lastInferenceRun == true){
+            print("recognition stream stopped")
+            self.lastInferenceRun = false
+            self.events(FlutterEndOfEventStream)
         }
-        // Stop the recording
+    }
+
+
+    func stopRecording(){
+        if(audioEngine.isRunning){
+        print("Recording stopped.")
         self.audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
+     }
     }
-    
-    
+
+    func stopPreprocessing(){
+        if(self.isPreprocessing == true){
+            self.isPreprocessing = false
+            print("stop preprocessing audio file") 
+        }
+    }
 }
 
 
@@ -600,16 +642,16 @@ extension Array {
     /// - Parameter unsafeData: The data containing the bytes to turn into an array.
     init?(unsafeData: Data) {
         guard unsafeData.count % MemoryLayout<Element>.stride == 0 else { return nil }
-        #if swift(>=5.0)
+#if swift(>=5.0)
         self = unsafeData.withUnsafeBytes { .init($0.bindMemory(to: Element.self)) }
-        #else
+#else
         self = unsafeData.withUnsafeBytes {
             .init(UnsafeBufferPointer<Element>(
                 start: $0,
                 count: unsafeData.count / MemoryLayout<Element>.stride
             ))
         }
-        #endif  // swift(>=5.0)
+#endif  // swift(>=5.0)
     }
 }
 
