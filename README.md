@@ -41,8 +41,6 @@ Recording            |  Inference result
 
 The plugin allows you to run inferences on recording or stored audio.  It can also support several model types:
 
-<br>
-
 1. Models from Google Teachable Machine
 
    * For beginners with little to no machine learning knowledge. You can read can read the tutorial [here](https://carolinamalbuquerque.medium.com/audio-recognition-using-tensorflow-lite-in-flutter-application-8a4ad39964ae) if you are a newbie.
@@ -333,7 +331,7 @@ import 'package:tflite_audio/tflite_audio.dart';
 
 <br/>
 
-### **NOTE:** Skip below if your are not using Google Teachable Machine (Android)
+#### **NOTE:** Skip below if your are not using Google Teachable Machine (Android)
 
 <br/>
 
@@ -349,7 +347,6 @@ import 'package:tflite_audio/tflite_audio.dart';
 <br>
 
 ## iOS Installation & Permissions
-___
 
 <br>
 
@@ -375,7 +372,7 @@ ___
 
 <br/>
 
-### **NOTE:** Skip below if your are not using Google Teachable Machine (iOS)
+#### **NOTE:** Skip below if your are not using Google Teachable Machine (iOS)
 ___
 
 <br/>
