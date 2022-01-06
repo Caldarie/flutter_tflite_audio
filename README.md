@@ -22,7 +22,6 @@ Recording            |  Inference result
 <br>
 
 ## Table of Contents
-___
 
  * [About this plugin](#about-this-plugin)
  * [Known Issues/Commonly asked questions](#known-issuescommonly-asked-questions)
@@ -31,15 +30,12 @@ ___
  * [How to use this plugin](#how-to-use-this-plugin)
  * [Rough guide on parameters](#rough-guide-on-the-parameters)
  * [Android Installation & Permissions](#android-installation--permissions)
-   * [If you are using Google's Teachable Machine. Otherwise skip.](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
  * [iOS Installation & Permissions](#ios-installation--permissions)
-   * [If you are using Google's Teachable Machine. Otherwise skip.](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip)
  * [References](#references)
  
 <br>
 
 ## About This Plugin
-___
 
 <br>
 
@@ -84,8 +80,6 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
 <br>
 
 ## Known Issues/Commonly asked questions
-
----
 
 <br/>
 
@@ -165,7 +159,6 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
 <br>
 
 ## Please Read If You Are Using Google's Teachable Machine. (Otherwise Skip)
----
 
 <br>
 
@@ -180,7 +173,6 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
 <br>
 
 ## How to add tflite model and label to flutter:
-___ 
 
 <br>
 
@@ -197,7 +189,6 @@ ___
 <br>
 
 ## How to use this plugin
-____
 
 <br>
 
@@ -314,7 +305,6 @@ import 'package:tflite_audio/tflite_audio.dart';
    ```
 
 ## Rough guide on the parameters
-___
 
 <br>
   
@@ -344,7 +334,6 @@ ___
 <br>
 
 ## Android Installation & Permissions
-___
 
 <br>
 
@@ -365,12 +354,11 @@ ___
 <br/>
 
 ### **NOTE:** Skip below if your are not using Google Teachable Machine (Android)
-___
 
 <br/>
 
 
-3. Enable select-ops under dependencies in your build gradle.
+1. Enable select-ops under dependencies in your build gradle.
 
    ```Gradle
    dependencies {
@@ -455,7 +443,7 @@ ___
 <br>
 
 ## References
-___
+
 <br>
 
 1. https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands
