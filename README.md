@@ -47,25 +47,19 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
 
    * For beginners with little to no machine learning knowledge. You can read can read the tutorial [here](https://carolinamalbuquerque.medium.com/audio-recognition-using-tensorflow-lite-in-flutter-application-8a4ad39964ae) if you are a newbie.
    * Training can be done [here](https://teachablemachine.withgoogle.com/train/audio) 
-  
-<br>
 
-1. Raw audio inputs. 
+2. Raw audio inputs. 
 
    * Can recognize the following inputs: float32[recordingLength, 1] or float32[1, recordingLength]
    * For more information on how to train your own model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
 
-<br>
-
-2. Supports models with decoded wave inputs. 
+3. Supports models with decoded wave inputs. 
 
    * Supports two inputs: float32[recordingLength, 1] and int32[1]
    * For more information on how to train your own model. Take a look [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
    * To train a decoded wave with MFCC, take a look [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
 
-<br>
-
-3. **(Currently worked on feature)** Raw audio with additional dynamic inputs. Take a look at this [branch](https://github.com/Caldarie/flutter_tflite_audio/tree/experimental_dynamic_input) for work on progress
+4. **(Currently worked on feature)** Raw audio with additional dynamic inputs. Take a look at this [branch](https://github.com/Caldarie/flutter_tflite_audio/tree/experimental_dynamic_input) for work on progress
 
     * Supports two inputs: float32[recordingLength, 1] and float32[dynamic input, 1] 
     * Also supports reverse inputs: float32[1, recordingLength] and float32[1, dynamic input] 
@@ -73,9 +67,7 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
     * Will add dynamic support for different input/output data types
     * Add support on iOS
 
-<br>
-
-4. **(Future feature)**  Spectogram as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
+5. **(Future feature)**  Spectogram as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
 
 <br>
 
@@ -90,7 +82,6 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
    * [Android installation & permissions](#android-installation--permissions)
   
    * [iOS installation & permissions](#ios-installation--permissions)         
-<br/>
 
 2. **How to adjust the recording length/time**
 
@@ -102,13 +93,9 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
   
    **Note:** That stretching the value too low will cause problems with model accuracy. In that case, you may want to consider lowering your sample rate as well. Likewise, a very low sample rate can also cause problems with accuracy. It is your job to find the sweetspot for both values.
 
-<br/>
-
 3. **How to reduce false positives in my model**
 
    To reduce false positives, you may want to adjust the default values of `detectionThreshold=0.3` and `averageWindowDuration=1000` to a higher value. A good value for both respectively are `0.7`  and `1500`. For more details about these parameters, please visit this [section](#rough-guide-on-the-parameters).
-
-<br/>
 
 4. **I am getting build errors on iOS**
 
@@ -129,9 +116,6 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
 
    * Others have fixed this issue building the app without the line: `pod 'TensorFlowLiteSelectTfOps`. Then rebuilding the app by re-adding the line again.
 
-
-<br/>
-
 5. **I am getting TensorFlow Lite Error on iOS. -  Regular TensorFlow ops are not supported by this interpreter. Make sure you apply/link the Flex delegate before inference** 
 
    *  Please make sure that you have enabled ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
@@ -142,15 +126,11 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
 
    * Take a looking at issue number 4 if none of the above works.  
 
-<br/>
-
 6. **(iOS) App crashes when running Google's Teachable Machine model** 
 
    Please run your simulation on actual iOS device. Running your device on M1 macs should also be ok.
   
    As of this moment, there's [limited support](https://github.com/tensorflow/tensorflow/issues/44997#issuecomment-734001671) for x86_64 architectures from the Tensorflow Lite select-ops framework. If you absolutely need to run it on an emulator, you can consider building the select ops framework yourself. Instructions can be found [here](https://www.tensorflow.org/lite/guide/ops_select#ios)
-
-<br/>
 
 7. **(Android) Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xfffffff4 in tid 5403** 
 
