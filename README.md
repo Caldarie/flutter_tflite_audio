@@ -282,6 +282,8 @@ import 'package:tflite_audio/tflite_audio.dart';
    TfliteAudio.stopAudioRecognition();
    ```
 
+</br>
+
 ## Rough guide on the parameters
 
 <br>
@@ -373,12 +375,11 @@ import 'package:tflite_audio/tflite_audio.dart';
 <br/>
 
 #### **NOTE:** Skip below if your are not using Google Teachable Machine (iOS)
-___
 
 <br/>
 
 
-4. Add `pod 'TensorFlowLiteSelectTfOps' under target.
+1. Add `pod 'TensorFlowLiteSelectTfOps' under target.
 
    ```ruby
    target 'Runner' do
@@ -390,7 +391,7 @@ ___
    end
    ```
 
-5. Force load Select Ops for Tensorflow. To do that:
+2. Force load Select Ops for Tensorflow. To do that:
 
    * Open your project on xcode 
     
@@ -407,7 +408,7 @@ ___
    ![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/tflite-select-ops-installation.png)
 
 
-6. Install the ops-select package to pod. To do this:
+3. Install the ops-select package to pod. To do this:
 
      * cd into iOS folder
 
