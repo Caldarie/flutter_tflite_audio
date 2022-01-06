@@ -37,8 +37,6 @@ Recording            |  Inference result
 
 ## About This Plugin
 
-<br>
-
 The plugin allows you to run inferences on recording or stored audio.  It can also support several model types:
 
 1. Models from Google Teachable Machine
@@ -70,8 +68,6 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
 <br>
 
 ## Known Issues/Commonly asked questions
-
-<br/>
 
 1. **My Model won't load**
 
@@ -285,8 +281,6 @@ import 'package:tflite_audio/tflite_audio.dart';
 </br>
 
 ## Rough guide on the parameters
-
-<br>
   
   * outputRawScores - Will output the result as an array in string format. For example `'[0.2, 0.6, 0.1, 0.1]'`
 
@@ -314,8 +308,6 @@ import 'package:tflite_audio/tflite_audio.dart';
 <br>
 
 ## Android Installation & Permissions
-
-<br>
 
 1. Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
 
@@ -349,8 +341,6 @@ import 'package:tflite_audio/tflite_audio.dart';
 <br>
 
 ## iOS Installation & Permissions
-
-<br>
 
 1. Add the following key to Info.plist for iOS. This ould be found in <YourApp>/ios/Runner
    ```
@@ -421,8 +411,6 @@ import 'package:tflite_audio/tflite_audio.dart';
 <br>
 
 ## References
-
-<br>
 
 1. https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands
 2. https://www.tensorflow.org/lite/guide/ops_select
