@@ -26,6 +26,7 @@ Recording            |  Inference result
  * [About this plugin](#about-this-plugin)
  * [Known Issues/Commonly asked questions](#known-issuescommonly-asked-questions)
  * [Please read if you are using Google's Teachable Machine. Otherwise skip.](#please-read-if-you-are-using-googles-teachable-machine-otherwise-skip)
+ * [Please read if you are using stored audio recognition]()
  * [How to add tflite model and label to flutter](#how-to-add-tflite-model-and-label-to-flutter)
  * [How to use this plugin](#how-to-use-this-plugin)
  * [Rough guide on parameters](#rough-guide-on-the-parameters)
@@ -37,7 +38,23 @@ Recording            |  Inference result
 
 ## About This Plugin
 
-The plugin allows you to run inferences on recording or stored audio.  It can also support several model types:
+### The plugin allows has several features that you can use:
+
+1. Preprocess stored audio files for inference. There are some things to note however:
+  
+   * Can only run inferences on mono wav files. (In the future, an audio converter will be included in this plugin.)
+   * For best results, use make sure the sample rate of the audio is similar to the inputSize. For example, GTM models have an input size of 44032. So a sample rate of 44100 should be used. Similarly, decodedWav models have a inputSize of 16000, so a sample rate of 16000 should be used.
+
+2. Run inferenced on recorded audio. There are some features you can use:
+
+   * Adjust the recording length/time (bufferRate)
+   * Adjust the quality of sound (sampleRate)
+
+3. Abiliy to Tune your model accuracy and reduce false positives. Please look a the [parameters](#rough-guide-on-the-parameters) below for more information.
+
+<br>
+
+### It can also support several model types:
 
 1. Models from Google Teachable Machine
 
@@ -63,7 +80,7 @@ The plugin allows you to run inferences on recording or stored audio.  It can al
     * Will add dynamic support for different input/output data types
     * Add support on iOS
 
-5. **(Future feature)**  Spectogram as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
+5. **(Future feature)**  Spectogram, MFCC, mel as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
 
 <br>
 
@@ -240,7 +257,7 @@ import 'package:tflite_audio/tflite_audio.dart';
 
       ```
 
-    * If you want to use the recognition stream for stored audio files
+    * If you want to use the recognition stream for stored audio files. 
 
        ```dart
        //Example values for both GTM or decodedwav
