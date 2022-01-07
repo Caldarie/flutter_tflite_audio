@@ -1,3 +1,6 @@
+## 0.2.2+2
+* Hot fixed missing AudioData class.
+
 ## 0.2.2+1
 * Hot fixed issue with unresponsive forced stop recognition.
 
