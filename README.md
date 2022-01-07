@@ -43,6 +43,7 @@ Recording            |  Inference result
 1. Preprocess stored audio files for inference. There are some things to note however:
   
    * Can only run inferences on mono wav files. (In the future, an audio converter will be included in this plugin.)
+   * Avoid using very large audio files. This may cause adverse effects.
    * For best results, use make sure the sample rate of the audio is similar to the inputSize. For example, GTM models have an input size of 44032. So a sample rate of 44100 should be used. Similarly, decodedWav models have a inputSize of 16000, so a sample rate of 16000 should be used.
 
 2. Run inferenced on recorded audio. There are some features you can use:
