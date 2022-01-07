@@ -44,7 +44,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+
 
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
@@ -73,7 +73,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     // debugging
     private DisplayLogs display = new DisplayLogs();
-    private boolean isDebugging = false;
+    private boolean showPreprocessLogs = true;
+    private boolean showRecordLogs = false;
 
     // working recording variables
     AudioRecord record;
@@ -129,6 +130,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     // Used to extract raw audio data
     private MediaCodec mediaCodec;
     MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+
+    private AudioData audioData;
 
     static Activity getActivity() {
         return instance.activity;
@@ -505,7 +508,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             int shortDataLength = shortBuffer.limit();
             int numOfInferences = numOfInferences = (int) Math.ceil((float) shortDataLength / inputSize);
 
-            if (isDebugging == true)
+            if (showPreprocessLogs == true)
                 display.logs("Raw data info", byteData.length, shortDataLength, numOfInferences);
 
             // Keep track of preprocessing loop
@@ -521,7 +524,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 // Inferences that is not final
                 if ((i + 1) % inputSize == 0 && inferenceCount != numOfInferences) {
                     Log.d(LOG_TAG, "Inference count: " + (inferenceCount) + "/" + numOfInferences);
-                    if (isDebugging == true)
+                    if (showPreprocessLogs == true)
                         display.logs("Preprocessing - regular inference", i, indexCount, inferenceCount, audioChunk);
                         
                     startRecognition(audioChunk);
@@ -538,26 +541,28 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 } else if (i == shortDataLength - 1 && inferenceCount == numOfInferences) {
                     Log.d(LOG_TAG, "Inference count: " + (inferenceCount) + "/" + numOfInferences);
 
-                    if (isDebugging == true)
+                    if (showPreprocessLogs == true)
                         display.logs("Final inference", i, indexCount, inferenceCount, audioChunk);
 
                     if ((i + 1) % inputSize != 0) {
                         Log.d(LOG_TAG, "Missing samples found in audioChunk..");
 
-                        if (isDebugging == true)
+                        if (showPreprocessLogs == true)
                             display.logs("preprocessing - before padding", audioChunk, indexCount, inputSize);
 
                         int remain = audioChunk.length - indexCount;
-                        short[] padding = new short[remain];
-                        Random random = new Random();
-                        Log.d(LOG_TAG, "Padding " + remain + " samples to audioChunk..");
-                        for (int x = 0; x < remain; x++) {
-                            int rand = random.nextInt(10 + 10) - 10;
-                            short value = (short) rand;
-                            padding[x] = value;
-                        }
-                        System.arraycopy(padding, 0, audioChunk, indexCount, remain);
-                        if (isDebugging == true)
+                        audioChunk = audioData.addSilence(remain, audioChunk, indexCount);
+
+                        // short[] padding = new short[remain];
+                        // Random random = new Random();
+                        // Log.d(LOG_TAG, "Padding " + remain + " samples to audioChunk..");
+                        // for (int x = 0; x < remain; x++) {
+                        //     int rand = random.nextInt(10 + 10) - 10;
+                        //     short value = (short) rand;
+                        //     padding[x] = value;
+                        // }
+                        // System.arraycopy(padding, 0, audioChunk, indexCount, remain);
+                        if (showPreprocessLogs == true)
                             display.logs("preprocessing - after padding", audioChunk, indexCount, inputSize);
                     }
                     
@@ -669,7 +674,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                             + inferenceCount + "/" + numOfInferences);
                     Log.v(LOG_TAG, "Recording buffer exceeded maximum threshold");
 
-                    if (isDebugging == true)
+                    if (showRecordLogs == true)
                         display.logs("Excess - Before trim:", recordingBuffer, recordingOffset);
 
                     /*
@@ -686,7 +691,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     Log.v(LOG_TAG, "Excess recording has been trimmed. RecordingOffset now at: " + recordingOffset + "/"
                             + inputSize);
 
-                    if (isDebugging == true)
+                    if (showRecordLogs== true)
                         display.logs("Recording Excess - After trim:", recordingBuffer, recordingOffset);
 
                     startRecognition(recordingBuffer);
@@ -708,7 +713,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     Log.v(LOG_TAG, "Added excess length to new recording buffer. RecordingOffset now at: "
                             + recordingOffset + "/" + inputSize);
 
-                    if (isDebugging == true)
+                    if (showRecordLogs== true)
                         display.logs("Recording excess - New recording buffer:", remainingRecordingFrame,
                                 remainingRecordingLength,
                                 excessRecordingFrame, excessRecordingLength);
@@ -759,7 +764,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     lastInferenceRun = true;
                     forceStopRecogniton();
 
-                    if (isDebugging == true)
+                    if (showRecordLogs == true)
                         display.logs("Recording - strange behaviour:", inferenceCount, numOfInferences,
                                 recordingOffset, recordingOffsetCount, inputSize);
 
@@ -917,7 +922,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     public void stopRecognition() {
         if (recognitionThread == null) {
-            // Log.d(LOG_TAG, "There is no ongoing recognition. Breaking.");
+            Log.d(LOG_TAG, "There is no ongoing recognition. Breaking.");
             return;
         }
 
@@ -963,8 +968,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     }
 
     public void forceStopRecogniton() {
-        this.lastInferenceRun = true;
-
         //!DO NOT CHANGE BELOW - awaits recognition thread or causes async error
         try {
             if (recognitionThread != null) {
@@ -977,6 +980,14 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         stopRecording();
         stopRecognition();
         stopPreprocessing();
+
+        //!DO NOT CHANGE BELOW. stopRecognition() wont pass due to recognitionThread null check
+        runOnUIThread(() -> {
+            if (events != null) {
+                Log.d(LOG_TAG, "Recognition Stream stopped");
+                events.endOfStream();
+            }
+        });
     }
 
     // TODO - Put the functions below in a seperate class?
