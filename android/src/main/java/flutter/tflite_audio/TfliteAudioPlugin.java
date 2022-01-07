@@ -84,6 +84,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     // preprocessing variables
     private Thread preprocessThread;
     private String audioDirectory;
+    private boolean isPreprocessing;
 
     // working label variables
     private List<String> labels;
@@ -282,7 +283,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         final Interpreter.Options tfliteOptions = new Interpreter.Options();
         tfliteOptions.setNumThreads(numThreads);
         this.tfLite = new Interpreter(buffer, tfliteOptions);
-        this.inputShape = tfLite.getInputTensor(0).shape();
+        this.inputShape = tfLite.getInputTensor(0).shape(); //TODO - maybe not accurage for multi inputs
         this.inputSize = Arrays.stream(inputShape).max().getAsInt(); // TODO - Not appropriate for MFCC or spectogram
                                                                      // inputs
 
@@ -468,6 +469,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private void preprocessAudioFile() {
         Log.d(LOG_TAG, "Preprocessing audio file..");
 
+        this.isPreprocessing = true;
         boolean isAsset = this.isAssetObj == null ? false : (boolean) isAssetObj;
         AssetFileDescriptor fileDescriptor = null;
         long startOffset = 0;
@@ -490,6 +492,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
             // Extract raw audio data in byte form then wrap as a
             MediaDecoder decoder = new MediaDecoder(fileDescriptor, startOffset, declaredLength);
+            this.sampleRate = decoder.getSampleRate();
             byte[] byteData = {};
             byte[] readData;
             while ((readData = decoder.readByteData()) != null) {
@@ -512,19 +515,17 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
             // Splice short buffer into several audio chunks for inferencing
             for (int i = 0; i < shortDataLength; i++) {
+
+                if(isPreprocessing == false) break;
+
                 // Inferences that is not final
                 if ((i + 1) % inputSize == 0 && inferenceCount != numOfInferences) {
                     Log.d(LOG_TAG, "Inference count: " + (inferenceCount) + "/" + numOfInferences);
                     if (isDebugging == true)
                         display.logs("Preprocessing - regular inference", i, indexCount, inferenceCount, audioChunk);
+                        
                     startRecognition(audioChunk);
-
-                    // awaits for recogniton thread to finish before looping.
-                    try {
-                        recognitionThread.join();
-                    } catch (InterruptedException ex) {
-                        Log.d(LOG_TAG, "Error with recognition thread: " + ex);
-                    }
+                    if(recognitionThread != null) awaitRecognition(); 
 
                     // need to reset index or out of array error
                     // Do not change the positions below!!!!
@@ -559,20 +560,18 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                         if (isDebugging == true)
                             display.logs("preprocessing - after padding", audioChunk, indexCount, inputSize);
                     }
+                    
                     lastInferenceRun = true;
                     startRecognition(audioChunk);
-                    // awaits for recogniton thread to finish before looping.
-                    try {
-                        recognitionThread.join();
-                    } catch (InterruptedException ex) {
-                        Log.d(LOG_TAG, "Error with recognition thread: " + ex);
-                    }
+                    if(recognitionThread != null) awaitRecognition(); 
+           
                     // clears out memmory and threads after preprocessing is done
                     stopPreprocessing();
                     byteData = null;
                     audioChunk = null;
                     indexCount = 0;
                     inferenceCount = 1;
+
                     // apend elements to buffer until it reaches the limit
                 } else {
                     audioChunk[indexCount] = shortBuffer.get(i);
@@ -906,11 +905,19 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         });
     }
 
-    // TODO - Seperate below in seperate class?
+    //Used in preprocesing only
+    //prevents async errors - as iteration is too quick
+    public void awaitRecognition(){
+        try {
+            recognitionThread.join();
+        } catch (InterruptedException ex) {
+            Log.d(LOG_TAG, "Error with recognition thread: " + ex);
+        }
+    }
 
     public void stopRecognition() {
         if (recognitionThread == null) {
-            Log.d(LOG_TAG, "There is no ongoing recognition. Breaking.");
+            // Log.d(LOG_TAG, "There is no ongoing recognition. Breaking.");
             return;
         }
 
@@ -918,7 +925,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         Log.d(LOG_TAG, "Recognition stopped.");
 
         if (lastInferenceRun == true) {
-            // passing data from platform to flutter requires ui thread
             runOnUIThread(() -> {
                 if (events != null) {
                     Log.d(LOG_TAG, "Recognition Stream stopped");
@@ -951,47 +957,26 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             return;
         }
 
+        isPreprocessing = false;
         preprocessThread = null;
         Log.d(LOG_TAG, "Prepocesing stopped.");
-
-        if (lastInferenceRun == true) {
-            runOnUIThread(() -> {
-                if (events != null) {
-                    Log.d(LOG_TAG, "Recognition Stream stopped");
-                    events.endOfStream();
-                }
-            });
-            lastInferenceRun = false;
-        }
     }
 
     public void forceStopRecogniton() {
+        this.lastInferenceRun = true;
 
-        // Used to manage async errors with preprocessing and recognition threads.
-        // Only applies when loadingFileRecongiton(). Does not apply with recording so
-        // is ignored below.
-        // !DO NOT CHANGE THE POSITION BELOW
+        //!DO NOT CHANGE BELOW - awaits recognition thread or causes async error
         try {
             if (recognitionThread != null) {
                 recognitionThread.join();
             }
-            if (preprocessThread != null) {
-                preprocessThread.join();
-            }
         } catch (InterruptedException e) {
             throw new AssertionError("Error with force stop: " + e);
         }
-
+        
         stopRecording();
         stopRecognition();
         stopPreprocessing();
-
-        runOnUIThread(() -> {
-            if (events != null) {
-                Log.d(LOG_TAG, "Recognition Stream stopped");
-                events.endOfStream();
-            }
-        });
     }
 
     // TODO - Put the functions below in a seperate class?

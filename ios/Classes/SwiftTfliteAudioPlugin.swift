@@ -289,7 +289,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let totalWithPad = int16DataSize + missingSamples
         let totalWithoutPad = int16DataSize - remainingSamples
         //!To debug requirePadding, simply change original [>] to < before (inputSize/2)
-        let requirePadding: Bool = remainingSamples > (inputSize/2) ? true : false //TODO - Make this user controlled?
+        // let requirePadding: Bool = remainingSamples > (inputSize/2) ? true : false //TODO - Make this user controlled?
+        let requirePadding = true
         let numOfInferences: Int = requirePadding == true ? Int(totalWithPad/inputSize) : Int(totalWithoutPad/inputSize)
         
         
@@ -318,8 +319,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                 if(self.isPreprocessing == false){
                     break
                 }
-                
-                //TODO - TEST FOR BREAK FUNCTION
 
                 if(inferenceCount != numOfInferences){
                     print("inference Count: \(inferenceCount)/\(numOfInferences)")
