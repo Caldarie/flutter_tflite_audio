@@ -598,11 +598,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
 
 
     func stopRecording(){
-        if(audioEngine.isRunning){
-        print("Recording stopped.")
+        print("Recording stopped.") //Add conditional - prints in preprocessing
         self.audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
-     }
     }
 
     func stopPreprocessing(){
