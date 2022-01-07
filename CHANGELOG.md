@@ -3,6 +3,7 @@
 * Breaking Change: RecordingLength will no longer be required as a parameter.
 * Improved stability of asyncronous tasks on Android.
 * Fixed NaN output for bufferRates that are non divisible to recordingLength 
+* Fixed android permission error when granted outside app.
 
 ## 0.2.1+2
 * Fixed NaN raw score output for Android.
