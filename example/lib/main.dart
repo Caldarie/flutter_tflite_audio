@@ -22,6 +22,7 @@ class _MyAppState extends State<MyApp> {
   // //!example values for decodedwav models
   // final String model = 'assets/decoded_wav_model.tflite';
   // final String label = 'assets/decoded_wav_label.txt';
+  // final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
   // final String inputType = 'decodedWav';
   // final int sampleRate = 16000;
   // final int bufferSize = 2000;
@@ -30,21 +31,22 @@ class _MyAppState extends State<MyApp> {
   final String model = 'assets/google_teach_machine_model.tflite';
   final String label = 'assets/google_teach_machine_label.txt';
   final String inputType = 'rawAudio';
+  final String audioDirectory = 'assets/sample_audio_44k_mono.wav';
   final int sampleRate = 44100;
-  final int bufferSize = 11008;
-  // final int bufferSize = 22050;
+  final int bufferSize = 22016;
+  // final int bufferSize = 11008;
 
   //!Optional parameters you can adjust to modify your interence.
   final bool outputRawScores = false;
   final int numOfInferences = 5;
-  // final int numThreads = 1;
-  // final bool isAsset = true;
+  final int numThreads = 1;
+  final bool isAsset = true;
 
   //!Adjust the values below when tuning model detection.
-  // final double detectionThreshold = 0.3;
-  // final int averageWindowDuration = 1000;
-  // final int minimumTimeBetweenSamples = 30;
-  // final int suppressionTime = 1500;
+  final double detectionThreshold = 0.3;
+  final int averageWindowDuration = 1000;
+  final int minimumTimeBetweenSamples = 30;
+  final int suppressionTime = 1500;
 
   @override
   void initState() {
@@ -62,14 +64,16 @@ class _MyAppState extends State<MyApp> {
   /// get result by calling the stream startAudioRecognition
   /// Uncomment the parameters below if you wish to adjust the values
   void getResult() {
+    //example for stored audio file recognition
     // result = TfliteAudio.startFileRecognition(
-    //   audioDirectory: "assets/sampleAudio.wav",
+    //   audioDirectory: this.audioDirectory,
     //   // detectionThreshold: this.detectionThreshold,
     //   // averageWindowDuration: this.averageWindowDuration,
     //   // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
     //   // suppressionTime: this.suppressionTime,
     // );
 
+    ///example for recording recognition
     result = TfliteAudio.startAudioRecognition(
       sampleRate: this.sampleRate,
       bufferSize: this.bufferSize,

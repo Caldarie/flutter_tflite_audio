@@ -37,7 +37,8 @@ flutter:
     - assets/decoded_wav_label.txt
     - assets/google_teach_machine_model.tflite
     - assets/google_teach_machine_label.txt
-    - assets/sampleAudio.wav
+    - assets/sample_audio_16k_mono.wav
+    - assets/sample_audio_44k_mono.wav
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
