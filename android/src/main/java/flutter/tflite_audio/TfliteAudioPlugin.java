@@ -131,7 +131,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private MediaCodec mediaCodec;
     MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
 
-    private AudioData audioData;
+    private AudioData audioData = new AudioData();
 
     static Activity getActivity() {
         return instance.activity;
@@ -553,15 +553,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                         int remain = audioChunk.length - indexCount;
                         audioChunk = audioData.addSilence(remain, audioChunk, indexCount);
 
-                        // short[] padding = new short[remain];
-                        // Random random = new Random();
-                        // Log.d(LOG_TAG, "Padding " + remain + " samples to audioChunk..");
-                        // for (int x = 0; x < remain; x++) {
-                        //     int rand = random.nextInt(10 + 10) - 10;
-                        //     short value = (short) rand;
-                        //     padding[x] = value;
-                        // }
-                        // System.arraycopy(padding, 0, audioChunk, indexCount, remain);
                         if (showPreprocessLogs == true)
                             display.logs("preprocessing - after padding", audioChunk, indexCount, inputSize);
                     }
