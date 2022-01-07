@@ -73,7 +73,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     // debugging
     private DisplayLogs display = new DisplayLogs();
-    private boolean showPreprocessLogs = true;
+    private boolean showPreprocessLogs = false;
     private boolean showRecordLogs = false;
 
     // working recording variables
@@ -934,7 +934,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     public void stopRecording() {
 
         if (recordingThread == null || shouldContinue == false) {
-            // Log.d(LOG_TAG, "There is no ongoing recording. Breaking.");
+            Log.d(LOG_TAG, "There is no ongoing recording. Breaking.");
             return;
         }
 
@@ -949,7 +949,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     public void stopPreprocessing() {
         if (preprocessThread == null) {
-            // Log.d(LOG_TAG, "There is no ongoing preprocessing. Breaking.");
+            Log.d(LOG_TAG, "There is no ongoing preprocessing. Breaking.");
             return;
         }
 
