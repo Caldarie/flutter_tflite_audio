@@ -20,5 +20,20 @@ public class AudioData {
         System.arraycopy(padding, 0, audioChunk, indexCount, remain);
         return audioChunk;
     }
+    
+     // preprocessing
+    public byte[] appendByteData(byte[] src, byte[] dst) {
+        byte[] result = new byte[src.length + dst.length];
+        System.arraycopy(src, 0, result, 0, src.length);
+        System.arraycopy(dst, 0, result, src.length, dst.length);
+        return result;
+    }
+
+    public short[] appendShortData(short[] src, short[] dst) {
+        short[] result = new short[src.length + dst.length];
+        System.arraycopy(src, 0, result, 0, src.length);
+        System.arraycopy(dst, 0, result, src.length, dst.length);
+        return result;
+    }
 
 }

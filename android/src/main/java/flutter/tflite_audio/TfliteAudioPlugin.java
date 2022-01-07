@@ -499,7 +499,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             byte[] byteData = {};
             byte[] readData;
             while ((readData = decoder.readByteData()) != null) {
-                byteData = appendByteData(readData, byteData);
+                byteData = audioData.appendByteData(readData, byteData);
                 Log.d(LOG_TAG, "data chunk length: " + readData.length);
             }
 
@@ -511,33 +511,27 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             if (showPreprocessLogs == true)
                 display.logs("Raw data info", byteData.length, shortDataLength, numOfInferences);
 
-            // Keep track of preprocessing loop
+            // Splice short buffer into several audio chunks for inferencing
             short[] audioChunk = new short[inputSize];
             int indexCount = 0;
             int inferenceCount = 1;
-
-            // Splice short buffer into several audio chunks for inferencing
             for (int i = 0; i < shortDataLength; i++) {
 
                 if(isPreprocessing == false) break;
 
-                // Inferences that is not final
                 if ((i + 1) % inputSize == 0 && inferenceCount != numOfInferences) {
                     Log.d(LOG_TAG, "Inference count: " + (inferenceCount) + "/" + numOfInferences);
+                    
                     if (showPreprocessLogs == true)
                         display.logs("Preprocessing - regular inference", i, indexCount, inferenceCount, audioChunk);
-                        
+                    //!Do not change position below
                     startRecognition(audioChunk);
                     if(recognitionThread != null) awaitRecognition(); 
-
-                    // need to reset index or out of array error
-                    // Do not change the positions below!!!!
                     indexCount = 0;
                     inferenceCount += 1;
                     audioChunk = new short[inputSize];
                     audioChunk[indexCount] = shortBuffer.get(i);
 
-                    // Final inference
                 } else if (i == shortDataLength - 1 && inferenceCount == numOfInferences) {
                     Log.d(LOG_TAG, "Inference count: " + (inferenceCount) + "/" + numOfInferences);
 
@@ -560,15 +554,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     lastInferenceRun = true;
                     startRecognition(audioChunk);
                     if(recognitionThread != null) awaitRecognition(); 
-           
-                    // clears out memmory and threads after preprocessing is done
                     stopPreprocessing();
                     byteData = null;
                     audioChunk = null;
                     indexCount = 0;
                     inferenceCount = 1;
 
-                    // apend elements to buffer until it reaches the limit
                 } else {
                     audioChunk[indexCount] = shortBuffer.get(i);
                     indexCount += 1;
@@ -981,8 +972,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         });
     }
 
-    // TODO - Put the functions below in a seperate class?
-
     private void runOnUIThread(Runnable runnable) {
         if (Looper.getMainLooper() == Looper.myLooper())
             runnable.run();
@@ -990,19 +979,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             handler.post(runnable);
     }
 
-    // TODO - MERGE THESE TWO FUNCTIONS TOGETHER
-    public byte[] appendByteData(byte[] src, byte[] dst) {
-        byte[] result = new byte[src.length + dst.length];
-        System.arraycopy(src, 0, result, 0, src.length);
-        System.arraycopy(dst, 0, result, src.length, dst.length);
-        return result;
-    }
 
-    public short[] appendShortData(short[] src, short[] dst) {
-        short[] result = new short[src.length + dst.length];
-        System.arraycopy(src, 0, result, 0, src.length);
-        System.arraycopy(dst, 0, result, src.length, dst.length);
-        return result;
-    }
+ 
+
+
 
 }
