@@ -1,3 +1,6 @@
+## 0.2.2+1
+* Hot fixed issue with unresponsive forced stop recognition.
+
 ## 0.2.2
 * Feature: Added ability to recognise stored audio files
 * Breaking Change: RecordingLength will no longer be required as a parameter.
