@@ -38,20 +38,21 @@ Recording            |  Inference result
 
 ## About This Plugin
 
-### The plugin allows has several features that you can use:
+### The plugin has several features that you can use:
 
-1. Preprocess stored audio files for inference. There are some things to note however:
+1. Audio recognition for stored audio files. There are some things to note however:
   
    * Can only run inferences on mono wav files. (In the future, an audio converter will be included in this plugin.)
    * Avoid using very large audio files. This may cause adverse effects.
-   * For best results, use make sure the sample rate of the audio is similar to the inputSize. For example, GTM models have an input size of 44032. So a sample rate of 44100 should be used. Similarly, decodedWav models have a inputSize of 16000, so a sample rate of 16000 should be used.
+   * For best results, make sure the sample rate of the wav file is similar to the inputSize. For example, GTM models have an input size of 44032. So a sample rate of 44100 should be used. Similarly, decodedWav models have a inputSize of 16000, so a sample rate of 16000 should be used.
 
-2. Run inferenced on recorded audio. There are some features you can use:
+2. Audio recognition for recordings. You can adjust the following with this plugin:
 
-   * Adjust the recording length/time (bufferRate)
-   * Adjust the quality of sound (sampleRate)
+   * Recording length/time (bufferRate)
+   * SampleRate 
+   * Number of inferences/recording 
 
-3. Abiliy to Tune your model accuracy and reduce false positives. Please look a the [parameters](#rough-guide-on-the-parameters) below for more information.
+3. Abiliy to tune your model's output, such as reducing false positives. Please look a the [parameters](#rough-guide-on-the-parameters) below for more information.
 
 <br>
 
