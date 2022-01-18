@@ -6,62 +6,36 @@ import 'package:flutter/services.dart';
 /// Class which manages the future and stream for the plugins
 class TfliteAudio {
   static const MethodChannel _channel = MethodChannel('tflite_audio');
-  static const EventChannel audioRecongitionChannel =
-      EventChannel('AudioRecognitionStream');
-  static const EventChannel fileRecognitionChannel =
-      EventChannel('FileRecognitionStream');
+  static const EventChannel _eventChannel =
+      EventChannel('startAudioRecognition');
 
   /// [startAudioRecognition] returns map objects with the following values:
-  /// String recognitionResult, int inferenceTime, bool hasPermission
-  /// Do not change the parameter 'method'
+  /// 1. String recognitionResult
+  /// 2. int inferenceTime
+  /// 3. bool hasPermission
   static Stream<Map<dynamic, dynamic>> startAudioRecognition(
       {required int sampleRate,
+      required int recordingLength,
       required int bufferSize,
       double detectionThreshold = 0.3,
       int numOfInferences = 1,
       int averageWindowDuration = 0,
       int minimumTimeBetweenSamples = 0,
-      int suppressionTime = 0,
-      String method = 'setAudioRecognitionStream'}) {
-    final audioRecognitionStream =
-        audioRecongitionChannel.receiveBroadcastStream(<String, dynamic>{
+      int suppressionTime = 0}) {
+    final recognitionStream =
+        _eventChannel.receiveBroadcastStream(<String, dynamic>{
       'sampleRate': sampleRate,
+      'recordingLength': recordingLength,
       'bufferSize': bufferSize,
       'numOfInferences': numOfInferences,
       'averageWindowDuration': averageWindowDuration,
       'detectionThreshold': detectionThreshold,
       'minimumTimeBetweenSamples': minimumTimeBetweenSamples,
-      'suppressionTime': suppressionTime,
-      'method': method
+      'suppressionTime': suppressionTime
     });
 
     ///cast the result of the stream a map object.
-    return audioRecognitionStream
-        .cast<Map<dynamic, dynamic>>()
-        .map((event) => Map<dynamic, dynamic>.from(event));
-  }
-
-  ///Load stored audio file, preprocess and then fed into model.
-  ///Do not change the parameter 'method'
-  static Stream<Map<dynamic, dynamic>> startFileRecognition(
-      {required String audioDirectory,
-      double detectionThreshold = 0.3,
-      int averageWindowDuration = 0,
-      int minimumTimeBetweenSamples = 0,
-      int suppressionTime = 0,
-      String method = 'setFileRecognitionStream'}) {
-    final fileRecognitionStream =
-        fileRecognitionChannel.receiveBroadcastStream(<String, dynamic>{
-      'audioDirectory': audioDirectory,
-      'averageWindowDuration': averageWindowDuration,
-      'detectionThreshold': detectionThreshold,
-      'minimumTimeBetweenSamples': minimumTimeBetweenSamples,
-      'suppressionTime': suppressionTime,
-      'method': method
-    });
-
-    ///cast the result of the stream a map object.
-    return fileRecognitionStream
+    return recognitionStream
         .cast<Map<dynamic, dynamic>>()
         .map((event) => Map<dynamic, dynamic>.from(event));
   }

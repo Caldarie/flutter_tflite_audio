@@ -28,25 +28,34 @@ class _MyAppState extends State<MyApp> {
   // final int bufferSize = 2000;
 
   //!example values for google's teachable machine model
-  final String model = 'assets/google_teach_machine_model.tflite';
-  final String label = 'assets/google_teach_machine_label.txt';
-  final String inputType = 'rawAudio';
-  final String audioDirectory = 'assets/sample_audio_44k_mono.wav';
-  final int sampleRate = 44100;
-  final int bufferSize = 22016;
+  // final String model = 'assets/google_teach_machine_model.tflite';
+  // final String label = 'assets/google_teach_machine_label.txt';
+  // final String inputType = 'rawAudio';
+  // final String audioDirectory = 'assets/sample_audio_44k_mono.wav';
+  // final int sampleRate = 44100;
+  // final int bufferSize = 22016;
   // final int bufferSize = 11008;
+
+  static const String modelTTF =
+      'assets/ser_angry_bored.tflite,assets/ser_calm_disgusted.tflite,assets/ser_fearful_neutral.tflite,assets/ser_happy_sad.tflite';
+  static const String modelTXT =
+      'assets/angry_bored_labels.txt,assets/calm_disgusted_labels.txt,assets/fearful_neutral_labels.txt,assets/happy_sad_labels.txt';
+  final String inputType = 'rawAudio';
+  final int sampleRate = 16000;
+  final int bufferSize = 2000;
+  final int recordingLength = 16000;
 
   //!Optional parameters you can adjust to modify your interence.
   final bool outputRawScores = false;
-  final int numOfInferences = 5;
+  final int numOfInferences = 1;
   final int numThreads = 1;
   final bool isAsset = true;
 
   //!Adjust the values below when tuning model detection.
-  final double detectionThreshold = 0.3;
-  final int averageWindowDuration = 1000;
-  final int minimumTimeBetweenSamples = 30;
-  final int suppressionTime = 1500;
+  // final double detectionThreshold = 0.3;
+  // final int averageWindowDuration = 1000;
+  // final int minimumTimeBetweenSamples = 30;
+  // final int suppressionTime = 1500;
 
   @override
   void initState() {
