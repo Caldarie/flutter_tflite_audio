@@ -34,7 +34,18 @@ class _MyAppState extends State<MyApp> {
   final String audioDirectory = 'assets/sample_audio_44k_mono.wav';
   final int sampleRate = 44100;
   final int bufferSize = 22016;
-  // final int bufferSize = 11008;
+  // // final int bufferSize = 11008;
+
+  //!example values for MFCC, melspectrogram, spectrogram models
+  // final String model = 'assets/spectrogram_model.tflite';
+  // final String label = 'assets/spectrogram_label.txt';
+  // final String inputType = 'spectrogram';
+  // // final String model = 'assets/mfcc_model.tflite';
+  // // final String label = 'assets/mfcc_label.txt';
+  // // final String inputType = 'mfcc';
+  // final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
+  // final int sampleRate = 16000;
+  // final int bufferSize = 2000;
 
   //!Optional parameters you can adjust to modify your interence.
   final bool outputRawScores = false;
