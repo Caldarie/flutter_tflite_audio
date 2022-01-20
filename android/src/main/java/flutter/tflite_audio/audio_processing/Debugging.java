@@ -5,6 +5,13 @@ import java.util.Arrays;
 
 class DisplayLogs {
 
+    public void matrix(float [][] matrix) {
+        for (int i = 0; i < matrix.length; i++) {
+            Log.d("matrix", Arrays.toString(matrix[i]));
+        }
+    }
+
+
     // Preprocessing - silence padding on final inference
     public void logs(String LOG_TAG, short[] audioChunk, int indexCount, int inputSize) {
         Log.d(LOG_TAG, "audioChunk first element: " + audioChunk[0]);
