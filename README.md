@@ -191,14 +191,20 @@ Recording            |  Inference result
 Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
 
 
-1. Import the plugin. For example:
+1. To add the package in pubspec.yaml, open your terminal and run this line in your flutter project:
+
+```
+flutter pub add tflite_audio
+```
+
+2. Import the plugin. For example:
 
 ```
 import 'package:tflite_audio/tflite_audio.dart';
 ```
 
 
-2. To load your model:
+3. To load your model:
 
 
 ```dart
@@ -227,7 +233,7 @@ import 'package:tflite_audio/tflite_audio.dart';
 ```
 
 
-3. To start and listen to the stream for inference results:
+4. To start and listen to the stream for inference results:
 
     * Declare stream value
       ```dart
@@ -294,7 +300,7 @@ import 'package:tflite_audio/tflite_audio.dart';
            );
       ```
 
-4. To forcibly cancel recognition stream
+5. To forcibly cancel recognition stream
   
    ```dart
    TfliteAudio.stopAudioRecognition();
