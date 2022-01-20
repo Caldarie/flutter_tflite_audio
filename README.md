@@ -169,7 +169,7 @@ Recording            |  Inference result
 
 <br>
 
-1. Create an assert folder and then place your custom tflite model and labels inside. 
+1. Create an assets folder and then place your custom tflite model and labels inside. 
 
 ![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/model-label-asset.png)
 
