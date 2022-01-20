@@ -446,11 +446,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                         //Final inference. Stops recognitions and recording.
                         //No need to trim excess data as this is the final inference. (not applicable on fixed arrays from android/java)
                     }else if(inferenceCount == numOfInferences! && recordingBuffer.count >= inputSize!){
-                      
-                        self.recognize(onBuffer: Array(recordingBuffer[0..<inputSize!]))
+                        print("Final recognition")
+
                         self.lastInferenceRun = true
-                        self.stopRecognition()
-                        
+                        self.recognize(onBuffer: Array(recordingBuffer[0..<inputSize!]))
+                        self.stopRecording()
+
                         inferenceCount = 1
                         recordingBuffer = []
                     }else{
@@ -555,6 +556,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             events(dict!)
         }
         
+        self.stopRecognition();
         
         
     }
