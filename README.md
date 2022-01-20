@@ -193,44 +193,44 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 
 1. To add the package in pubspec.yaml, open your terminal and run this line in your flutter project:
 
-```
-flutter pub add tflite_audio
-```
+   ```
+   flutter pub add tflite_audio
+   ```
 
 2. Import the plugin. For example:
 
-```
-import 'package:tflite_audio/tflite_audio.dart';
-```
+   ```
+   import 'package:tflite_audio/tflite_audio.dart';
+   ```
 
 
 3. To load your model:
 
 
-```dart
-  //Example for decodedWav models
-   TfliteAudio.loadModel(
-        model: 'assets/conv_actions_frozen.tflite',
-        label: 'assets/conv_actions_label.txt',
-        inputType: 'decodedWav');
-
-
-  //Example for Google's Teachable Machine models
+   ```dart
+   //Example for decodedWav models
     TfliteAudio.loadModel(
-        model: 'assets/google_teach_machine_model.tflite',
-        label: 'assets/google_teach_machine_label.txt',
-        inputType: 'rawAudio');
+         model: 'assets/conv_actions_frozen.tflite',
+         label: 'assets/conv_actions_label.txt',
+         inputType: 'decodedWav');
 
-  //Example if you want to take advantage of all optional parameters from loadModel()
-    TfliteAudio.loadModel(
-      model: 'assets/conv_actions_frozen.tflite',
-      label: 'assets/conv_actions_label.txt',
-      inputType: 'decodedWav',
-      outputRawScores: false, 
-      numThreads: 1,
-      isAsset: this.isAsset,
-    );
-```
+
+   //Example for Google's Teachable Machine models
+     TfliteAudio.loadModel(
+         model: 'assets/google_teach_machine_model.tflite',
+         label: 'assets/google_teach_machine_label.txt',
+         inputType: 'rawAudio');
+
+   //Example if you want to take advantage of all optional parameters from loadModel()
+     TfliteAudio.loadModel(
+       model: 'assets/conv_actions_frozen.tflite',
+       label: 'assets/conv_actions_label.txt',
+       inputType: 'decodedWav',
+       outputRawScores: false, 
+       numThreads: 1,
+       isAsset: this.isAsset,
+     );
+   ```
 
 
 4. To start and listen to the stream for inference results:
