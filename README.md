@@ -376,15 +376,19 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
    <string>Record audio for playback</string>
    ```
 
-2. Change the deployment target to at least 12.0. This could be done by:
+2. Change the deployment target to a minumum of 12.0 or higher. This could be done by:
 
-   * Open your project workspace on xcode
+   * Open your project workspace on xcode. Project workspace can be found here: `<YourApp>/ios/Runner.xcworkspace`
   
-   * Select root runner on the left panel
+   * Select the top level Runner on the left panel
+   
+   * Select the Runner under Project.
   
-   * Under the info tab, change the iOS deployment target to 12.0
+   * Under the info tab, change the iOS deployment target to a minimum of 12.0 or higher
+
+   ![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/deployment-target.png)
     
-3. Open your podfile in your iOS folder and change platform ios to 12. 
+3. Open your podfile in your iOS folder and change platform ios to a minimum 12 or higher. 
 
    ```ruby
    platform :ios, '12.0'
