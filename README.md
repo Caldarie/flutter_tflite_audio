@@ -388,7 +388,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 
    ![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/deployment-target.png)
     
-3. Open your podfile in your iOS folder and change platform ios to a minimum 12 or higher. 
+3. Open your podfile (found here: `<YourApp>/ios/Podfile`) and change platform ios to a minimum 12 or higher. 
 
    ```ruby
    platform :ios, '12.0'
@@ -401,7 +401,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 <br/>
 
 
-1. Add `pod 'TensorFlowLiteSelectTfOps' under target.
+1. In the same podfile, add `pod 'TensorFlowLiteSelectTfOps' under target.
 
    ```ruby
    target 'Runner' do
@@ -425,7 +425,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 
    * Click on the empty space which is on the right side of "Other Links Flag"
 
-   * Add: `-force_load $(SRCROOT)/Pods/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps`
+   * Add the following line: `-force_load $(SRCROOT)/Pods/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps`
 
    ![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/tflite-select-ops-installation.png)
 
@@ -439,6 +439,8 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
      * Run `pod install` on terminal
 
      * Run `flutter clean` on terminal
+
+     * Run `flutter run` on terminal. All done!
     
 <br>
 
