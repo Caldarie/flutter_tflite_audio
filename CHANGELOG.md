@@ -1,3 +1,6 @@
+## 0.2.2+3
+* Hot fixed iOS issue where it will record indefintetly.
+
 ## 0.2.2+2
 * Hot fixed missing AudioData class.
 
