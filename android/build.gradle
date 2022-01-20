@@ -54,7 +54,9 @@ android {
     dependencies{
         implementation "androidx.appcompat:appcompat:1.1.0"
         implementation 'androidx.annotation:annotation:1.1.0'
+        implementation files('../android/src/main/java/flutter/tflite_audio/lib/jlibrosa-1.1.8-SNAPSHOT-jar-with-dependencies.jar')
         compile 'org.tensorflow:tensorflow-lite:+'
+        // compile 'org.apache.commons:commons-math3:3.6.1'
         // compile 'org.tensorflow:tensorflow-lite-select-tf-ops:+'
         // implementation 'org.tensorflow:tensorflow-lite:0.1.100'
         // implementation 'org.tensorflow:tensorflow-lite-select-tf-ops:0.1.100'
