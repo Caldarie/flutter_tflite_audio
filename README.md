@@ -337,14 +337,14 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 
 ## Android Installation & Permissions
 
-1. Add the permissions below to your AndroidManifest. This could be found in  <YourApp>/android/app/src folder. For example:
+1. Add the permissions below to your AndroidManifest. This could be found in `<YourApp>/android/app/src`. For example:
 
    ```
    <uses-permission android:name="android.permission.RECORD_AUDIO" />
    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
    ```
 
-2. Edit the following below to your build.gradle. This could be found in <YourApp>/app/src/For example:
+2. Edit the following below to your build.gradle. This could be found in `<YourApp>/app/src/`. For example:
 
    ```Gradle
    aaptOptions {
@@ -370,7 +370,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 
 ## iOS Installation & Permissions
 
-1. Add the following key to Info.plist for iOS. This ould be found in <YourApp>/ios/Runner
+1. Add the following key to Info.plist for iOS. This could be found in `<YourApp>/ios/Runner`
    ```
    <key>NSMicrophoneUsageDescription</key>
    <string>Record audio for playback</string>
