@@ -47,6 +47,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+<<<<<<< HEAD
+=======
+//external libraries
+import org.apache.commons.math3.complex.Complex;
+import com.jlibrosa.audio.JLibrosa;
+
+>>>>>>> 9850d96c3903e4983dc26d7baeaee574cbcfe6e5
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
@@ -463,12 +470,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     }
 
-    private void loadAudioFile() {
+    private void loadAudioFile(){
         boolean isAsset = this.isAssetObj == null ? false : (boolean) isAssetObj;
         AssetFileDescriptor fileDescriptor = null;
         long startOffset = 0;
         long declaredLength = 0;
-
+  
         try {
             if (isAsset) {
                 // Get exact location of the file in the asssets folder.
@@ -483,7 +490,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 FileChannel fileChannel = inputStream.getChannel();
                 declaredLength = fileChannel.size();
             }
-
+            
             byte[] byteData = extractRawData(fileDescriptor, startOffset, declaredLength);
             startPreprocessing(byteData);
 
@@ -879,6 +886,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 break;
 
         }
+
+    
+
 
         // debugging purposes
         Log.v(LOG_TAG, "Raw Scores: " + Arrays.toString(floatOutputBuffer[0]));
