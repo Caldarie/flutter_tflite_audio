@@ -24,6 +24,19 @@ public class AudioData {
         return audioChunk;
     }
 
+    public float[] addSilence(int remain, float[] audioChunk, int indexCount) {
+        float[] padding = new float[remain];
+        Random random = new Random();
+        Log.d("Preprocess:", "Padding " + remain + " samples to audioChunk..");
+        for (int x = 0; x < remain; x++) {
+            int rand = random.nextInt(10 + 10) - 10; //range from negative to positive
+            float value = (float) rand;
+            padding[x] = value;
+        }
+        System.arraycopy(padding, 0, audioChunk, indexCount, remain);
+        return audioChunk;
+    }
+
 
     public float[][] transpose(float[][] matrix){
 	    int m = matrix.length;
