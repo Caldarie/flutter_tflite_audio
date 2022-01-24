@@ -47,13 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-<<<<<<< HEAD
-=======
-//external libraries
-import org.apache.commons.math3.complex.Complex;
-import com.jlibrosa.audio.JLibrosa;
-
->>>>>>> 9850d96c3903e4983dc26d7baeaee574cbcfe6e5
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
