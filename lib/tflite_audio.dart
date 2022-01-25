@@ -42,19 +42,20 @@ class TfliteAudio {
   }
 
   ///Load stored audio file, preprocess and then fed into model.
-  ///Do not change the parameter 'method'
   static Stream<Map<dynamic, dynamic>> startFileRecognition(
       {required String audioDirectory,
       required int sampleRate,
+      int inputTime = 1,
       double detectionThreshold = 0.3,
       int averageWindowDuration = 0,
       int minimumTimeBetweenSamples = 0,
       int suppressionTime = 0,
-      String method = 'setFileRecognitionStream'}) {
+      final String method = 'setFileRecognitionStream'}) {
     final fileRecognitionStream =
         fileRecognitionChannel.receiveBroadcastStream(<String, dynamic>{
       'audioDirectory': audioDirectory,
       'sampleRate': sampleRate,
+      'inputTime': inputTime,
       'averageWindowDuration': averageWindowDuration,
       'detectionThreshold': detectionThreshold,
       'minimumTimeBetweenSamples': minimumTimeBetweenSamples,

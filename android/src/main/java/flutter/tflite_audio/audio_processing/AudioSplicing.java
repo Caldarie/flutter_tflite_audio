@@ -30,10 +30,12 @@ public class AudioSplicing{
     private int inputSize;
     private String inputType;
     private int fileSize;
-    private int numOfInferences;
 
     private int indexCount = 0;
     private int inferenceCount = 1;
+
+    private boolean requirePadding;
+    private int numOfInferences;
 
 
     public AudioSplicing(byte[] byteData, String inputType, int inputSize){
@@ -44,19 +46,28 @@ public class AudioSplicing{
             fileSize = shortBuffer.limit(); //calculate how many bytes in 1 second in short array
             this.inputSize = inputSize;
             this.inputType = inputType;
-            numOfInferences = (int) Math.ceil((float) fileSize / inputSize); 
             shortAudioChunk = new short[inputSize];
 
         }else{
             dataType = DataType.FLOAT;
             floatBuffer = ByteBuffer.wrap(byteData).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer();
             fileSize = floatBuffer.limit();    
-            this.inputSize = inputSize/2; //calculate how many bytes in 1 second in float array
+            this.inputSize = inputSize; 
             this.inputType = inputType;
-            numOfInferences = (int) Math.ceil((float) fileSize / inputSize);
             floatAudioChunk = new float[inputSize]; 
-
         }
+
+        calculateRemain();
+    }
+ 
+    private void calculateRemain(){
+        int remainingSamples = fileSize % inputSize;
+        int missingSamples = inputSize - remainingSamples;
+        int totalWithPad = fileSize + missingSamples;
+        int totalWithoutPad = fileSize - remainingSamples;
+        //!To debug requirePadding, simply change original [>] to < before (inputSize/2)
+        requirePadding = remainingSamples > (int) inputSize/2 ? true : false; //TODO - Make this user controlled?
+        numOfInferences = requirePadding ? (int) totalWithPad/inputSize : (int) totalWithoutPad/inputSize;
     }
 
     public int getFileSize (){
@@ -156,24 +167,23 @@ public class AudioSplicing{
 
 
 
-    // public void padSilenceToChunk(int i){
+    //TODO requirePadding - USER CONTROLLED?
     public void padSilenceToChunk(int i){  
 
-        int remain = inputSize - indexCount;
-        boolean requirePadding = ((i + 1) % inputSize != 0);
-  
-        if(dataType == DataType.SHORT && requirePadding == true){
+        int remainingSamples = inputSize - indexCount;
+
+        if(dataType == DataType.SHORT && requirePadding ){
             Log.d(LOG_TAG, "Missing samples found in short audio chunk..");
-            shortAudioChunk = audioData.addSilence(remain, shortAudioChunk, indexCount);
+            shortAudioChunk = audioData.addSilence(remainingSamples, shortAudioChunk, indexCount);
         }
 
-        else if(dataType == DataType.FLOAT && requirePadding == true){   
+        else if(dataType == DataType.FLOAT && requirePadding){   
             Log.d(LOG_TAG, "Missing samples found in float audio chunk..");    
-            floatAudioChunk = audioData.addSilence(remain, floatAudioChunk, indexCount);
+            floatAudioChunk = audioData.addSilence(remainingSamples, floatAudioChunk, indexCount);
         }
 
         else {
-            Log.d(LOG_TAG, "No missing samples. Padding not required");
+            Log.d(LOG_TAG, "Missing samples are less than half of input. Padding not required");
         }
 
 

@@ -9,8 +9,8 @@ import java.util.Random;
 import org.apache.commons.math3.complex.Complex;
 
 public class AudioData {
-
-    // preprocessing
+    
+    //TODO -  user controlled ranges?
     public short[] addSilence(int remain, short[] audioChunk, int indexCount) {
         short[] padding = new short[remain];
         Random random = new Random();
@@ -24,12 +24,13 @@ public class AudioData {
         return audioChunk;
     }
 
+    //TODO -  user controlled ranges?
     public float[] addSilence(int remain, float[] audioChunk, int indexCount) {
         float[] padding = new float[remain];
         Random random = new Random();
         Log.d("Preprocess:", "Padding " + remain + " samples to audioChunk..");
         for (int x = 0; x < remain; x++) {
-            int rand = random.nextInt(10 + 10) - 10; //range from negative to positive
+            float rand = random.nextFloat() * (0.01f - 0.001f) + 0.001f; //range from negative to positive
             float value = (float) rand;
             padding[x] = value;
         }

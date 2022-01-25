@@ -116,6 +116,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private int inputSize;
     private int[] inputShape;
     private String inputType;
+    private int inputTime;
     private boolean outputRawScores;
     private String modelPath;
     private String labelPath;
@@ -244,17 +245,33 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 this.bufferSize = (int) arguments.get("bufferSize");
                 this.sampleRate = (int) arguments.get("sampleRate");
                 this.numOfInferences = (int) arguments.get("numOfInferences");
+                determineInput();
                 checkPermissions(REQUEST_RECORD_AUDIO);
                 break;
             case "setFileRecognitionStream":
-                // Log.d(LOG_TAG, "setting file recognition listener");
                 this.audioDirectory = (String) arguments.get("audioDirectory");
                 this.sampleRate = (int) arguments.get("sampleRate");
+                this.inputTime = (int) arguments.get("inputTime");
+                determineInput();
                 checkPermissions(REQUEST_READ_EXTERNAL_STORAGE);
                 break;
             default:
                 throw new AssertionError("Error with listening to stream.");
         }
+
+    }
+
+    private void determineInput() {
+        if (inputType.equals("rawAudio") || inputType.equals("decodedWav")) {
+            this.inputShape = tfLite.getInputTensor(0).shape();
+            this.inputSize = Arrays.stream(inputShape).max().getAsInt();
+        } else {
+            this.inputShape = tfLite.getInputTensor(0).shape();
+            this.inputSize = (sampleRate/2) * inputTime; //calculate how many bytes in 1 second in float array
+        }
+        Log.v(LOG_TAG, "Input Type: " + inputType);
+        Log.v(LOG_TAG, "Input shape: " + Arrays.toString(inputShape));
+        Log.v(LOG_TAG, "Input size: " + inputSize);
 
     }
 
@@ -286,11 +303,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         final Interpreter.Options tfliteOptions = new Interpreter.Options();
         tfliteOptions.setNumThreads(numThreads);
         this.tfLite = new Interpreter(buffer, tfliteOptions);
-        determineInput();
-
-        Log.v(LOG_TAG, "Input Type: " + inputType);
-        // Log.v(LOG_TAG, "Input shape: " + Arrays.toString(inputShape));
-        Log.v(LOG_TAG, "Input size: " + inputSize);
 
         // load labels
         Log.d(LOG_TAG, "label name is: " + labelPath);
@@ -306,17 +318,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     }
 
-    private void determineInput() {
-        if (inputType.equals("rawAudio") || inputType.equals("decodedWav")) {
-            this.inputShape = tfLite.getInputTensor(0).shape();
-            this.inputSize = Arrays.stream(inputShape).max().getAsInt();
-        } else {
-            this.inputShape = tfLite.getInputTensor(0).shape();
-            this.inputSize = sampleRate;
-        }
-
-    }
-
+  
     private void loadLabels(AssetManager assetManager, String path) {
         BufferedReader br;
         try {

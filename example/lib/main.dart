@@ -28,24 +28,25 @@ class _MyAppState extends State<MyApp> {
   // final int bufferSize = 2000;
 
   //!example values for google's teachable machine model
-  final String model = 'assets/google_teach_machine_model.tflite';
-  final String label = 'assets/google_teach_machine_label.txt';
-  final String inputType = 'rawAudio';
-  final String audioDirectory = 'assets/sample_audio_44k_mono.wav';
-  final int sampleRate = 44100;
-  final int bufferSize = 22016;
+  // final String model = 'assets/google_teach_machine_model.tflite';
+  // final String label = 'assets/google_teach_machine_label.txt';
+  // final String inputType = 'rawAudio';
+  // final String audioDirectory = 'assets/sample_audio_44k_mono.wav';
+  // final int sampleRate = 44100;
+  // final int bufferSize = 22016;
   // // final int bufferSize = 11008;
 
   //!example values for MFCC, melspectrogram, spectrogram models
-  // final String model = 'assets/spectrogram_model.tflite';
-  // final String label = 'assets/spectrogram_label.txt';
-  // final String inputType = 'spectrogram';
-  // // final String model = 'assets/mfcc_model.tflite';
-  // // final String label = 'assets/mfcc_label.txt';
-  // // final String inputType = 'mfcc';
-  // final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
-  // final int sampleRate = 16000;
-  // final int bufferSize = 2000;
+  final String model = 'assets/spectrogram_model.tflite';
+  final String label = 'assets/spectrogram_label.txt';
+  final String inputType = 'spectrogram';
+  final int inputTime = 1;
+  // final String model = 'assets/mfcc_model.tflite';
+  // final String label = 'assets/mfcc_label.txt';
+  // final String inputType = 'mfcc';
+  final String audioDirectory = 'assets/sample_audio_16k_mono-2.wav';
+  final int sampleRate = 16000;
+  final int bufferSize = 2000;
 
   //!Optional parameters you can adjust to modify your interence.
   final bool outputRawScores = false;
@@ -76,24 +77,26 @@ class _MyAppState extends State<MyApp> {
   /// Uncomment the parameters below if you wish to adjust the values
   void getResult() {
     //example for stored audio file recognition
-    // result = TfliteAudio.startFileRecognition(
-    //   audioDirectory: this.audioDirectory,
-    //   // detectionThreshold: this.detectionThreshold,
-    //   // averageWindowDuration: this.averageWindowDuration,
-    //   // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
-    //   // suppressionTime: this.suppressionTime,
-    // );
-
-    ///example for recording recognition
-    result = TfliteAudio.startAudioRecognition(
+    result = TfliteAudio.startFileRecognition(
+      audioDirectory: this.audioDirectory,
       sampleRate: this.sampleRate,
-      bufferSize: this.bufferSize,
-      numOfInferences: this.numOfInferences,
+      inputTime: this.inputTime,
       // detectionThreshold: this.detectionThreshold,
       // averageWindowDuration: this.averageWindowDuration,
       // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
       // suppressionTime: this.suppressionTime,
     );
+
+    ///example for recording recognition
+    // result = TfliteAudio.startAudioRecognition(
+    //   sampleRate: this.sampleRate,
+    //   bufferSize: this.bufferSize,
+    //   numOfInferences: this.numOfInferences,
+    //   // detectionThreshold: this.detectionThreshold,
+    //   // averageWindowDuration: this.averageWindowDuration,
+    //   // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
+    //   // suppressionTime: this.suppressionTime,
+    // );
 
     //Event returns a map. Keys are:
     //event["recognitionResult"], event["hasPermission"], event["inferenceTime"]
