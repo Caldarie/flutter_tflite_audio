@@ -41,6 +41,7 @@ import java.nio.ShortBuffer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.Date;
 import java.util.HashMap;
@@ -61,6 +62,11 @@ import io.flutter.plugin.common.PluginRegistry; //required for onRequestPermissi
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
+
+//External libraries
+//TODO - new class
+import org.apache.commons.math3.complex.Complex;
+import com.jlibrosa.audio.JLibrosa;
 
 public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, FlutterPlugin, ActivityAware,
         PluginRegistry.RequestPermissionsResultListener {
@@ -112,12 +118,14 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private int sampleRate;
     private int numOfInferences;
 
-    // model variables
+    //input/output variables
     private int inputSize;
     private int[] inputShape;
     private String inputType;
     private int inputTime;
     private boolean outputRawScores;
+
+    //tflite variables
     private String modelPath;
     private String labelPath;
     private Object isAssetObj;
@@ -267,7 +275,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             this.inputSize = Arrays.stream(inputShape).max().getAsInt();
         } else {
             this.inputShape = tfLite.getInputTensor(0).shape();
-            this.inputSize = (sampleRate/2) * inputTime; //calculate how many bytes in 1 second in float array
+            this.inputSize = sampleRate * inputTime; //calculate how many bytes in 1 second in float array
         }
         Log.v(LOG_TAG, "Input Type: " + inputType);
         Log.v(LOG_TAG, "Input shape: " + Arrays.toString(inputShape));
@@ -525,48 +533,38 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         preprocessThread.start();
     }
 
-    private void determineChunkType(AudioSplicing as) {
-
-        if (as.isSpectrogram() == true) {
-            startRecognition(null, as.getFloatChunk());
-        }else{
-            startRecognition(as.getShortChunk(), null);
-        }
-
-        if(recognitionThread != null) awaitRecognition();
-
-    }
-
     public void preprocess(byte[] byteData) {
         Log.d(LOG_TAG, "Preprocessing audio file..");
 
         isPreprocessing = true;
-        AudioSplicing as = new AudioSplicing(byteData, inputType, inputSize);
+        AudioSplicing audioSplicer = new AudioSplicing(byteData, inputType, inputSize);
 
-        for (int i = 0; i < as.getFileSize(); i++) {
+        for (int i = 0; i < audioSplicer.getFileSize(); i++) {
 
             if (isPreprocessing == false) break;
-            String state = as.getState(i);
+            String state = audioSplicer.getState(i);
 
             switch (state) {
                 case "processing":
                     Log.d(LOG_TAG, "Processing.");
-                    as.displayInferenceCount();
-                    determineChunkType(as);
-                    as.reset(i);
+                    audioSplicer.displayInferenceCount();
+                    startRecognition(audioSplicer.getShortChunk());
+                    if(recognitionThread != null) awaitRecognition();
+                    audioSplicer.reset(i);
                     break;
 
                 case "finalising":
                     Log.d(LOG_TAG, "Finalising");
-                    as.displayInferenceCount();
-                    as.padSilenceToChunk(i);
+                    audioSplicer.displayInferenceCount();
+                    audioSplicer.padSilenceToChunk(i);
                     lastInference = true;
-                    determineChunkType(as); 
+                    startRecognition(audioSplicer.getShortChunk());
+                    if(recognitionThread != null) awaitRecognition();
                     stopPreprocessing();
                     break;
 
                 case "appending":
-                    as.appendDataToChunk(i);
+                    audioSplicer.appendDataToChunk(i);
                     break;
 
                 default:
@@ -644,7 +642,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
                     Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + inputSize);
                     // recordingBuffer = recordingBuffer;
-                    startRecognition(recordingBuffer, null);
+                    startRecognition(recordingBuffer);
                     inferenceCount += 1;
 
                     Log.v(LOG_TAG, "Clearing recordingBuffer..");
@@ -680,7 +678,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     if (showRecordLogs == true)
                         display.logs("Recording Excess - After trim:", recordingBuffer, recordingOffset);
 
-                    startRecognition(recordingBuffer, null);
+                    startRecognition(recordingBuffer);
                     inferenceCount += 1;
 
                     /*
@@ -723,7 +721,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     Log.v(LOG_TAG, "Unused excess samples: " + (recordingOffsetCount - inputSize));
 
                     lastInference = true;
-                    startRecognition(recordingBuffer, null);
+                    startRecognition(recordingBuffer);
                     stopRecording();
 
                     // reset after recognition and recording. Don't change position!!
@@ -737,7 +735,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     System.arraycopy(recordingFrame, 0, recordingBuffer, recordingOffset, numberRead);
                     // recordingBuffer = recordingBuffer;
                     lastInference = true;
-                    startRecognition(recordingBuffer, null);
+                    startRecognition(recordingBuffer);
                     stopRecording();
 
                     // reset after recognition and recording. Don't change position!!
@@ -766,7 +764,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         }
     }
 
-    public synchronized void startRecognition(short[] audioBuffer, float[][] spectrogram) {
+    public synchronized void startRecognition(short[] audioBuffer) {
         if (recognitionThread != null) {
             return;
         }
@@ -775,13 +773,13 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 new Runnable() {
                     @Override
                     public void run() {
-                        recognize(audioBuffer, spectrogram);
+                        recognize(audioBuffer);
                     }
                 });
         recognitionThread.start();
     }
 
-    private void recognize(short[] audioBuffer, float[][] spectrogram) {
+    private void recognize(short[] audioBuffer) {
         Log.v(LOG_TAG, "Recognition started.");
     
         if (events == null) {
@@ -794,11 +792,11 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         int[] sampleRateList = {};
         float[][] floatOutputBuffer = new float[1][labels.size()]; // TODO - uncomment this
         short[] inputBuffer = new short[inputSize];
-        // float[][][][] spectogramInput = {};
         // TODO - TEST
         int FRAMES = 129;
         int MEL_BINS = 124;
-        float[][][][] inputTensor = new float[1][FRAMES][MEL_BINS][1]; // if using spectrogram input
+        // public float[][] melBasis = new float[MEL_BINS][1+FFT_SIZE/2]; //used for mel spectrogram
+        float[][][][] inputTensor = new float[1][FRAMES][MEL_BINS][1]; // used for spectrogram
 
         // Used for multiple input and outputs (decodedWav)
         Object[] inputArray = {};
@@ -813,11 +811,34 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             // TODO - add ability to transpose
 
             case "mfcc":
-                tfLite.run(spectrogram, floatOutputBuffer);
+                // tfLite.run(spectrogram, floatOutputBuffer);
                 lastProcessingTimeMs = new Date().getTime() - startTime;
                 break;
 
             case "spectrogram":
+                //TODO - ADD TRANSPOSE
+                //TODO - NEW CLASS
+
+                JLibrosa jLibrosa = new JLibrosa();
+                AudioData audioData = new AudioData();
+
+                //normalise
+                final float maxRes16 = (float) Math.pow(2, 15) -1; //outputs 32767.0f
+                final short wmax = audioData.getMaxAbsoluteValue(audioBuffer);
+                Log.d(LOG_TAG, "audio chunk: " + Arrays.toString(audioBuffer));
+                Log.d(LOG_TAG, "wmax: " + wmax);
+                float inputBuffer32[] = new float[inputSize];
+            
+                //convert to float
+                for (int i = 0; i < audioBuffer.length; ++i)
+                    inputBuffer32[i] = audioBuffer[i] / wmax;
+                
+                //float to spectrogram
+                Complex [][] stft = jLibrosa.generateSTFTFeatures(inputBuffer32, 16000, 40, 256, 130, 130);
+                float[][] spectrogram = audioData.complexTo2DFloat(stft);
+                Log.d(LOG_TAG, "1. Mel Bin " + spectrogram.length);
+                Log.d(LOG_TAG, "2. Frames " + spectrogram[0].length);
+
                 for (int frame = 0; frame < FRAMES; frame++) {
                     for (int freq = 0; freq < MEL_BINS; freq++) {
                         inputTensor[0][frame][freq][0] = spectrogram[frame][freq];

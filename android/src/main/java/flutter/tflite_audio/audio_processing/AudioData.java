@@ -11,33 +11,19 @@ import org.apache.commons.math3.complex.Complex;
 public class AudioData {
     
     //TODO -  user controlled ranges?
-    public short[] addSilence(int remain, short[] audioChunk, int indexCount) {
-        short[] padding = new short[remain];
+    public short[] addSilence(int missingSamples, short[] audioChunk, int indexCount) {
+        short[] padding = new short[missingSamples];
         Random random = new Random();
-        Log.d("Preprocess:", "Padding " + remain + " samples to audioChunk..");
-        for (int x = 0; x < remain; x++) {
+        Log.d("Preprocess:", "Padding " + missingSamples + " samples to audioChunk..");
+        for (int x = 0; x < missingSamples; x++) {
             int rand = random.nextInt(10 + 10) - 10; //range from negative to positive
+            // int rand = 0;
             short value = (short) rand;
             padding[x] = value;
         }
-        System.arraycopy(padding, 0, audioChunk, indexCount, remain);
+        System.arraycopy(padding, 0, audioChunk, indexCount, missingSamples);
         return audioChunk;
     }
-
-    //TODO -  user controlled ranges?
-    public float[] addSilence(int remain, float[] audioChunk, int indexCount) {
-        float[] padding = new float[remain];
-        Random random = new Random();
-        Log.d("Preprocess:", "Padding " + remain + " samples to audioChunk..");
-        for (int x = 0; x < remain; x++) {
-            float rand = random.nextFloat() * (0.01f - 0.001f) + 0.001f; //range from negative to positive
-            float value = (float) rand;
-            padding[x] = value;
-        }
-        System.arraycopy(padding, 0, audioChunk, indexCount, remain);
-        return audioChunk;
-    }
-
 
     public float[][] transpose(float[][] matrix){
 	    int m = matrix.length;
@@ -91,9 +77,10 @@ public class AudioData {
     }
 
     public float padNanValues(float value){
-        Random random = new Random();
-        float randF = random.nextFloat() * (0.01f - 0.001f) + 0.001f;
-        return Float.isFinite(value) ? value : randF;
+        // Random random = new Random();
+        float zeroValue = 0.0f;
+        // float randF = random.nextFloat() * (0.01f - 0.001f) + 0.001f; //only in absolute values
+        return Float.isFinite(value) ? value : zeroValue;
     }
 
     //https://github.com/lucasronchetti/tg_aedes_detector/blob/4dd323620238833c66737a7fdd67fadac73d503a/aedes_detector/app/src/main/java/com/example/aedesdetector/spec/MFCC.java#L36
@@ -125,4 +112,14 @@ public class AudioData {
         return result;
     }
 
+    //http://www.java2s.com/example/java/collection-framework/calculates-max-absolute-value-in-short-type-array.html
+    public short getMaxAbsoluteValue(short[] input) {
+        short max = Short.MIN_VALUE;
+        for (int i = 0; i < input.length; i++) {
+            if (Math.abs(input[i]) > max) {
+                max = (short) Math.abs(input[i]);
+            }
+        }
+        return max;
+    }
 }
