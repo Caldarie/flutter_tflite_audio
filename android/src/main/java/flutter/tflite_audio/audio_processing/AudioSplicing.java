@@ -56,7 +56,7 @@ public class AudioSplicing{
         boolean underThreshold = missingSamples < (int) inputSize * 0.75f;
         
         if(hasMissingSamples && underThreshold){ requirePadding = true; }
-        else if(hasMissingSamples && !underThreshold) {requirePadding = false; }
+        else if(hasMissingSamples && !underThreshold) { requirePadding = false; }
         else if(!hasMissingSamples && underThreshold) { requirePadding = false; }
         else { requirePadding = false; }
         
