@@ -122,8 +122,14 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private int inputSize;
     private int[] inputShape;
     private String inputType;
-    private int inputTime;
     private boolean outputRawScores;
+
+    //default specrogram variables
+    private int inputTime = 1;
+    private int nMFCC = 20;
+    private int nFFT = 256;
+    private int nMels = 128;
+    private int hopLength = 512;
 
     //tflite variables
     private String modelPath;
@@ -217,11 +223,21 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 this.modelPath = (String) arguments.get("model");
                 this.labelPath = (String) arguments.get("label");
                 this.isAssetObj = arguments.get("isAsset");
+                Log.d(LOG_TAG, "loadModel parameters: " + arguments);
                 try {
                     loadModel();
                 } catch (Exception e) {
                     result.error("failed to load model", e.getMessage(), e);
                 }
+                break;
+            case "setSpectrogramParameters":
+                // this.mSampleRate = (int) arguments.get("mSampleRate");
+                this.inputTime = (int) arguments.get("inputTime");
+                this.nMFCC = (int) arguments.get("nMFCC");
+                this.nFFT = (int) arguments.get("nFFT");
+                this.nMels = (int) arguments.get("nMels");
+                this.hopLength = (int) arguments.get("hopLength");
+                Log.d(LOG_TAG, "Spectrogram parameters: " + arguments);
                 break;
             case "stopAudioRecognition":
                 forceStopRecogniton();
@@ -259,7 +275,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             case "setFileRecognitionStream":
                 this.audioDirectory = (String) arguments.get("audioDirectory");
                 this.sampleRate = (int) arguments.get("sampleRate");
-                this.inputTime = (int) arguments.get("inputTime");
                 determineInput();
                 checkPermissions(REQUEST_READ_EXTERNAL_STORAGE);
                 break;
@@ -792,11 +807,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         int[] sampleRateList = {};
         float[][] floatOutputBuffer = new float[1][labels.size()]; // TODO - uncomment this
         short[] inputBuffer = new short[inputSize];
-        // TODO - TEST
-        int FRAMES = 129;
-        int MEL_BINS = 124;
+        // int FRAMES = 129;
+        // int MEL_BINS = 124;
         // public float[][] melBasis = new float[MEL_BINS][1+FFT_SIZE/2]; //used for mel spectrogram
-        float[][][][] inputTensor = new float[1][FRAMES][MEL_BINS][1]; // used for spectrogram
+        // float[][][][] inputTensor = new float[1][FRAMES][MEL_BINS][1]; // used for spectrogram
 
         // Used for multiple input and outputs (decodedWav)
         Object[] inputArray = {};
@@ -816,35 +830,20 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 break;
 
             case "spectrogram":
-                //TODO - ADD TRANSPOSE
-                //TODO - NEW CLASS
 
-                JLibrosa jLibrosa = new JLibrosa();
                 AudioData audioData = new AudioData();
+                SignalProcessing signalProcessing = new SignalProcessing(sampleRate, nMFCC, nFFT, nMels, hopLength);
 
-                //normalise
-                final float maxRes16 = (float) Math.pow(2, 15) -1; //outputs 32767.0f
-                final short wmax = audioData.getMaxAbsoluteValue(audioBuffer);
-                Log.d(LOG_TAG, "audio chunk: " + Arrays.toString(audioBuffer));
-                Log.d(LOG_TAG, "wmax: " + wmax);
-                float inputBuffer32[] = new float[inputSize];
+                // Log.v(LOG_TAG, "smax: " + audioData.getMaxAbsoluteValue(audioBuffer));
+                // Log.v(LOG_TAG, "smin: " + audioData.getMinAbsoluteValue(audioBuffer));
+                // Log.v(LOG_TAG, "audio data: " + Arrays.toString(audioBuffer));
+
+                //TODO - ADD TRANSPOSE
+                float inputBuffer32[] = audioData.normalizeByMaxAmplitude(audioBuffer);      
+                inputBuffer32 = audioData.scaleAndCentre(inputBuffer32);
+                float [][] spectrogram = signalProcessing.getSpectrogram(inputBuffer32);
+                float [][][][] inputTensor = signalProcessing.reshape2dto4d(spectrogram);
             
-                //convert to float
-                for (int i = 0; i < audioBuffer.length; ++i)
-                    inputBuffer32[i] = audioBuffer[i] / wmax;
-                
-                //float to spectrogram
-                Complex [][] stft = jLibrosa.generateSTFTFeatures(inputBuffer32, 16000, 40, 256, 130, 130);
-                float[][] spectrogram = audioData.complexTo2DFloat(stft);
-                Log.d(LOG_TAG, "1. Mel Bin " + spectrogram.length);
-                Log.d(LOG_TAG, "2. Frames " + spectrogram[0].length);
-
-                for (int frame = 0; frame < FRAMES; frame++) {
-                    for (int freq = 0; freq < MEL_BINS; freq++) {
-                        inputTensor[0][frame][freq][0] = spectrogram[frame][freq];
-                    }
-                }
-
                 tfLite.run(inputTensor, floatOutputBuffer);
                 lastProcessingTimeMs = new Date().getTime() - startTime;
                 break;

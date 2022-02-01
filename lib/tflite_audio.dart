@@ -45,7 +45,6 @@ class TfliteAudio {
   static Stream<Map<dynamic, dynamic>> startFileRecognition(
       {required String audioDirectory,
       required int sampleRate,
-      int inputTime = 1,
       double detectionThreshold = 0.3,
       int averageWindowDuration = 0,
       int minimumTimeBetweenSamples = 0,
@@ -55,7 +54,6 @@ class TfliteAudio {
         fileRecognitionChannel.receiveBroadcastStream(<String, dynamic>{
       'audioDirectory': audioDirectory,
       'sampleRate': sampleRate,
-      'inputTime': inputTime,
       'averageWindowDuration': averageWindowDuration,
       'detectionThreshold': detectionThreshold,
       'minimumTimeBetweenSamples': minimumTimeBetweenSamples,
@@ -73,6 +71,25 @@ class TfliteAudio {
   ///stream.
   static Future stopAudioRecognition() async {
     return _channel.invokeMethod('stopAudioRecognition');
+  }
+
+  static Future setSpectrogramParameters({
+    int inputTime = 1,
+    int nMFCC = 20,
+    int nFFT = 2048,
+    int nMels = 128,
+    int hopLength = 512,
+  }) async {
+    return _channel.invokeMethod(
+      'setSpectrogramParameters',
+      {
+        'inputTime': inputTime,
+        'nMFCC': nMFCC,
+        'nFFT': nFFT,
+        'nMels': nMels,
+        'hopLength': hopLength,
+      },
+    );
   }
 
   ///initialize [loadModel] before calling any other streams and futures.
