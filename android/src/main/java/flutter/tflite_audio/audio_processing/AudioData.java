@@ -9,6 +9,8 @@ import java.util.Random;
 import org.apache.commons.math3.complex.Complex;
 
 public class AudioData {
+
+    private static final String LOG_TAG = "Audio_Data";
     
     //TODO -  user controlled ranges?
     public short[] addSilence(int missingSamples, short[] audioChunk, int indexCount) {
@@ -36,67 +38,65 @@ public class AudioData {
 	            transposedMatrix[x][y] = matrix[y][x];
 	        }
 	    }
-
 	    return transposedMatrix;
 	}
 
-    public float [][] normalize(float [][] floatInput){
-        int m = floatInput.length;
-	    int n = floatInput[0].length;
+    public float [] normalizeBySigned16(short [] inputBuffer16){
+        final float maxRes16 = (float) Math.pow(2, 15) -1; //outputs 32767.0f
+        float inputBuffer32[] = new float[inputBuffer16.length];
 
-        float[][] normalizedInput = new float[n][m];
+        //normalise audio to -1 to 1 values
+        for (int i = 0; i < inputBuffer16.length; ++i)
+            inputBuffer32[i] = inputBuffer16[i] / maxRes16;
+            // inputBuffer32[i] = inputBuffer16[i] / 32767.0f;
 
-	    for(int x = 0; x < n; x++) {
-	        for(int y = 0; y < m; y++) {
-	            normalizedInput[x][y] = floatInput[x][y] / 32767.0f;
-	        }
-	    }
-
-	    return normalizedInput;
+        return inputBuffer32;
     }
 
-    public float[][] complexTo2DFloat(Complex[][] c) {
-        final int length = c.length;
-        float[][] f = new float[length][];
-        for (int n = 0; n < length; n++) {
-            f[n] = complexTo1DFloat(c[n]);
-        }
-        return f;
+    public float [] normalizeByMaxAmplitude(short[] inputBuffer16){
+              //normalise what??
+        float [] result = new float [inputBuffer16.length];
+        short wmax = getMaxAbsoluteValue(inputBuffer16);
+        for (int i = 0; i < inputBuffer16.length; ++i)
+            result[i] = (float) inputBuffer16[i] / wmax;
+
+        return result;
     }
 
-
-    public float[] complexTo1DFloat(Complex[] c) {
-        int index = 0;
-        final float[] f = new float[c.length];
-        for (Complex cc : c) {
-            float value = (float) cc.abs();
-            f[index] = padNanValues(value);
-            index++;
-        }
-        return f;
-    }
-
-    public float padNanValues(float value){
-        // Random random = new Random();
-        float zeroValue = 0.0f;
-        // float randF = random.nextFloat() * (0.01f - 0.001f) + 0.001f; //only in absolute values
-        return Float.isFinite(value) ? value : zeroValue;
-    }
-
-    //https://github.com/lucasronchetti/tg_aedes_detector/blob/4dd323620238833c66737a7fdd67fadac73d503a/aedes_detector/app/src/main/java/com/example/aedesdetector/spec/MFCC.java#L36
-    public float[][] convert(double[][] doubleInput) {
-        float[][] floatArray = new float[doubleInput.length][];
-        for (int i = 0 ; i < doubleInput.length; i++)
-        {
-            floatArray[i] = new float[doubleInput[i].length];
-            for (int j = 0; j < doubleInput[i].length; j++) {
-                floatArray[i][j] = (float) ((doubleInput[i][j] / 80 ) + 1);
-            }
-        }
-        return floatArray;
-    }
-
+     
+    //https://github.com/mkvenkit/simple_audio_pi/blob/main/simple_audio.py
+    public float [] scaleAndCentre(float [] inputBuffer32){
+        
+        float [] result = new float [inputBuffer32.length];
+        final float ptp = getMaxMinRange(inputBuffer32);
+        final float min = getMinValue(inputBuffer32);
+       
+        // Log.d(LOG_TAG, "audio chunk: " + Arrays.toString(inputBuffer32));
+        Log.d(LOG_TAG, "ptp: " + ptp);
+        Log.d(LOG_TAG, "min: " + min);
     
+        //scale to center waveform 
+        for (int i = 0; i < inputBuffer32.length; ++i)
+            result[i] = 2.0f*(inputBuffer32[i] - min) / (float)(ptp - 1);
+
+        return result;
+    }
+
+    // public float[][] doubleTo2dFloat(double[][] doubleInput) {
+
+    //     int height = doubleInput.length;
+    //     int width = doubleInput[0].length;
+
+    //     float[][] floatOutput = new float[height][width];
+    //     for (int h = 0; h < height; h++) {
+    //         for (int w = 0; w < width; w++) {
+    //             floatOutput[h][w] = (float) doubleInput[h][w];
+    //         }
+    //     }
+    //     return floatOutput;
+    // }
+    
+
      // preprocessing
     public byte[] appendByteData(byte[] src, byte[] dst) {
         byte[] result = new byte[src.length + dst.length];
@@ -112,8 +112,29 @@ public class AudioData {
         return result;
     }
 
+    //https://stackoverflow.com/questions/40361324/maximum-minus-minimum-in-an-array
+    private float getMaxMinRange(float [] input){
+        float min = Float.MAX_VALUE;
+        float max = Float.MIN_VALUE;
+        for (float elem : input) {
+            if (elem < min) min = elem;
+            if (elem > max) max = elem;
+        }
+        return (float) (max - min);
+    }
+
     //http://www.java2s.com/example/java/collection-framework/calculates-max-absolute-value-in-short-type-array.html
-    public short getMaxAbsoluteValue(short[] input) {
+    // private float getMaxAbsoluteValue(float[] input) {
+    //     float max = Float.MIN_VALUE;
+    //     for (int i = 0; i < input.length; i++) {
+    //         if (Math.abs(input[i]) > max) {
+    //             max = (float) Math.abs(input[i]);
+    //         }
+    //     }
+    //     return max;
+    // }
+
+    private short getMaxAbsoluteValue(short[] input) {
         short max = Short.MIN_VALUE;
         for (int i = 0; i < input.length; i++) {
             if (Math.abs(input[i]) > max) {
@@ -122,4 +143,34 @@ public class AudioData {
         }
         return max;
     }
+
+    private float getMinValue(float[] input) {
+        float min = Float.MAX_VALUE;
+        for (int i = 0; i < input.length; i++) {
+            if (Math.abs(input[i]) < min) {
+                min = (float) input[i];
+            }
+        }
+        return min;
+    }
+
+    // private float getMinAbsoluteValue(float[] input) {
+    //     float min = Float.MAX_VALUE;
+    //     for (int i = 0; i < input.length; i++) {
+    //         if (Math.abs(input[i]) < min) {
+    //             min = (float) Math.abs(input[i]);
+    //         }
+    //     }
+    //     return min;
+    // }
+
+    // public short getMinAbsoluteValue(short[] input) {
+    //     short min = Short.MAX_VALUE;
+    //     for (int i = 0; i < input.length; i++) {
+    //         if (Math.abs(input[i]) < min) {
+    //             min = (short) Math.abs(input[i]);
+    //         }
+    //     }
+    //     return min;
+    // }
 }
