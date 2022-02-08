@@ -36,9 +36,9 @@ class _MyAppState extends State<MyApp> {
   // final int bufferSize = 22016;
   // final int bufferSize = 11008;
 
-  static const String modelTTF =
+  static const String model =
       'assets/ser_angry_bored.tflite,assets/ser_calm_disgusted.tflite,assets/ser_fearful_neutral.tflite,assets/ser_happy_sad.tflite';
-  static const String modelTXT =
+  static const String label =
       'assets/angry_bored_labels.txt,assets/calm_disgusted_labels.txt,assets/fearful_neutral_labels.txt,assets/happy_sad_labels.txt';
   final String inputType = 'rawAudio';
   final int sampleRate = 16000;
@@ -63,10 +63,10 @@ class _MyAppState extends State<MyApp> {
     TfliteAudio.loadModel(
       // numThreads: this.numThreads,
       // isAsset: this.isAsset,
-      inputType: this.inputType,
-      outputRawScores: this.outputRawScores,
-      model: this.model,
-      label: this.label,
+      inputType: inputType,
+      outputRawScores: outputRawScores,
+      model: model,
+      label: label,
     );
   }
 
@@ -84,9 +84,10 @@ class _MyAppState extends State<MyApp> {
 
     ///example for recording recognition
     result = TfliteAudio.startAudioRecognition(
-      sampleRate: this.sampleRate,
-      bufferSize: this.bufferSize,
-      numOfInferences: this.numOfInferences,
+      sampleRate: sampleRate,
+      bufferSize: bufferSize,
+      numOfInferences: numOfInferences,
+      recordingLength: recordingLength,
       // detectionThreshold: this.detectionThreshold,
       // averageWindowDuration: this.averageWindowDuration,
       // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
@@ -104,11 +105,16 @@ class _MyAppState extends State<MyApp> {
   //fetches the labels from the text file in assets
   Future<List<String>> fetchLabelList() async {
     List<String> _labelList = [];
-    await rootBundle.loadString(this.label).then((q) {
-      for (String i in LineSplitter().convert(q)) {
-        _labelList.add(i);
-      }
-    });
+    final labelFiles = label.split(",");
+    for (var i = 0; i < labelFiles.length; i++) {
+      await rootBundle.loadString(labelFiles[i]).then((q) {
+        for (String s in LineSplitter().convert(q)) {
+          if (!_labelList.contains(s)) {
+            _labelList.add(s);
+          }
+        }
+      });
+    }
     return _labelList;
   }
 
