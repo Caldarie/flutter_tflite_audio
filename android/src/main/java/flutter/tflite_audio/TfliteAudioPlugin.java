@@ -48,6 +48,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.*;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.subjects.PublishSubject;
+
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
@@ -92,7 +98,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     // preprocessing variables
     private Thread preprocessThread;
     private String audioDirectory;
-    private boolean isPreprocessing;
+    AudioSplicing audioSplicer;
+    // private boolean isPreprocessing;
 
     // working label variables
     private List<String> labels;
@@ -376,7 +383,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
                 if (hasRecordPerm) {
                     startRecording();
-                    Log.d(LOG_TAG, "Permission already granted. start recording");
+                    Log.d(LOG_TAG, "Permission already granted.");
                 } else {
                     requestPermission(REQUEST_RECORD_AUDIO);
                 }
@@ -388,7 +395,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 boolean hasReadPerm = readPerm == PackageManager.PERMISSION_GRANTED;
                 if (hasReadPerm) {
                     loadAudioFile();
-                    Log.d(LOG_TAG, "Permission already granted. Loading audio file..");
+                    Log.d(LOG_TAG, "Permission already granted.");
                 } else {
                     requestPermission(REQUEST_READ_EXTERNAL_STORAGE);
                 }
@@ -489,6 +496,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     }
 
     private void loadAudioFile(){
+        Log.d(LOG_TAG, "Loading audio file to buffer");
         boolean isAsset = this.isAssetObj == null ? false : (boolean) isAssetObj;
         AssetFileDescriptor fileDescriptor = null;
         long startOffset = 0;
@@ -509,6 +517,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 declaredLength = fileChannel.size();
             }
             
+            Log.d(LOG_TAG, "Audio file sucessfully loaded");
             byte[] byteData = extractRawData(fileDescriptor, startOffset, declaredLength);
             startPreprocessing(byteData);
 
@@ -518,6 +527,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     }
 
     private byte[] extractRawData(AssetFileDescriptor fileDescriptor, long startOffset, long declaredLength) {
+        Log.d(LOG_TAG, "Extracting byte data from audio file");
 
         MediaDecoder decoder = new MediaDecoder(fileDescriptor, startOffset, declaredLength);
         AudioData audioData = new AudioData();
@@ -551,42 +561,19 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     public void preprocess(byte[] byteData) {
         Log.d(LOG_TAG, "Preprocessing audio file..");
 
-        isPreprocessing = true;
-        AudioSplicing audioSplicer = new AudioSplicing(byteData, inputType, inputSize);
-
-        for (int i = 0; i < audioSplicer.getFileSize(); i++) {
-
-            if (isPreprocessing == false) break;
-            String state = audioSplicer.getState(i);
-
-            switch (state) {
-                case "processing":
-                    Log.d(LOG_TAG, "Processing.");
-                    audioSplicer.displayInferenceCount();
-                    startRecognition(audioSplicer.getShortChunk());
-                    if(recognitionThread != null) awaitRecognition();
-                    audioSplicer.reset(i);
-                    break;
-
-                case "finalising":
-                    Log.d(LOG_TAG, "Finalising");
-                    audioSplicer.displayInferenceCount();
-                    audioSplicer.padSilenceToChunk(i);
-                    lastInference = true;
-                    startRecognition(audioSplicer.getShortChunk());
-                    if(recognitionThread != null) awaitRecognition();
-                    stopPreprocessing();
-                    break;
-
-                case "appending":
-                    audioSplicer.appendDataToChunk(i);
-                    break;
-
-                default:
-                    throw new AssertionError("Incorrect state when preprocessing");
+        audioSplicer = new AudioSplicing(byteData, inputType, inputSize);
+        audioSplicer.getObservable()
+            .doOnTerminate(() -> {
+                stopPreprocessing();
+                stopStream();
+                })
+            .subscribe((audioChunk) -> {
+                startRecognition(audioChunk);
+                if(recognitionThread != null) awaitRecognition();
             }
-
-        }
+        );
+        audioSplicer.startPreprocessing();
+        audioSplicer.spliceAudio();
     }
 
     public synchronized void startRecording() {
@@ -840,7 +827,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
                 //TODO - ADD TRANSPOSE
                 float inputBuffer32[] = audioData.normalizeByMaxAmplitude(audioBuffer);      
-                inputBuffer32 = audioData.scaleAndCentre(inputBuffer32);
+                // inputBuffer32 = audioData.scaleAndCentre(inputBuffer32);
                 float [][] spectrogram = signalProcessing.getSpectrogram(inputBuffer32);
                 float [][][][] inputTensor = signalProcessing.reshape2dto4d(spectrogram);
             
@@ -993,11 +980,21 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             return;
         }
 
-        isPreprocessing = false;
-        // audioSplicing.interrupt();
+        audioSplicer.stopPreprocessing();
+        audioSplicer = null;
         preprocessThread = null;
         Log.d(LOG_TAG, "Prepocesing stopped.");
     }
+
+    public void stopStream(){
+        runOnUIThread(() -> {
+            if (events != null) {
+                Log.d(LOG_TAG, "Recognition Stream stopped");
+                events.endOfStream();
+            }
+        });
+    }
+    
 
     public void forceStopRecogniton() {
         // !DO NOT CHANGE BELOW - awaits recognition thread or causes async error
@@ -1015,13 +1012,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
         // !DO NOT CHANGE BELOW. stopRecognition() wont pass due to recognitionThread
         // null check
-        runOnUIThread(() -> {
-            if (events != null) {
-                Log.d(LOG_TAG, "Recognition Stream stopped");
-                events.endOfStream();
-            }
-        });
+        stopStream();
     }
+
 
     private void runOnUIThread(Runnable runnable) {
         if (Looper.getMainLooper() == Looper.myLooper())
