@@ -124,6 +124,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private int bufferSize;
     private int sampleRate;
     private int numOfInferences;
+    private Recording recording;
 
     //input/output variables
     private int inputSize;
@@ -547,7 +548,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         if (preprocessThread != null) {
             return;
         }
-        shouldContinue = true;
+        // shouldContinue = true;
         preprocessThread = new Thread(
                 new Runnable() {
                     @Override
@@ -570,8 +571,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             .subscribe((audioChunk) -> {
                 startRecognition(audioChunk);
                 if(recognitionThread != null) awaitRecognition();
-            }
-        );
+                }
+            );
         audioSplicer.startPreprocessing();
         audioSplicer.spliceAudio();
     }
@@ -580,7 +581,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         if (recordingThread != null) {
             return;
         }
-        shouldContinue = true;
         recordingThread = new Thread(
                 new Runnable() {
                     @Override
@@ -594,176 +594,191 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private void record() {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
-        int inferenceCount = 1;
-        int recordingOffset = 0;
-        short[] recordingFrame = new short[bufferSize / 2];
-        short[] recordingBuffer = new short[inputSize];
-
-        record = new AudioRecord(
-                MediaRecorder.AudioSource.DEFAULT,
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                bufferSize);
-
-        if (record.getState() != AudioRecord.STATE_INITIALIZED) {
-            Log.e(LOG_TAG, "Audio Record can't initialize!");
-            return;
-        }
-
-        record.startRecording();
-
-        Log.v(LOG_TAG, "Recording started");
-
-        while (shouldContinue) {
-            // Reads audio data and records it into redcordFrame
-            int numberRead = record.read(recordingFrame, 0, recordingFrame.length);
-            int recordingOffsetCount = recordingOffset + numberRead;
-
-            recordingBufferLock.lock();
-            try {
-                // Continue to append frame until it reaches recording length
-                // Do not change inferenceCount <= numOfInferences! - counts last inference
-                if (inferenceCount <= numOfInferences && recordingOffsetCount < inputSize) {
-
-                    System.arraycopy(recordingFrame, 0, recordingBuffer, recordingOffset, numberRead);
-                    recordingOffset += numberRead;
-                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + inputSize + " | inferenceCount: "
-                            + inferenceCount + "/" + numOfInferences);
-                    // Log.v(LOG_TAG, Arrays.toString(recordingBuffer));
-
-                    // Starts recognition when recording bufffer is full. Resest recording buffer
-                    // for next inference
-                } else if (inferenceCount < numOfInferences && recordingOffsetCount == inputSize) {
-
-                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffsetCount + "/" + inputSize + " | inferenceCount: "
-                            + inferenceCount + "/" + numOfInferences);
-                    Log.v(LOG_TAG, "Recording reached threshold");
-                    System.arraycopy(recordingFrame, 0, recordingBuffer, recordingOffset, numberRead);
-                    recordingOffset += numberRead;
-
-                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + inputSize);
-                    // recordingBuffer = recordingBuffer;
-                    startRecognition(recordingBuffer);
-                    inferenceCount += 1;
-
-                    Log.v(LOG_TAG, "Clearing recordingBuffer..");
-                    recordingBuffer = new short[inputSize];
-                    recordingOffset = 0;
-
-                    // when buffer exeeds max record length, trim and resize the buffer, append, and
-                    // then start inference
-                    // Resets recording buffer after inference
-                } else if (inferenceCount < numOfInferences && recordingOffsetCount > inputSize) {
-
-                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffsetCount + "/" + inputSize + " | inferenceCount: "
-                            + inferenceCount + "/" + numOfInferences);
-                    Log.v(LOG_TAG, "Recording buffer exceeded maximum threshold");
-
-                    if (showRecordLogs == true)
-                        display.logs("Excess - Before trim:", recordingBuffer, recordingOffset);
-
-                    /*
-                     * Calculate remaining unread recordingBuffer.
-                     * Resize readingBuffer to the remaining then add to recording buffer
-                     * For example: 11025,22050,33075 -> 44032-33075 -> 10957 remaining
-                     */
-                    int remainingRecordingLength = inputSize - recordingOffset;
-                    short[] remainingRecordingFrame = new short[remainingRecordingLength];
-                    System.arraycopy(recordingFrame, 0, remainingRecordingFrame, 0, remainingRecordingLength);
-                    System.arraycopy(remainingRecordingFrame, 0, recordingBuffer, recordingOffset,
-                            remainingRecordingLength);
-                    recordingOffset += remainingRecordingLength;
-                    Log.v(LOG_TAG, "Excess recording has been trimmed. RecordingOffset now at: " + recordingOffset + "/"
-                            + inputSize);
-
-                    if (showRecordLogs == true)
-                        display.logs("Recording Excess - After trim:", recordingBuffer, recordingOffset);
-
-                    startRecognition(recordingBuffer);
-                    inferenceCount += 1;
-
-                    /*
-                     * Calculate excess of recordingBufferCount
-                     * Trim excess than add to new recordingBuffer
-                     * For example: //44100/44032 -> 68 excess @ bufferRate of 22050
-                     */
-                    Log.v(LOG_TAG, "Clearing recording buffer..");
-                    recordingBuffer = new short[inputSize];
-                    int excessRecordingLength = recordingOffsetCount - inputSize;
-                    short[] excessRecordingFrame = new short[excessRecordingLength];
-                    System.arraycopy(recordingFrame, remainingRecordingLength, excessRecordingFrame, 0,
-                            excessRecordingLength);
-                    System.arraycopy(excessRecordingFrame, 0, recordingBuffer, 0, excessRecordingLength);
-                    recordingOffset = 0 + excessRecordingLength;
-                    Log.v(LOG_TAG, "Added excess length to new recording buffer. RecordingOffset now at: "
-                            + recordingOffset + "/" + inputSize);
-
-                    if (showRecordLogs == true)
-                        display.logs("Recording excess - New recording buffer:", remainingRecordingFrame,
-                                remainingRecordingLength,
-                                excessRecordingFrame, excessRecordingLength);
-
-                    // when count reaches max numOfInferences, stop all inference and recording
-                    // no need to count recordingOffset with numberRead as its final
-                } else if (inferenceCount == numOfInferences && recordingOffsetCount > inputSize) {
-
-                    Log.v(LOG_TAG, "recordingOffset: " + recordingOffsetCount + "/" + inputSize + " | inferenceCount: "
-                            + inferenceCount + "/" + numOfInferences);
-                    Log.v(LOG_TAG, "Recording buffer exceeded maximum threshold");
-                    int remainingRecordingLength = inputSize - recordingOffset; // 11025,22050,33075 -> 44032-33075 ->
-                                                                                // 10957 remaining
-                    short[] remainingRecordingFrame = new short[remainingRecordingLength];
-                    System.arraycopy(recordingFrame, 0, remainingRecordingFrame, 0, remainingRecordingLength);
-                    System.arraycopy(remainingRecordingFrame, 0, recordingBuffer, recordingOffset,
-                            remainingRecordingLength);
-                    recordingOffset += remainingRecordingLength;
-                    Log.v(LOG_TAG, "Excess recording has been trimmed. RecordingOffset now at: " + recordingOffset + "/"
-                            + inputSize);
-                    Log.v(LOG_TAG, "Unused excess samples: " + (recordingOffsetCount - inputSize));
-
-                    lastInference = true;
-                    startRecognition(recordingBuffer);
-                    stopRecording();
-
-                    // reset after recognition and recording. Don't change position!!
-                    recordingOffset = 0;
-                    inferenceCount = 1;
-
-                    // Final inference. Stops recognitions and recording.
-                } else if (inferenceCount == numOfInferences && recordingOffsetCount == inputSize) {
-                    Log.v(LOG_TAG, "Reached indicated number of inferences.");
-
-                    System.arraycopy(recordingFrame, 0, recordingBuffer, recordingOffset, numberRead);
-                    // recordingBuffer = recordingBuffer;
-                    lastInference = true;
-                    startRecognition(recordingBuffer);
-                    stopRecording();
-
-                    // reset after recognition and recording. Don't change position!!
-                    recordingOffset = 0;
-                    inferenceCount = 1;
-
-                } else {
-                    Log.v(LOG_TAG, "something weird has happened with recording");
-                    lastInference = true;
-                    forceStopRecogniton();
-
-                    if (showRecordLogs == true)
-                        display.logs("Recording - strange behaviour:", inferenceCount, numOfInferences,
-                                recordingOffset, recordingOffsetCount, inputSize);
-
-                    // reset after recognition and recording. Don't change position!!
-                    recordingOffset = 0;
-                    inferenceCount = 1;
-
+        recording = new Recording(bufferSize, inputSize, sampleRate, numOfInferences);
+        recording.setReentrantLock(recordingBufferLock);
+        recording.getObservable()
+            .doOnTerminate(() -> {
+                stopRecording();
+                stopStream();
+                })
+            .subscribe((audioChunk) -> {
+                Log.d(LOG_TAG, Arrays.toString(audioChunk));
+                // startRecognition(audioChunk);
+                // if(recognitionThread != null) awaitRecognition();
                 }
+            );
+        recording.splice();
 
-            } finally {
-                recordingBufferLock.unlock();
+        // int inferenceCount = 1;
+        // int recordingOffset = 0;
+        // short[] recordingFrame = new short[bufferSize / 2];
+        // short[] recordingBuffer = new short[inputSize];
 
-            }
-        }
+        // record = new AudioRecord(
+        //         MediaRecorder.AudioSource.DEFAULT,
+        //         sampleRate,
+        //         AudioFormat.CHANNEL_IN_MONO,
+        //         AudioFormat.ENCODING_PCM_16BIT,
+        //         bufferSize);
+
+        // if (record.getState() != AudioRecord.STATE_INITIALIZED) {
+        //     Log.e(LOG_TAG, "Audio Record can't initialize!");
+        //     return;
+        // }
+
+        // record.startRecording();
+
+        // Log.v(LOG_TAG, "Recording started");
+
+        // while (shouldContinue) {
+        //     // Reads audio data and records it into redcordFrame
+        //     int numberRead = record.read(recordingFrame, 0, recordingFrame.length);
+        //     int recordingOffsetCount = recordingOffset + numberRead;
+
+        //     recordingBufferLock.lock();
+        //     try {
+        //         // Continue to append frame until it reaches recording length
+        //         // Do not change inferenceCount <= numOfInferences! - counts last inference
+        //         if (inferenceCount <= numOfInferences && recordingOffsetCount < inputSize) {
+
+        //             System.arraycopy(recordingFrame, 0, recordingBuffer, recordingOffset, numberRead);
+        //             recordingOffset += numberRead;
+        //             Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + inputSize + " | inferenceCount: "
+        //                     + inferenceCount + "/" + numOfInferences);
+        //             // Log.v(LOG_TAG, Arrays.toString(recordingBuffer));
+
+        //             // Starts recognition when recording bufffer is full. Resest recording buffer
+        //             // for next inference
+        //         } else if (inferenceCount < numOfInferences && recordingOffsetCount == inputSize) {
+
+        //             Log.v(LOG_TAG, "recordingOffset: " + recordingOffsetCount + "/" + inputSize + " | inferenceCount: "
+        //                     + inferenceCount + "/" + numOfInferences);
+        //             Log.v(LOG_TAG, "Recording reached threshold");
+        //             System.arraycopy(recordingFrame, 0, recordingBuffer, recordingOffset, numberRead);
+        //             recordingOffset += numberRead;
+
+        //             Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + inputSize);
+        //             // recordingBuffer = recordingBuffer;
+        //             startRecognition(recordingBuffer);
+        //             inferenceCount += 1;
+
+        //             Log.v(LOG_TAG, "Clearing recordingBuffer..");
+        //             recordingBuffer = new short[inputSize];
+        //             recordingOffset = 0;
+
+        //             // when buffer exeeds max record length, trim and resize the buffer, append, and
+        //             // then start inference
+        //             // Resets recording buffer after inference
+        //         } else if (inferenceCount < numOfInferences && recordingOffsetCount > inputSize) {
+
+        //             Log.v(LOG_TAG, "recordingOffset: " + recordingOffsetCount + "/" + inputSize + " | inferenceCount: "
+        //                     + inferenceCount + "/" + numOfInferences);
+        //             Log.v(LOG_TAG, "Recording buffer exceeded maximum threshold");
+
+        //             if (showRecordLogs == true)
+        //                 display.logs("Excess - Before trim:", recordingBuffer, recordingOffset);
+
+        //             /*
+        //              * Calculate remaining unread recordingBuffer.
+        //              * Resize readingBuffer to the remaining then add to recording buffer
+        //              * For example: 11025,22050,33075 -> 44032-33075 -> 10957 remaining
+        //              */
+        //             int remainingRecordingLength = inputSize - recordingOffset;
+        //             short[] remainingRecordingFrame = new short[remainingRecordingLength];
+        //             System.arraycopy(recordingFrame, 0, remainingRecordingFrame, 0, remainingRecordingLength);
+        //             System.arraycopy(remainingRecordingFrame, 0, recordingBuffer, recordingOffset,
+        //                     remainingRecordingLength);
+        //             recordingOffset += remainingRecordingLength;
+        //             Log.v(LOG_TAG, "Excess recording has been trimmed. RecordingOffset now at: " + recordingOffset + "/"
+        //                     + inputSize);
+
+        //             if (showRecordLogs == true)
+        //                 display.logs("Recording Excess - After trim:", recordingBuffer, recordingOffset);
+
+        //             startRecognition(recordingBuffer);
+        //             inferenceCount += 1;
+
+        //             /*
+        //              * Calculate excess of recordingBufferCount
+        //              * Trim excess than add to new recordingBuffer
+        //              * For example: //44100/44032 -> 68 excess @ bufferRate of 22050
+        //              */
+        //             Log.v(LOG_TAG, "Clearing recording buffer..");
+        //             recordingBuffer = new short[inputSize];
+        //             int excessRecordingLength = recordingOffsetCount - inputSize;
+        //             short[] excessRecordingFrame = new short[excessRecordingLength];
+        //             System.arraycopy(recordingFrame, remainingRecordingLength, excessRecordingFrame, 0,
+        //                     excessRecordingLength);
+        //             System.arraycopy(excessRecordingFrame, 0, recordingBuffer, 0, excessRecordingLength);
+        //             recordingOffset = 0 + excessRecordingLength;
+        //             Log.v(LOG_TAG, "Added excess length to new recording buffer. RecordingOffset now at: "
+        //                     + recordingOffset + "/" + inputSize);
+
+        //             if (showRecordLogs == true)
+        //                 display.logs("Recording excess - New recording buffer:", remainingRecordingFrame,
+        //                         remainingRecordingLength,
+        //                         excessRecordingFrame, excessRecordingLength);
+
+        //             // when count reaches max numOfInferences, stop all inference and recording
+        //             // no need to count recordingOffset with numberRead as its final
+        //         } else if (inferenceCount == numOfInferences && recordingOffsetCount > inputSize) {
+
+        //             Log.v(LOG_TAG, "recordingOffset: " + recordingOffsetCount + "/" + inputSize + " | inferenceCount: "
+        //                     + inferenceCount + "/" + numOfInferences);
+        //             Log.v(LOG_TAG, "Recording buffer exceeded maximum threshold");
+        //             int remainingRecordingLength = inputSize - recordingOffset; // 11025,22050,33075 -> 44032-33075 ->
+        //                                                                         // 10957 remaining
+        //             short[] remainingRecordingFrame = new short[remainingRecordingLength];
+        //             System.arraycopy(recordingFrame, 0, remainingRecordingFrame, 0, remainingRecordingLength);
+        //             System.arraycopy(remainingRecordingFrame, 0, recordingBuffer, recordingOffset,
+        //                     remainingRecordingLength);
+        //             recordingOffset += remainingRecordingLength;
+        //             Log.v(LOG_TAG, "Excess recording has been trimmed. RecordingOffset now at: " + recordingOffset + "/"
+        //                     + inputSize);
+        //             Log.v(LOG_TAG, "Unused excess samples: " + (recordingOffsetCount - inputSize));
+
+        //             lastInference = true;
+        //             startRecognition(recordingBuffer);
+        //             stopRecording();
+
+        //             // reset after recognition and recording. Don't change position!!
+        //             recordingOffset = 0;
+        //             inferenceCount = 1;
+
+        //             // Final inference. Stops recognitions and recording.
+        //         } else if (inferenceCount == numOfInferences && recordingOffsetCount == inputSize) {
+        //             Log.v(LOG_TAG, "Reached indicated number of inferences.");
+
+        //             System.arraycopy(recordingFrame, 0, recordingBuffer, recordingOffset, numberRead);
+        //             // recordingBuffer = recordingBuffer;
+        //             lastInference = true;
+        //             startRecognition(recordingBuffer);
+        //             stopRecording();
+
+        //             // reset after recognition and recording. Don't change position!!
+        //             recordingOffset = 0;
+        //             inferenceCount = 1;
+
+        //         } else {
+        //             Log.v(LOG_TAG, "something weird has happened with recording");
+        //             lastInference = true;
+        //             forceStopRecogniton();
+
+        //             if (showRecordLogs == true)
+        //                 display.logs("Recording - strange behaviour:", inferenceCount, numOfInferences,
+        //                         recordingOffset, recordingOffsetCount, inputSize);
+
+        //             // reset after recognition and recording. Don't change position!!
+        //             recordingOffset = 0;
+        //             inferenceCount = 1;
+
+        //         }
+
+        //     } finally {
+        //         recordingBufferLock.unlock();
+
+        //     }
+        // }
     }
 
     public synchronized void startRecognition(short[] audioBuffer) {
@@ -947,6 +962,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         recognitionThread = null;
         Log.d(LOG_TAG, "Recognition stopped.");
 
+        //TODO - remove once rxjava is fully intergrated
         if (lastInference == true) {
             runOnUIThread(() -> {
                 if (events != null) {
@@ -965,12 +981,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             return;
         }
 
-        shouldContinue = false;
-
-        record.stop();
-        record.release();
-
-        recordingThread = null;
+        recording.stop();
+        recording = null;
+        recordingThread = null;   
         Log.d(LOG_TAG, "Recording stopped.");
     }
 
