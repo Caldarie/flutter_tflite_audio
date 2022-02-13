@@ -76,13 +76,11 @@ public class Recording{
     public void stop(){
         shouldContinue = false;
         record.stop();
-        record.release();       
-    }
-
-    public void stopEmission(){
+        record.release();  
         subject.onComplete();
     }
 
+ 
     public void splice(){
 
         if (record.getState() != AudioRecord.STATE_INITIALIZED) {
@@ -107,22 +105,22 @@ public class Recording{
                     case "recognising":
                         Log.v(LOG_TAG, "recognising");
                         appendData();
-                        emitRecordChunk(false);
+                        emitChunk();
                         clearRecordChunk();
                         break;
 
                     case "finalising":
                         Log.v(LOG_TAG, "finalising");
                         appendData();
-                        emitRecordChunk(true);
-                        stopEmission();
+                        emitFinalChunk();
+                        stop();
                         break;
 
                     case "trimmingAndRecognising":
                         Log.v(LOG_TAG, "trimming and recognising");
                         calculateExcess();
                         trimExcessToRemain();
-                        emitRecordChunk(false);
+                        emitChunk();
 
                         clearRecordChunk();
                         addExcessToNew();
@@ -133,8 +131,8 @@ public class Recording{
                         Log.v(LOG_TAG, "trimming and finalising");
                         calculateExcess();
                         trimExcessToRemain();
-                        emitRecordChunk(true); 
-                        stopEmission();
+                        emitFinalChunk(); 
+                        stop();
                         break;
                     
                     default:
@@ -167,9 +165,13 @@ public class Recording{
     }
     
    
-    private void emitRecordChunk(boolean isFinal){
+    private void emitChunk(){
         subject.onNext(recordingBuffer);
-        if(isFinal == false) {inferenceCount += 1;}  //beaware that this also counts on final inference, e.g. 6/5 inferences
+        inferenceCount += 1;
+    }
+
+    private void emitFinalChunk(){
+        subject.onNext(recordingBuffer);
     }
 
 
