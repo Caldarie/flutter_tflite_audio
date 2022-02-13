@@ -18,7 +18,7 @@ import java.nio.FloatBuffer;
 import java.nio.ByteBuffer; //required for preprocessing
 import java.nio.ByteOrder; //required for preprocessing
 
-public class AudioSplicing{
+public class AudioFile{
 
     private static final String LOG_TAG = "Audio_Slicing";
     private AudioData audioData = new AudioData();
@@ -40,7 +40,7 @@ public class AudioSplicing{
     private boolean isPreprocessing = false;
 
 
-    public AudioSplicing(byte[] byteData, String inputType, int inputSize){
+    public AudioFile(byte[] byteData, String inputType, int inputSize){
 
             shortBuffer = ByteBuffer.wrap(byteData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
             this.inputSize = inputSize;
@@ -50,16 +50,18 @@ public class AudioSplicing{
       
     }
 
-    public void startPreprocessing(){
-        isPreprocessing = true;
-    }
-
-    public void stopPreprocessing(){
+    public void stop(){
         isPreprocessing = false;
+        subject.onComplete();
     }
 
+    public Observable<short []> getObservable() {
+        return (Observable<short []>) this.subject;
+     } 
 
-    public void spliceAudio(){
+    public void splice(){
+
+        isPreprocessing = true;
 
         for (int i = 0; i < fileSize; i++) {
 
@@ -72,7 +74,7 @@ public class AudioSplicing{
                 case "recognising":
                     Log.d(LOG_TAG, "Recognising");
                     displayInferenceCount();
-                    subject.onNext(shortAudioChunk);
+                    sendAudioChunk();
                     reset(i);
                     break;
 
@@ -80,9 +82,10 @@ public class AudioSplicing{
                     Log.d(LOG_TAG, "Finalising");
                     displayInferenceCount();
                     padSilenceToChunk(i);
-                    stopPreprocessing();
-                    subject.onNext(shortAudioChunk);
-                    subject.onComplete();
+                    sendAudioChunk();
+                    // stopPreprocessing(); //TODO - Remove?
+                    // stopStream();
+                    stop();
                     break;
 
                 case "appending":
@@ -96,9 +99,13 @@ public class AudioSplicing{
         }
     }
 
-    public Observable<short []> getObservable() {
-        return (Observable<short []>) this.subject;
-     } 
+    private void sendAudioChunk(){
+        subject.onNext(shortAudioChunk);
+    }
+
+    // private void stopStream(){
+    //     subject.onComplete();
+    // }
      
      //!To debug requirePadding, simply change original [<] to > before (inputSize/2)
     //TODO - add unit test | [>] 2/2 or 5/5 | [<] returns 1/1 or 6/6
