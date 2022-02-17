@@ -9,12 +9,48 @@ import com.jlibrosa.audio.process.AudioFeatureExtraction;
 
 import android.util.Log;
 
+/* Spectogram - shape guidelines
+    First dimension: [Frequency Bins] = 1+nFFT/2   (note: frequency bins = mel bins)
+    Second dimension: [Frame Rate] = sampleRate/hopLength  (note: by default hopLength = winLength)
+
+    For example for input shape [129, 124]
+    nFFT = 256
+    hopLength = 129 
+
+    First dimenstion: 129 = 1+nFTT/2
+    Second dimension: 124 = 16000/hopLength
+
+    https://kinwaicheuk.github.io/nnAudio/v0.1.5/_autosummary/nnAudio.Spectrogram.STFT.html
+    https://stackoverflow.com/questions/62584184/understanding-the-shape-of-spectrograms-and-n-mels
+    nFFT = number of samples per frame (needs to be power to 2/ if nFFT > hop length - need to pad)
+    hopLength = sample_rate/frame_rate = 512 = 22050 Hz/43 Hz
+*/
+
+/* MFCC - shape guidelines
+    https://stackoverflow.com/questions/56911774/mfcc-feature-extraction-librosa
+    first dimension: n_mfcc
+    second dimension: (sr * time) / hop length
+
+    example, given a samplerate of 16000/sec, inputshape is [1,40]
+    first dimension = 40
+    second dimension is (16000 * 1 / 16384) = [1]
+
+    16,384 is hoplength
+*/
+
+/* Mel spectrogram
+    number of mel bins
+    time
+    
+*/
+
 
 public class SignalProcessing{
     
     private static final String LOG_TAG = "Signal_Processing";
     private JLibrosa jLibrosa = new JLibrosa();
     private AudioFeatureExtraction featureExtractor = new AudioFeatureExtraction();
+    private boolean showPreprocessLogs = true;
 
     private int sampleRate;
     private int nMFCC;
@@ -28,65 +64,49 @@ public class SignalProcessing{
         this.nFFT = nFFT;
         this.nMels = nMels;
         this.hopLength = hopLength;
+    };
 
+
+    public float [][] getMFCC(float [] inputBuffer32){
+        float [][] MFCC = jLibrosa.generateMFCCFeatures(inputBuffer32, sampleRate, nMFCC, nFFT, nMels, hopLength);
+        if (showPreprocessLogs) displayShape(MFCC);
+        return MFCC;
+    }
+
+    public float [][] getMelSpectrogram(float [] inputBuffer32){
+        float [][] melSpectrogram = jLibrosa.generateMelSpectroGram(inputBuffer32, sampleRate, nFFT, nMels, hopLength);
+        if (showPreprocessLogs) displayShape(melSpectrogram);
+        return melSpectrogram;
+    }
+    
+    public float[][] getSpectrogram(float [] inputBuffer32){
         featureExtractor.setSampleRate(sampleRate);
 		featureExtractor.setN_mfcc(nMFCC);
         featureExtractor.setN_fft(nFFT);
 		featureExtractor.setN_mels(nMels);
 		featureExtractor.setHop_length(hopLength);
-    };
-
-
-    // public float [][] getMFCC(float [] inputBuffer32){
-    //     //generateMFCCFeatures(float[] magValues, int sampleRate, int nMFCC, int nFFT, int nMels, int hopLength)
-    //     //generateMFCCFeatures(float[] magValues, int sampleRate, int nMFCC)
-    //     //nMfcc - affects first shape
-    //     //hopLength - affects second shape
-    //     return jLibrosa.generateMFCCFeatures(inputBuffer32, sampleRate, nMFCC, nFFT, nMels, hopLength);
-    //     //if (showPreprocessLogs == true) display.matrix(mfcc);
-    //     //Log.d(LOG_TAG, "1. Shape1 " + mfcc.length);
-    //     // Log.d(LOG_TAG, "2. Shape2 " + mfcc[0].length);
-    // }
-    
-    public float[][] getSpectrogram(float [] inputBuffer32){
-
-        // double [][] stft = featureExtractor.extractSTFTFeatures(inputBuffer32);
-        // double [][] spectro = featureExtractor.powerToDb(featureExtractor.melSpectrogram(inputBuffer32));
-        // double [][] melspectro = 
-        // float [][] spectrogram = doubleTo2dFloat(featureExtractor.melSpectrogram(inputBuffer32));
 
         Complex [][] stft = featureExtractor.extractSTFTFeaturesAsComplexValues(inputBuffer32, true);
-        // float [][] spectrogram = getSpectroAbsVal(stft);
-        float [][] spectrogram = complexTo2DFloat(stft);
-        // float [][] spectrogram = doubleTo2dFloat(stftAbsVal); 
-        
-
-        // float [][] spectrogram = jLibrosa.generateMelSpectroGram(inputBuffer32, sampleRate, nFFT, nMels, hopLength);
-        Log.d(LOG_TAG, "Spectrogram " + Arrays.toString(spectrogram[0]));
-        Log.d(LOG_TAG, "1. Mel Bin " + spectrogram.length);
-        Log.d(LOG_TAG, "2. Frames " + spectrogram[0].length);
-
-        //generateSTFTFeatures(float[] magValues, int sampleRate, int nMFCC, int nFFT, int nMels, int hopLength)
-        //nFFT - affects first shape
-
-        // Complex [][] stft = jLibrosa.generateSTFTFeatures(inputBuffer32, sampleRate, nMFCC, nFFT, nMels, hopLength);
-        // // Complex [][] stft = jLibrosa.generateSTFTFeaturesWithPadOption(inputBuffer32, 16000, 40, 256, 130, 130, false);
-        // float[][] spectrogram = new float[stft.length][stft[0].length];
-
-        // for(int i=0;i<stft.length;i++) {
-        //     for(int j=0;j<stft[0].length;j++) {
-        //         Complex complexVal = stft[i][j];
-        //         double spectroDblVal = Math.sqrt((Math.pow(complexVal.getReal(), 2) + Math.pow(complexVal.getImaginary(), 2)));
-        //         spectrogram[i][j] = (float) Math.pow(spectroDblVal,2);
-        //     }
-        // }
-
-        // // Log.d(LOG_TAG, "Spectrogram: " + Arrays.toString(spectrogram[0]));
-
-
-
+        //float [][] spectrogram = getSpectroAbsVal(stft);
+        float [][] spectrogram = getFloatABSValue(stft);
+        if (showPreprocessLogs) displayShape(spectrogram);
         return spectrogram;
     }
+
+    private float [][] getFloatABSValue(Complex [][] spectro){
+
+        float[][] spectroAbsVal = new float[spectro.length][spectro[0].length];
+		
+		for(int i=0;i<spectro.length;i++) {
+			for(int j=0;j<spectro[0].length;j++) {
+				Complex complexVal = spectro[i][j];
+				spectroAbsVal[i][j] = (float) complexVal.abs();
+			}
+		}
+
+        return spectroAbsVal;
+    }
+
 
     private float [][] getSpectroAbsVal(Complex [][] spectro){
 
@@ -101,6 +121,12 @@ public class SignalProcessing{
 		}
 
         return spectroAbsVal;
+    }
+
+    private void displayShape(float [][] spectro){
+        Log.d(LOG_TAG, "Spectro " + Arrays.toString(spectro[0]));
+        Log.d(LOG_TAG, "1. Mel Bin " + spectro.length);
+        Log.d(LOG_TAG, "2. Frames " + spectro[0].length);
     }
 
 
@@ -164,52 +190,6 @@ public class SignalProcessing{
     // }
 
 }
-//    public float[][] getFloatChunk(){
 
-//         JLibrosa jLibrosa = new JLibrosa();
-//         float [][] chunk;
-
-//         switch(inputType){
-
-//             case "melSpectrogram":
-//                 // generateMelSpectroGram(float[] yValues, int sampleRate, int nFFT, int nMels, int hopLength)
-//                 chunk = jLibrosa.generateMelSpectroGram(floatAudioChunk, 16000, 256, 129, 65);
-//                 // if (showPreprocessLogs == true) display.matrix(melSpectrogram);
-//                 // Log.d(LOG_TAG, "1. Mel Bin " + melSpectrogram.length);
-//                 // Log.d(LOG_TAG, "2. Frames " + melSpectrogram[0].length);
-//                 break;
-
-//             case "spectrogram":
-//                 generateSTFTFeatures(float[] magValues, int sampleRate, int nMFCC, int nFFT, int nMels, int hopLength)
-//                 https://stackoverflow.com/questions/62584184/understanding-the-shape-of-spectrograms-and-n-mels
-//                 nFFT = number of samples per frame (needs to be power to 2/ if nFFT > hop length - need to pad)
-//                 hopLength = sample_rate/frame_rate = 512 = 22050 Hz/43 Hz
-//                 frame_rate - is the output of spectrogram [freq, frame]
-//                 Complex [][] stft = jLibrosa.generateSTFTFeatures(floatAudioChunk, 16000, 40, 256, 129, 130);
-//                 chunk = audioData.complexTo2DFloat(stft);
-//                 // if (showPreprocessLogs == true) display.matrix(spectrogram);
-//                 Log.d(LOG_TAG, "1. Mel Bin " + chunk.length);
-//                 Log.d(LOG_TAG, "2. Frames " + chunk[0].length);
-//                 break;
-
-//             case "mfcc":
-//                 //generateMFCCFeatures(float[] magValues, int sampleRate, int nMFCC, int nFFT, int nMels, int hopLength)
-//                 //generateMFCCFeatures(float[] magValues, int sampleRate, int nMFCC)
-//                 //nMfcc - affects first shape
-//                 //hopLength - affects second shape
-//                 chunk = jLibrosa.generateMFCCFeatures(floatAudioChunk, 16000, 40, 256, 128, 8192);
-//                 //if (showPreprocessLogs == true) display.matrix(mfcc);
-//                 //Log.d(LOG_TAG, "1. Shape1 " + mfcc.length);
-//                 // Log.d(LOG_TAG, "2. Shape2 " + mfcc[0].length);
-//                 break;
-
-//             default:
-//                 throw new AssertionError("Input type: " + inputType + " is not a spectrogram. Skipping"); 
-//                 // Log.d(LOG_TAG, "Input type: " + inputType + " is not a spectrogram. Skipping");
-//                 // break;
-            
-//         }
-
-//         return chunk;
 
     
