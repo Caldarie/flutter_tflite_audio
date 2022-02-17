@@ -33,19 +33,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/decoded_wav_model.tflite
-    - assets/decoded_wav_label.txt
-    - assets/google_teach_machine_model.tflite
-    - assets/google_teach_machine_label.txt
-    - assets/spectrogram_model.tflite
-    - assets/spectrogram_label.txt
-    - assets/mfcc_model.tflite
-    - assets/mfcc_label.txt
-    - assets/sample_audio_16k_mono.wav
-    - assets/sample_audio_16k_mono-1.wav
-    - assets/sample_audio_16k_mono-2.wav
-    - assets/sample_audio_16k_mono-3.wav
-    - assets/sample_audio_44k_mono.wav
+    - assets/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
