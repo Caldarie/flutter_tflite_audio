@@ -8,6 +8,13 @@ import java.util.Random;
 
 import org.apache.commons.math3.complex.Complex;
 
+
+/* Used for debugging. Implement this??
+Log.v(LOG_TAG, "smax: " + audioData.getMaxAbsoluteValue(audioBuffer));
+Log.v(LOG_TAG, "smin: " + audioData.getMinAbsoluteValue(audioBuffer));
+Log.v(LOG_TAG, "audio data: " + Arrays.toString(audioBuffer));
+*/
+
 public class AudioData {
 
     private static final String LOG_TAG = "Audio_Data";
@@ -27,7 +34,7 @@ public class AudioData {
         return audioChunk;
     }
 
-    public float[][] transpose(float[][] matrix){
+    public float[][] transpose2D(float[][] matrix){
 	    int m = matrix.length;
 	    int n = matrix[0].length;
 
@@ -40,6 +47,31 @@ public class AudioData {
 	    }
 	    return transposedMatrix;
 	}
+
+
+    public float[][] normaliseTo2D(short [] inputBuffer16){
+        final float maxRes16 = (float) Math.pow(2, 15) -1; //outputs 32767.0f
+        float[][] floatInputBuffer = new float [1][inputBuffer16.length];
+
+        for (int i = 0; i < inputBuffer16.length; ++i) {
+            floatInputBuffer[0][i] = inputBuffer16[i] / maxRes16;
+        }
+
+        return floatInputBuffer;
+	}
+
+
+    public float[][] normaliseToTranspose2D(short [] inputBuffer16){
+        final float maxRes16 = (float) Math.pow(2, 15) -1; //outputs 32767.0f
+        float[][] floatInputBuffer = new float [inputBuffer16.length][1];
+
+        for (int i = 0; i < inputBuffer16.length; ++i) {
+            floatInputBuffer[i][0] = inputBuffer16[i] / maxRes16;
+        }
+
+        return floatInputBuffer;
+	}
+
 
     public float [] normalizeBySigned16(short [] inputBuffer16){
         final float maxRes16 = (float) Math.pow(2, 15) -1; //outputs 32767.0f
