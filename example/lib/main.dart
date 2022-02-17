@@ -20,12 +20,12 @@ class _MyAppState extends State<MyApp> {
   Stream<Map<dynamic, dynamic>>? result;
 
   // //!example values for decodedwav models
-  // final String model = 'assets/decoded_wav_model.tflite';
-  // final String label = 'assets/decoded_wav_label.txt';
-  // final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
-  // final String inputType = 'decodedWav';
-  // final int sampleRate = 16000;
-  // final int bufferSize = 2000;
+  final String model = 'assets/decoded_wav_model.tflite';
+  final String label = 'assets/decoded_wav_label.txt';
+  final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
+  final String inputType = 'decodedWav';
+  final int sampleRate = 16000;
+  final int bufferSize = 2000;
 
   //!example values for google's teachable machine model
   // final String model = 'assets/google_teach_machine_model.tflite';
@@ -37,15 +37,16 @@ class _MyAppState extends State<MyApp> {
   // // final int bufferSize = 11008;
 
   //!example values for MFCC, melspectrogram, spectrogram models
-  final String model = 'assets/spectrogram_model.tflite';
-  final String label = 'assets/spectrogram_label.txt';
-  final String inputType = 'spectrogram';
-  // final String model = 'assets/mfcc_model.tflite';
-  // final String label = 'assets/mfcc_label.txt';
-  // final String inputType = 'mfcc';
-  final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
-  final int sampleRate = 16000;
-  final int bufferSize = 2000;
+  // final String model = 'assets/spectrogram_model.tflite';
+  // final String label = 'assets/spectrogram_label.txt';
+  // final String inputType = 'spectrogram';
+  // // final String inputType = 'melSpectrogram';
+  // // final String model = 'assets/mfcc_model.tflite';
+  // // final String label = 'assets/mfcc_label.txt';
+  // // final String inputType = 'mfcc';
+  // final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
+  // final int sampleRate = 16000;
+  // final int bufferSize = 2000;
 
   //!Optional parameters you can adjust to modify your input and output
   final bool outputRawScores = false;
@@ -71,13 +72,19 @@ class _MyAppState extends State<MyApp> {
       label: this.label,
     );
 
+    //spectrogram parameters
     TfliteAudio.setSpectrogramParameters(
-      inputTime: 1,
-      nMFCC: 20,
+      inputTime: 1.0,
       nFFT: 256,
-      nMels: 129,
-      hopLength: 128,
+      hopLength: 129,
     );
+
+    //mfcc parameters
+    // TfliteAudio.setSpectrogramParameters(
+    //   inputTime: 1.0,
+    //   nMFCC: 40,
+    //   hopLength: 16384,
+    // );
   }
 
   /// get result by calling the stream startAudioRecognition
@@ -93,7 +100,7 @@ class _MyAppState extends State<MyApp> {
     //   // suppressionTime: this.suppressionTime,
     // );
 
-    // /example for recording recognition
+    //example for recording recognition
     result = TfliteAudio.startAudioRecognition(
       sampleRate: this.sampleRate,
       bufferSize: this.bufferSize,
