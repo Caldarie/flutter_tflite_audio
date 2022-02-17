@@ -73,8 +73,9 @@ class TfliteAudio {
     return _channel.invokeMethod('stopAudioRecognition');
   }
 
+  /// Call [setSpectrogramParameters] to adjust the default spectro parameters
   static Future setSpectrogramParameters({
-    int inputTime = 1,
+    double inputTime = 1.0,
     int nMFCC = 20,
     int nFFT = 2048,
     int nMels = 128,

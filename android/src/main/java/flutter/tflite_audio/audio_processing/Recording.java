@@ -12,6 +12,14 @@ import io.reactivex.rxjava3.core.*;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.subjects.PublishSubject;
 
+   
+/*  //TODO - ADD or remove re-entract lock????
+        recordingBufferLock.lock();
+        try {
+        } finally {
+            recordingBufferLock.unlock();
+        }
+*/
 
 public class Recording{
 
