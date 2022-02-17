@@ -128,12 +128,16 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     // input/output variables
     private int inputSize;
+    private int outputSize;
     private int[] inputShape;
+    // private int [] outputShape;
+    private boolean transposeInput = false;
+    private boolean transposeOutput = false;
     private String inputType;
     private boolean outputRawScores;
 
     // default specrogram variables
-    private int inputTime = 1;
+    private float inputTime = 1.00f;
     private int nMFCC = 20;
     private int nFFT = 256;
     private int nMels = 128;
@@ -240,7 +244,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 break;
             case "setSpectrogramParameters":
                 // this.mSampleRate = (int) arguments.get("mSampleRate");
-                this.inputTime = (int) arguments.get("inputTime");
+                double time = (double) arguments.get("inputTime");
+                this.inputTime = (float) time;
                 this.nMFCC = (int) arguments.get("nMFCC");
                 this.nFFT = (int) arguments.get("nFFT");
                 this.nMels = (int) arguments.get("nMels");
@@ -293,18 +298,40 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     }
 
     private void determineInput() {
+
+        this.inputShape = tfLite.getInputTensor(0).shape();
+        int [] outputShape = tfLite.getOutputTensor(0).shape();
+        
         if (inputType.equals("rawAudio") || inputType.equals("decodedWav")) {
-            this.inputShape = tfLite.getInputTensor(0).shape();
             this.inputSize = Arrays.stream(inputShape).max().getAsInt();
+            this.transposeInput = shouldTranspose(inputShape);            
         } else {
-            this.inputShape = tfLite.getInputTensor(0).shape();
-            this.inputSize = sampleRate * inputTime; // calculate how many bytes in 1 second in float array
+            //TODO - add transpose for multiple inputs or more than 2d shape?
+            this.inputSize = (int)(sampleRate * inputTime); // calculate how many bytes in 1 second in float array
         }
+
+        this.transposeOutput = shouldTranspose(outputShape);
+        this.outputSize = Arrays.stream(outputShape).max().getAsInt();
+
         Log.v(LOG_TAG, "Input Type: " + inputType);
         Log.v(LOG_TAG, "Input shape: " + Arrays.toString(inputShape));
+        Log.v(LOG_TAG, "Require Transpose: " + transposeInput);
         Log.v(LOG_TAG, "Input size: " + inputSize);
+        Log.v(LOG_TAG, "Output shape: " + Arrays.toString(outputShape));
+        Log.v(LOG_TAG, "Require Transpose: " + transposeOutput);
+        Log.v(LOG_TAG, "Input size: " + outputSize);
 
     }
+
+
+    private boolean shouldTranspose(int [] inputShape){
+        
+        if (inputShape[0] > inputShape[1] && inputShape[1] == 1) return true;
+        else if (inputShape[0] < inputShape[1] && inputShape[0] == 1) return false;
+        else throw new AssertionError("Problem with input shape: " + inputShape);
+    }
+
+
 
     @Override
     public void onCancel(Object _arguments) {
@@ -564,7 +591,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         audioFile.getObservable()
                 .doOnComplete(() -> {
                     stopStream(); 
-                    stopPreprocessing();
+                    clearPreprocessing();
                 })
                 .subscribe((audioChunk) -> {
                     startRecognition(audioChunk);
@@ -598,7 +625,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 .doOnComplete(() -> {
                     awaitRecognition(); //prevents stream from prematurely closing before recognition. Scheduler required.
                     stopStream();
-                    stopRecording();
+                    clearRecording();
                     })
                 .subscribe((audioChunk) -> {
                     startRecognition(audioChunk);
@@ -622,120 +649,111 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         recognitionThread.start();
     }
 
-    private void recognize(short[] audioBuffer) {
+    private void recognize(short[] inputBuffer16) {
         Log.v(LOG_TAG, "Recognition started.");
 
         if (events == null) {
             return;
-            // throw new AssertionError("Events is null. Cannot start recognition");
         }
 
-        // determine rawAudio or decodedWav input
-        float[][] floatInputBuffer = {};
-        int[] sampleRateList = {};
-        float[][] floatOutputBuffer = new float[1][labels.size()]; // TODO - uncomment this
-        short[] inputBuffer = new short[inputSize];
-        // int FRAMES = 129;
-        // int MEL_BINS = 124;
-        // public float[][] melBasis = new float[MEL_BINS][1+FFT_SIZE/2]; //used for mel
-        // spectrogram
-        // float[][][][] inputTensor = new float[1][FRAMES][MEL_BINS][1]; // used for
-        // spectrogram
+        SignalProcessing signalProcessing;
+        AudioData audioData = new AudioData();
 
-        // Used for multiple input and outputs (decodedWav)
-        Object[] inputArray = {};
+        float [] inputBuffer32; //for spectro
+        float [][] inputTensor2D = {}; //for raw audio
+        float [][][][] inputTensor4D = {}; // for spectro
+        Object [] inputArray = {};
+
         Map<Integer, Object> outputMap = new HashMap<>();
+        float [][] outputTensor = {};
+        
         Map<String, Object> finalResults = new HashMap();
 
         long startTime = new Date().getTime();
 
         switch (inputType) {
 
-            // TODO - make this dynamic by calling shape?
-            // TODO - add ability to transpose
+            //TODO - add transponse for spectro
 
             case "mfcc":
-                // tfLite.run(spectrogram, floatOutputBuffer);
-                lastProcessingTimeMs = new Date().getTime() - startTime;
+                signalProcessing = new SignalProcessing(sampleRate, nMFCC, nFFT, nMels, hopLength);
+                inputBuffer32 = audioData.normalizeBySigned16(inputBuffer16);
+                float mfcc [][] = signalProcessing.getMFCC(inputBuffer32);
+                // float transposedMfcc [][] = audioData.transpose2D(mfcc);
+                
+                outputTensor = transposeOutput
+                ? new float [outputSize][1]
+                : new float [1][outputSize];
+
+                tfLite.run(mfcc, outputTensor);
+                break;
+
+            case "melSpectrogram":
+                signalProcessing = new SignalProcessing(sampleRate, nMFCC, nFFT, nMels, hopLength);
+                inputBuffer32 = audioData.normalizeBySigned16(inputBuffer16);
+                float[][] melSpectrogram = signalProcessing.getMelSpectrogram(inputBuffer32);
+                inputTensor4D = signalProcessing.reshape2dto4d(melSpectrogram);
+
+                outputTensor = transposeOutput
+                ? new float [outputSize][1]
+                : new float [1][outputSize];
+
+                tfLite.run(inputTensor4D, outputTensor);
                 break;
 
             case "spectrogram":
-
-                AudioData audioData = new AudioData();
-                SignalProcessing signalProcessing = new SignalProcessing(sampleRate, nMFCC, nFFT, nMels, hopLength);
-
-                // Log.v(LOG_TAG, "smax: " + audioData.getMaxAbsoluteValue(audioBuffer));
-                // Log.v(LOG_TAG, "smin: " + audioData.getMinAbsoluteValue(audioBuffer));
-                // Log.v(LOG_TAG, "audio data: " + Arrays.toString(audioBuffer));
-
-                // TODO - ADD TRANSPOSE
-                float inputBuffer32[] = audioData.normalizeByMaxAmplitude(audioBuffer);
-                // inputBuffer32 = audioData.scaleAndCentre(inputBuffer32);
+                signalProcessing = new SignalProcessing(sampleRate, nMFCC, nFFT, nMels, hopLength);
+                inputBuffer32 = audioData.normalizeBySigned16(inputBuffer16);
                 float[][] spectrogram = signalProcessing.getSpectrogram(inputBuffer32);
-                float[][][][] inputTensor = signalProcessing.reshape2dto4d(spectrogram);
+                // float[][] transposedSpectrogram = audioData.transpose2D(spectrogram);
+                // float[][][][] inputTensor4d = signalProcessing.reshape2dto4d(transposedSpectrogram);
+                inputTensor4D = signalProcessing.reshape2dto4d(spectrogram);
 
-                tfLite.run(inputTensor, floatOutputBuffer);
-                lastProcessingTimeMs = new Date().getTime() - startTime;
+                outputTensor = transposeOutput
+                ? new float [outputSize][1]
+                : new float [1][outputSize];
+
+                tfLite.run(inputTensor4D, outputTensor);
                 break;
 
             case "decodedWav":
-                floatInputBuffer = new float[inputSize][1];
-                sampleRateList = new int[] { sampleRate };
 
-                recordingBufferLock.lock();
-                try {
-                    int maxLength = audioBuffer.length;
-                    System.arraycopy(audioBuffer, 0, inputBuffer, 0, maxLength);
-                    // System.arraycopy(audioBuffer, 0, inputBuffer, 0, inputSize);
-                } finally {
-                    recordingBufferLock.unlock();
-                }
+                //TODO - allow user to add their own additional inputs
+                //TODO - remove duplicate code by dynamically adding custom inputs
+         
+                inputTensor2D = transposeInput 
+                    ? audioData.normaliseToTranspose2D(inputBuffer16) 
+                    : audioData.normaliseTo2D(inputBuffer16);
+                
+                outputTensor = transposeOutput
+                    ? new float [outputSize][1]
+                    : new float [1][outputSize];
 
-                for (int i = 0; i < inputSize; ++i) {
-                    floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f;
-                }
+                int [] sampleRateList = new int[] { sampleRate }; 
+                inputArray = new Object[] { inputTensor2D, sampleRateList};
 
-                inputArray = new Object[] { floatInputBuffer, sampleRateList };
-                outputMap.put(0, floatOutputBuffer);
-
+                outputMap.put(0, outputTensor);
                 tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
-                lastProcessingTimeMs = new Date().getTime() - startTime;
                 break;
 
             case "rawAudio":
+     
+                inputTensor2D = transposeInput 
+                    ? audioData.normaliseToTranspose2D(inputBuffer16) 
+                    : audioData.normaliseTo2D(inputBuffer16);
 
-                if (inputShape[0] > inputShape[1] && inputShape[1] == 1) {
-                    floatInputBuffer = new float[inputSize][1];
+                outputTensor = transposeOutput
+                    ? new float [outputSize][1]
+                    : new float [1][outputSize];
 
-                } else if (inputShape[0] < inputShape[1] && inputShape[0] == 1) {
-                    floatInputBuffer = new float[1][inputSize];
-                } else {
-                    throw new AssertionError(inputType + " is an incorrect input type");
-                }
-
-                recordingBufferLock.lock();
-                try {
-                    int maxLength = audioBuffer.length;
-                    System.arraycopy(audioBuffer, 0, inputBuffer, 0, maxLength);
-                    // System.arraycopy(audioBuffer, 0, inputBuffer, 0, inputSize);
-                } finally {
-                    recordingBufferLock.unlock();
-                }
-
-                for (int i = 0; i < inputSize; ++i) {
-                    floatInputBuffer[0][i] = inputBuffer[i] / 32767.0f;
-                }
-
-                tfLite.run(floatInputBuffer, floatOutputBuffer);
-                lastProcessingTimeMs = new Date().getTime() - startTime;
+                tfLite.run(inputTensor2D, outputTensor);
                 break;
 
         }
 
-        // debugging purposes
-        Log.v(LOG_TAG, "Raw Scores: " + Arrays.toString(floatOutputBuffer[0]));
-        // Log.v(LOG_TAG, Long.toString(lastProcessingTimeMs));
-
+        lastProcessingTimeMs = new Date().getTime() - startTime;
+        Log.v(LOG_TAG, "Raw Scores: " + Arrays.toString(outputTensor[0]));
+   
         if (outputRawScores == false) {
             labelSmoothing = new LabelSmoothing(
                     labels,
@@ -746,10 +764,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
             long currentTime = System.currentTimeMillis();
             final LabelSmoothing.RecognitionResult recognitionResult = labelSmoothing
-                    .processLatestResults(floatOutputBuffer[0], currentTime);
+                    .processLatestResults(outputTensor[0], currentTime);
             finalResults.put("recognitionResult", recognitionResult.foundCommand);
         } else {
-            finalResults.put("recognitionResult", Arrays.toString(floatOutputBuffer[0]));
+            finalResults.put("recognitionResult", Arrays.toString(outputTensor[0]));
         }
 
         finalResults.put("inferenceTime", lastProcessingTimeMs);
@@ -769,92 +787,20 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         });
     }
 
-    // Used in preprocesing only
-    // prevents async errors - as iteration is too quick
+
     public void awaitRecognition() {
 
         if (recognitionThread == null){
-            Log.d(LOG_TAG, "No recognition thread to await");
+            Log.d(LOG_TAG, "There is no recognition thread to await. Breaking.");
             return;
         } 
 
-        Log.d(LOG_TAG, "awaiting recognition to finish..");
         try {
+            Log.d(LOG_TAG, "awaiting recognition to finish..");
             recognitionThread.join();
         } catch (InterruptedException ex) {
             Log.d(LOG_TAG, "Error with recognition thread: " + ex);
         }
-        Log.d(LOG_TAG, "Recognition thread completed. Proceeding");
-    }
-
-    public void stopRecognition() {
-        if (recognitionThread == null) {
-            Log.d(LOG_TAG, "There is no ongoing recognition. Breaking.");
-            return;
-        }
-
-        Log.d(LOG_TAG, "Recognition stopped.");
-        recognitionThread = null;
-    }
-    
-    public void clearRecognition() {
-        if (recognitionThread == null) {
-            Log.d(LOG_TAG, "There is no ongoing recognition. Breaking.");
-            return;
-        }
-
-        Log.d(LOG_TAG, "Recognition stopped.");
-        recognitionThread = null;
-        stopStream();
-    }
-
-
-    public void stopRecording() {
-        if (recordingThread == null) {
-            Log.d(LOG_TAG, "There is no ongoing recording. Breaking.");
-            return;
-        }
-
-        recording = null;
-        recordingThread = null;
-        Log.d(LOG_TAG, "Recording stopped.");
-    }
-
-    public void clearRecording(){
-        if (recordingThread == null) {
-            Log.d(LOG_TAG, "There is no ongoing recording. Breaking.");
-            return;
-        }
-
-        recording.stop();
-        recording = null;
-        recordingThread = null;
-        Log.d(LOG_TAG, "Recording stopped.");
-    }
-
-    public void stopPreprocessing() {
-        if (preprocessThread == null) {
-            Log.d(LOG_TAG, "There is no ongoing preprocessing. Breaking.");
-            return;
-        }
-
-        audioFile.stop();
-        audioFile = null;
-        preprocessThread = null;
-        Log.d(LOG_TAG, "Prepocesing stopped.");
-    }
-
-    public void stopStream() {
-
-        // if (lastInference == true) {
-        runOnUIThread(() -> {
-            if (events != null) {
-                Log.d(LOG_TAG, "Recognition Stream stopped");
-                events.endOfStream();
-            }
-        });
-        // lastInference = false;
-        // }
     }
 
     public void forceStop() {
@@ -867,15 +813,73 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             throw new AssertionError("Error with force stop: " + e);
         }
         
-        // stopRecording(true);
-        clearRecording();
-        clearRecognition();
+        stopRecording();
+        stopRecognition(); 
         stopPreprocessing();
+        //no need to have stop stream here, as it is called when observable is onComplete()
+    }
+    
+    public void stopRecognition() {
+        if (recognitionThread == null) {
+            Log.d(LOG_TAG, "There is no ongoing recognition. Breaking.");
+            return;
+        }
 
-        // !DO NOT CHANGE BELOW. stopRecognition() wont pass due to recognitionThread
-        // null check
-        // lastInference = true;
-        stopStream();
+        Log.d(LOG_TAG, "Recognition stopped.");
+        recognitionThread = null;
+    }
+
+    public void stopStream() {
+
+        runOnUIThread(() -> {
+            if (events != null) {
+                Log.d(LOG_TAG, "Recognition Stream stopped");
+                events.endOfStream();
+            }
+        });
+    }
+
+    public void stopRecording(){
+        if (recordingThread == null) {
+            Log.d(LOG_TAG, "There is no ongoing recording. Breaking.");
+            return;
+        }
+
+        recording.stop();
+        clearRecording();
+    }
+
+    public void clearRecording() {
+        if (recordingThread == null) {
+            Log.d(LOG_TAG, "There is no ongoing recording. Breaking.");
+            return;
+        }
+
+        recording = null;
+        recordingThread = null;
+        Log.d(LOG_TAG, "Recording stopped.");
+    }
+
+
+    public void stopPreprocessing() {
+        if (preprocessThread == null) {
+            Log.d(LOG_TAG, "There is no ongoing preprocessing. Breaking.");
+            return;
+        }
+
+        audioFile.stop();
+        clearPreprocessing();
+    }
+
+    public void clearPreprocessing() {
+        if (preprocessThread == null) {
+            Log.d(LOG_TAG, "There is no ongoing preprocessing. Breaking.");
+            return;
+        }
+
+        audioFile = null;
+        preprocessThread = null;
+        Log.d(LOG_TAG, "Prepocesing stopped.");
     }
 
     private void runOnUIThread(Runnable runnable) {
