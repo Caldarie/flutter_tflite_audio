@@ -521,6 +521,14 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
         print(detectionThreshold!)
         
+        
+        // Gets the formatted and averaged results.
+        let scores = [Float32](unsafeData: outputTensor.data) ?? []
+        let normalizedScores = scores.map { $0.isFinite ? $0 : 0.0 }
+        let finalResults: Result!
+        let roundInterval = interval.rounded()
+
+        //Set parameters for label smoothing
         recognitionResult = LabelSmoothing(
             averageWindowDuration: averageWindowDuration!,
             detectionThreshold: detectionThreshold!.floatValue as Float,
@@ -528,11 +536,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             suppressionTime: suppressionTime!,
             classLabels: labelArray
         )
+
         
-        // Gets the formatted and averaged results.
-        let scores = [Float32](unsafeData: outputTensor.data) ?? []
-        let finalResults: Result!
-        let roundInterval = interval.rounded()
         
         //debugging
         print("Raw Label Scores:")
@@ -540,11 +545,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
         
         if(outputRawScores == false){
-            let results = getResults(withScores: scores)
+
+            let results = getResults(withScores: normalizedScores)
             finalResults = Result(recognitionResult: results, inferenceTime: roundInterval, hasPermission: true)
         }else{
             //convert array to exact string value
-            let data = try? JSONSerialization.data(withJSONObject: scores)
+            let data = try? JSONSerialization.data(withJSONObject: normalizedScores)
             let stringValue = String(data: data!, encoding: String.Encoding.utf8)
             finalResults = Result(recognitionResult: stringValue, inferenceTime: roundInterval, hasPermission: true)
         }

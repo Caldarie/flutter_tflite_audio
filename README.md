@@ -26,7 +26,6 @@ Recording            |  Inference result
  * [About this plugin](#about-this-plugin)
  * [Known Issues/Commonly asked questions](#known-issuescommonly-asked-questions)
  * [Please read if you are using Google's Teachable Machine. Otherwise skip.](#please-read-if-you-are-using-googles-teachable-machine-otherwise-skip)
- * [Please read if you are using stored audio recognition]()
  * [How to add tflite model and label to flutter](#how-to-add-tflite-model-and-label-to-flutter)
  * [How to use this plugin](#how-to-use-this-plugin)
  * [Rough guide on parameters](#rough-guide-on-the-parameters)
@@ -40,19 +39,11 @@ Recording            |  Inference result
 
 ### The plugin has several features that you can use:
 
-1. Audio recognition for stored audio files. There are some things to note however:
-  
-   * Can only run inferences on mono wav files. (In the future, an audio converter will be included in this plugin.)
-   * Avoid using very large audio files. This may cause adverse effects.
-   * For best results, make sure the sample rate of the wav file is similar to the inputSize. For example, GTM models have an input size of 44032. So a sample rate of 44100 should be used. Similarly, decodedWav models have a inputSize of 16000, so a sample rate of 16000 should be used.
+1. Audio recognition for stored audio files. 
 
-2. Audio recognition for recordings. You can adjust the following with this plugin:
+2. Audio recognition for recordings. 
 
-   * Recording length/time (bufferRate)
-   * SampleRate 
-   * Number of inferences/recording 
-
-3. Abiliy to tune your model's output, such as reducing false positives. Please look a the [parameters](#rough-guide-on-the-parameters) below for more information.
+3. Abiliy to tune your model's output. Please look a the [parameters](#rough-guide-on-the-parameters) below for more information.
 
 <br>
 
@@ -88,7 +79,13 @@ Recording            |  Inference result
 
 ## Known Issues/Commonly asked questions
 
-1. **My Model won't load**
+1. **How to use audio file recognition**
+
+   * Can only run inferences on mono wav files. (In the future, an audio converter will be included in this plugin.)
+   * Avoid using very large audio files. This may cause adverse effects.
+   * For best results, make sure the sample rate of the wav file is similar to the inputSize. For example, GTM models have an input size of 44032. So a sample rate of 44100 should be used. Similarly, decodedWav models have a inputSize of 16000, so a sample rate of 16000 should be used.
+
+2. **My Model won't load**
 
    You need to configures permissions and dependencies to use this plugin. Please follow the steps below:
 
@@ -96,7 +93,7 @@ Recording            |  Inference result
   
    * [iOS installation & permissions](#ios-installation--permissions)         
 
-2. **How to adjust the recording length/time**
+3. **How to adjust the recording length/time**
 
    There are two ways to reduce adjust recording length/time:
 
@@ -106,11 +103,11 @@ Recording            |  Inference result
   
    **Note:** That stretching the value too low will cause problems with model accuracy. In that case, you may want to consider lowering your sample rate as well. Likewise, a very low sample rate can also cause problems with accuracy. It is your job to find the sweetspot for both values.
 
-3. **How to reduce false positives in my model**
+4. **How to reduce false positives in my model**
 
    To reduce false positives, you may want to adjust the default values of `detectionThreshold=0.3` and `averageWindowDuration=1000` to a higher value. A good value for both respectively are `0.7`  and `1500`. For more details about these parameters, please visit this [section](#rough-guide-on-the-parameters).
 
-4. **I am getting build errors on iOS**
+5. **I am getting build errors on iOS**
 
    There are several ways to fix this:
 
@@ -129,7 +126,7 @@ Recording            |  Inference result
 
    * Others have fixed this issue building the app without the line: `pod 'TensorFlowLiteSelectTfOps`. Then rebuilding the app by re-adding the line again.
 
-5. **I am getting TensorFlow Lite Error on iOS. -  Regular TensorFlow ops are not supported by this interpreter. Make sure you apply/link the Flex delegate before inference** 
+6. **I am getting TensorFlow Lite Error on iOS. -  Regular TensorFlow ops are not supported by this interpreter. Make sure you apply/link the Flex delegate before inference** 
 
    *  Please make sure that you have enabled ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
@@ -139,13 +136,13 @@ Recording            |  Inference result
 
    * Take a looking at issue number 4 if none of the above works.  
 
-6. **(iOS) App crashes when running Google's Teachable Machine model** 
+7. **(iOS) App crashes when running Google's Teachable Machine model** 
 
    Please run your simulation on actual iOS device. Running your device on M1 macs should also be ok.
   
    As of this moment, there's [limited support](https://github.com/tensorflow/tensorflow/issues/44997#issuecomment-734001671) for x86_64 architectures from the Tensorflow Lite select-ops framework. If you absolutely need to run it on an emulator, you can consider building the select ops framework yourself. Instructions can be found [here](https://www.tensorflow.org/lite/guide/ops_select#ios)
 
-7. **(Android) Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xfffffff4 in tid 5403** 
+8. **(Android) Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xfffffff4 in tid 5403** 
 
    It seems like the latest tflite package for android is causing this issue. Until this issue is fixed, please run this package on an actual Android Device. 
 

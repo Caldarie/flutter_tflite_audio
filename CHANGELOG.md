@@ -2,6 +2,9 @@
 * Feature: added MFCC, melSpectrogram and spectrogram support
 * Feature: Added transposable input and outputs
 * Improved stability of asyncronous operations with RxJava and RxSwift
+  
+## 0.2.2+4
+* Handled NaN exception for raw output on swift
 
 ## 0.2.2+3
 * Hot fixed iOS issue where it will record indefintetly.
