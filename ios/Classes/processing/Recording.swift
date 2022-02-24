@@ -7,6 +7,20 @@ import RxSwift
 https://github.com/chat-sdk/firestream-swift/blob/7cdcb2bfe18a50d982609d972e1fadc5d3d5655a/Sources/RX/MultiQueueSubject.swift
 */
 
+/* observable schedulers/threads
+https://stackoverflow.com/questions/37973445/does-the-order-of-subscribeon-and-observeon-matter
+https://stackoverflow.com/questions/52931989/schedulers-for-network-requests-in-rxswift
+*/
+
+/* serial vs concurrent
+let main = MainScheduler.instance
+let concurrentMain = ConcurrentMainScheduler.instance
+
+let serialBackground = SerialDispatchQueueScheduler.init(qos: .background)
+let concurrentBackground = ConcurrentDispatchQueueScheduler.init(qos: .background)
+https://www.avanderlee.com/swift/concurrent-serial-dispatchqueue/
+*/
+
 class Recording{
 
     private var bufferSize: Int
@@ -53,31 +67,27 @@ class Recording{
 
          audioEngine.inputNode.installTap(onBus: 0, bufferSize: AVAudioFrameCount(bufferSize), format: inputFormat) { (buffer, time) in
             
-            self.conversionQueue.async {
+            let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFrameBuffer))
+            var error: NSError? = nil
+            
+            let inputBlock: AVAudioConverterInputBlock = {inNumPackets, outStatus in
+                outStatus.pointee = AVAudioConverterInputStatus.haveData
+                return buffer
+            }
+            
+            formatConverter.convert(to: pcmBuffer!, error: &error, withInputFrom: inputBlock)
+            
+            if error != nil {
+                print(error!.localizedDescription)
+            }
+            else if let channelData = pcmBuffer!.int16ChannelData {
                 
-                //let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFormat!.sampleRate * 2.0))
-                let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFrameBuffer))
-                var error: NSError? = nil
-                
-                let inputBlock: AVAudioConverterInputBlock = {inNumPackets, outStatus in
-                    outStatus.pointee = AVAudioConverterInputStatus.haveData
-                    return buffer
-                }
-                
-                formatConverter.convert(to: pcmBuffer!, error: &error, withInputFrom: inputBlock)
-                
-                if error != nil {
-                    print(error!.localizedDescription)
-                }
-                else if let channelData = pcmBuffer!.int16ChannelData {
-                    
-                    let channelDataValue = channelData.pointee
-                    let channelDataValueArray = stride(from: 0,
-                                                       to: Int(pcmBuffer!.frameLength),
-                                                       by: buffer.stride).map{ channelDataValue[$0] }
-                    self.splice(data: channelDataValueArray)
-                }
-            }    
+                let channelDataValue = channelData.pointee
+                let channelDataValueArray = stride(from: 0,
+                                                    to: Int(pcmBuffer!.frameLength),
+                                                    by: buffer.stride).map{ channelDataValue[$0] }
+                self.splice(data: channelDataValueArray)
+            }
         }
 
         audioEngine.prepare()
