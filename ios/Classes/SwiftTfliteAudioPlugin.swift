@@ -26,7 +26,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     //recording variables
     private var bufferSize: Int!
     private var sampleRate: Int!
-    private var audioEngine: AVAudioEngine = AVAudioEngine()
+    private var recording: Recording!
+    // private var audioEngine: AVAudioEngine = AVAudioEngine()
     
     //Model variables
     private var inputSize: Int!
@@ -54,12 +55,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private var suppressionTime: Double!
     
     //threads
-    private let conversionQueue = DispatchQueue(label: "conversionQueue")
+    // private let conversionQueue = DispatchQueue(label: "conversionQueue")
     private let preprocessQueue = DispatchQueue(label: "preprocessQueue")
     private let group = DispatchGroup() //notifies whether recognition thread is done
-    
-    
-    
     
     
     init(registrar: FlutterPluginRegistrar) {
@@ -312,7 +310,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         var endCount = inputSize
         self.isPreprocessing = true
         
-        self.conversionQueue.async{ [self] in
+        self.preprocessQueue.async{ [self] in
             for inferenceCount in 1...numOfInferences{
             
                 //used to forcibly stop preprocessing
@@ -368,111 +366,167 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     
     func startMicrophone(){
         print("start microphone")
+
+        recording = Recording(
+            bufferSize: bufferSize, 
+            inputSize: inputSize,
+            sampleRate: sampleRate, 
+            numOfInferences: numOfInferences)
         
-        let recordingFrameBuffer = bufferSize/2
-        var recordingBuffer: [Int16] = []
-        var inferenceCount: Int = 1
-        let numOfInferences = self.numOfInferences
-        let inputSize = self.inputSize
+        recording.getObservable()
+            .subscribe(
+                onNext: { audioChunk in print(audioChunk)},
+                onError: { error in print(error)},
+                onCompleted: {print("completed")},
+                onDisposed: {print("disposed")})
+
+        recording.start()
+
+
+        // recording = Recording(
+        //     bufferSize: bufferSize, 
+        //     inputSize: inputSize,
+        //     sampleRate: sampleRate, 
+        //     numOfInferences: numOfInferences)
         
-        let inputNode = audioEngine.inputNode
-        let inputFormat = inputNode.outputFormat(forBus: 0)
-        let recordingFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: Double(sampleRate), channels: 1, interleaved: true)
-        guard let formatConverter =  AVAudioConverter(from:inputFormat, to: recordingFormat!) else {
-            return
-        }
+//         // recording.add(addNum: 2).print()
         
-        // install a tap on the audio engine and loops the frames into recordingBuffer
-        audioEngine.inputNode.installTap(onBus: 0, bufferSize: AVAudioFrameCount(bufferSize), format: inputFormat) { (buffer, time) in
+        
+// //        var recordingBuffer: [Int16] = []
+// //        var inferenceCount: Int = 1
+// //        let numOfInferences = self.numOfInferences
+// //        let inputSize = self.inputSize
+        
+//         let recordingFrameBuffer = bufferSize/2
+//         let inputNode = audioEngine.inputNode
+//         let inputFormat = inputNode.outputFormat(forBus: 0)
+//         let recordingFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: Double(sampleRate), channels: 1, interleaved: true)
+//         guard let formatConverter =  AVAudioConverter(from:inputFormat, to: recordingFormat!) else {
+//             return
+//         }
+        
+//         // install a tap on the audio engine and loops the frames into recordingBuffer
+//         audioEngine.inputNode.installTap(onBus: 0, bufferSize: AVAudioFrameCount(bufferSize), format: inputFormat) { (buffer, time) in
             
-            self.conversionQueue.async {
+//             self.conversionQueue.async {
                 
-                //let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFormat!.sampleRate * 2.0))
-                let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFrameBuffer))
-                var error: NSError? = nil
+//                 //let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFormat!.sampleRate * 2.0))
+//                 let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFrameBuffer))
+//                 var error: NSError? = nil
                 
-                let inputBlock: AVAudioConverterInputBlock = {inNumPackets, outStatus in
-                    outStatus.pointee = AVAudioConverterInputStatus.haveData
-                    return buffer
-                }
+//                 let inputBlock: AVAudioConverterInputBlock = {inNumPackets, outStatus in
+//                     outStatus.pointee = AVAudioConverterInputStatus.haveData
+//                     return buffer
+//                 }
                 
-                formatConverter.convert(to: pcmBuffer!, error: &error, withInputFrom: inputBlock)
+//                 formatConverter.convert(to: pcmBuffer!, error: &error, withInputFrom: inputBlock)
                 
-                if error != nil {
-                    print(error!.localizedDescription)
-                }
-                else if let channelData = pcmBuffer!.int16ChannelData {
+//                 if error != nil {
+//                     print(error!.localizedDescription)
+//                 }
+//                 else if let channelData = pcmBuffer!.int16ChannelData {
                     
-                    let channelDataValue = channelData.pointee
-                    let channelDataValueArray = stride(from: 0,
-                                                       to: Int(pcmBuffer!.frameLength),
-                                                       by: buffer.stride).map{ channelDataValue[$0] }
+//                     let channelDataValue = channelData.pointee
+//                     let channelDataValueArray = stride(from: 0,
+//                                                        to: Int(pcmBuffer!.frameLength),
+//                                                        by: buffer.stride).map{ channelDataValue[$0] }
                     
-                    
-                    
-                    //Append frames onto the recording buffer until it reaches the input size
-                    //Do not change inferenceCount <= numOfInferences! - counts last inference
-                    if(inferenceCount <= numOfInferences! && recordingBuffer.count < inputSize!){
-                        recordingBuffer.append(contentsOf: channelDataValueArray)
-                        print("recordingBuffer length: \(recordingBuffer.count) | inferenceCount: \(inferenceCount)/\(numOfInferences!)")
-                        
-                        //Starts recognition when recording bufffer is full. Resest recording buffer for next inference
-                    }else if(inferenceCount < numOfInferences! && recordingBuffer.count == inputSize!){
-                        
-                        print("reached threshold")
-                        self.recognize(onBuffer: Array(recordingBuffer[0..<inputSize!]))
-                        
-                        inferenceCount += 1
-                        recordingBuffer = []
-                        print("Looping recording")
-                        print("Clearing recording buffer")
-                        
-                        //when buffer exeeds max record length, trim and resize the buffer, append, and then start inference
-                        //Resets recording buffer after inference
-                    }else if(inferenceCount < numOfInferences! && recordingBuffer.count > inputSize!){
-                        
-                        print("Exceeded threshold")
-                        self.recognize(onBuffer: Array(recordingBuffer[0..<inputSize!]))
-                        
-                        inferenceCount += 1
-                        let excessRecordingBuffer: [Int16] = Array(recordingBuffer[inputSize!..<recordingBuffer.count])
-                        recordingBuffer = []
-                        recordingBuffer.append(contentsOf: excessRecordingBuffer)
-                        print("Looping recording")
-                        print("trimmed excess recording. Excess count: \(excessRecordingBuffer.count)")
-                        print("Clearing recording buffer")
-                        print("appended excess to recording buffer")
-                        
-                        //Final inference. Stops recognitions and recording.
-                        //No need to trim excess data as this is the final inference. (not applicable on fixed arrays from android/java)
-                    }else if(inferenceCount == numOfInferences! && recordingBuffer.count >= inputSize!){
-                        print("Final recognition")
+//                     let state = recordingData.getState()
+//                     switch state{
+//                         case "append":
+//                             recordingData.append(data: channelDataValueArray)
+//                             break
+//                         case "recognise":
+//                             recordingData
+//                                 .emit{ (result) in print( state )}
+//                                 .updateCount()
+//                                 .clear()
+//                                 .append(data: channelDataValueArray)
+//                             break
+//                         case "trimAndRecognise":
+//                             recordingData
+//                                 .emit{ (result) in print( state )}
+//                                 .updateCount()
+//                                 .trimExcessToNewBuffer()
+//                             break
+//                         case "finalise":
+//                             recordingData
+//                                 .emit{ (result) in print( state )}
+//                                 .updateCount()
+//                                 .resetCount()
+//                                 .clear()
+//                             self.lastInferenceRun = true
+//                             self.stopRecording()
+//                             break
+//                         default:
+//                             print("Error: \(state)")
+                            
+                            // print(state)
+                            
 
-                        self.lastInferenceRun = true
-                        self.recognize(onBuffer: Array(recordingBuffer[0..<inputSize!]))
-                        self.stopRecording()
+                    // //Append frames onto the recording buffer until it reaches the input size
+                    // //Do not change inferenceCount <= numOfInferences! - counts last inference
+                    // if(inferenceCount <= numOfInferences! && recordingBuffer.count < inputSize!){
+                    //     recordingBuffer.append(contentsOf: channelDataValueArray)
+                    //     print("recordingBuffer length: \(recordingBuffer.count) | inferenceCount: \(inferenceCount)/\(numOfInferences!)")
+                        
+                    //     //Starts recognition when recording bufffer is full. Resest recording buffer for next inference
+                    // }else if(inferenceCount < numOfInferences! && recordingBuffer.count == inputSize!){
+                        
+                    //     print("reached threshold")
+                    //     self.recognize(onBuffer: Array(recordingBuffer[0..<inputSize!]))
+                        
+                    //     inferenceCount += 1
+                    //     recordingBuffer = []
+                    //     print("Looping recording")
+                    //     print("Clearing recording buffer")
+                        
+                    //     //when buffer exeeds max record length, trim and resize the buffer, append, and then start inference
+                    //     //Resets recording buffer after inference
+                    // }else if(inferenceCount < numOfInferences! && recordingBuffer.count > inputSize!){
+                        
+                    //     print("Exceeded threshold")
+                    //     self.recognize(onBuffer: Array(recordingBuffer[0..<inputSize!]))
+                        
+                    //     inferenceCount += 1
+                    //     let excessRecordingBuffer: [Int16] = Array(recordingBuffer[inputSize!..<recordingBuffer.count])
+                    //     recordingBuffer = []
+                    //     recordingBuffer.append(contentsOf: excessRecordingBuffer)
+                    //     print("Looping recording")
+                    //     print("trimmed excess recording. Excess count: \(excessRecordingBuffer.count)")
+                    //     print("Clearing recording buffer")
+                    //     print("appended excess to recording buffer")
+                        
+                    //     //Final inference. Stops recognitions and recording.
+                    //     //No need to trim excess data as this is the final inference. (not applicable on fixed arrays from android/java)
+                    // }else if(inferenceCount == numOfInferences! && recordingBuffer.count >= inputSize!){
+                    //     print("Final recognition")
 
-                        inferenceCount = 1
-                        recordingBuffer = []
-                    }else{
-                        print("Something weird happened")
-                        print("recording buffer: \(recordingBuffer.count)")
-                        print("inferenceCount: \(inferenceCount)")
-                        print("numOfInferences: \(numOfInferences!)")
-                    }
+                    //     self.lastInferenceRun = true
+                    //     self.recognize(onBuffer: Array(recordingBuffer[0..<inputSize!]))
+                    //     self.stopRecording()
+
+                    //     inferenceCount = 1
+                    //     recordingBuffer = []
+                    // }else{
+                    //     print("Something weird happened")
+                    //     print("recording buffer: \(recordingBuffer.count)")
+                    //     print("inferenceCount: \(inferenceCount)")
+                    //     print("numOfInferences: \(numOfInferences!)")
+        //             }
                     
                     
-                } //channeldata
-            } //conversion queue
-        } //installtap
+        //         } //channeldata
+        //     } //conversion queue
+        // } //installtap
         
-        audioEngine.prepare()
-        do {
-            try audioEngine.start()
-        }
-        catch {
-            print(error.localizedDescription)
-        }
+        // audioEngine.prepare()
+        // do {
+        //     try audioEngine.start()
+        // }
+        // catch {
+        //     print(error.localizedDescription)
+        // }
         
         
         
@@ -607,8 +661,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
 
     func stopRecording(){
         print("Recording stopped.") //Add conditional - prints in preprocessing
-        self.audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
+        recording.stop()
     }
 
     func stopPreprocessing(){
