@@ -378,7 +378,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let main = MainScheduler.instance
         let concurrentBackground = ConcurrentDispatchQueueScheduler.init(qos: .background)
         
-        recording.getObservable()
+        //underscore to suppress disposable warning
+        //https://github.com/ReactiveX/RxSwift/blob/main/Documentation/Warnings.md
+        _ = recording.getObservable()
             .subscribe(on: concurrentBackground)
             .observe(on: main)   
             .subscribe(
