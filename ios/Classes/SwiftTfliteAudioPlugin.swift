@@ -125,6 +125,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         case "setFileRecognitionStream":
             //TODO - dont need to have external permission?
             self.audioDirectory = arguments["audioDirectory"] as? String
+            self.sampleRate = arguments["sampleRate"] as? Int
             preprocessAudioFile()
             break
         default:
@@ -269,139 +270,25 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
          
         return fileURL
         
-//        let file = try! AVAudioFile(forReading: fileURL)
-//        let format = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: file.fileFormat.sampleRate, channels: 1, interleaved: false)
-//        let fileSize = file.length
-//        let frameSize = AVAudioFrameCount(fileSize)
-//
-//        let pcmBuffer = AVAudioPCMBuffer(pcmFormat: format!, frameCapacity: frameSize)
-//        try! file.read(into: pcmBuffer!)
-//
-//        let int16Array = UnsafeBufferPointer(start: pcmBuffer?.int16ChannelData![0], count:Int(pcmBuffer!.frameLength))
-//
-//        for buf in int16Array{
-//            print(Array(arrayLiteral: buf))
-//        }
     }
     
+    //preprocess queue replaces observeOn or subscribeOn so that it can be forcefully stopped
     func preprocessAudioFile(){
         print("Preprocessing audio file..")
+  
         let url = loadData()
         audioFile = AudioFile(fileURL: url, inputSize: inputSize)
-        audioFile?.splice()
-        
-//        let int16Data = loadData()
-     
-        
-//         var data: Data
-//         let inputSize = self.inputSize!
-        
-//         if(isAsset){
-//             let audioKey = registrar.lookupKey(forAsset: audioDirectory)
-//             let audioPath = Bundle.main.path(forResource: audioKey, ofType: nil)!
-//             // data = try! Data(contentsOfFile: audioPath)
-//             data = NSData(contentsOfFile: audioPath)! as Data
-            
-//         } else {
-//             let audioPath = audioDirectory;
-//             let url = URL(string: audioPath!)
-//             data = try! Data(contentsOf: url!)
-//         }
-        
-//         //TODO - dont need to extract audio data????
-//         //TODO - get sample rate and channels
-//         //TODO - assert that it has be to be wav file, and mono
-//         //let format = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 44100, channels: 1, interleaved: true)
-//         //let rawData = data.convertedTo(format!)
-        
-//         //TODO - Fix deprecation
-//         let int16Data = data.withUnsafeBytes {
-//             UnsafeBufferPointer<Int16>(start: $0, count: data.count/2).map(Int16.init(littleEndian:))
-//         }
-        
-        
-//         //If missing samples are more than half, padding will be done.
-//         //Too little samples, is pointless to pad.)
-//         let int16DataSize = int16Data.count
-//         let remainingSamples = int16DataSize % inputSize
-//         let missingSamples = inputSize - remainingSamples
-//         let totalWithPad = int16DataSize + missingSamples
-//         let totalWithoutPad = int16DataSize - remainingSamples
-//         //!To debug requirePadding, simply change original [>] to < before (inputSize/2)
-//         // let requirePadding: Bool = remainingSamples > (inputSize/2) ? true : false //TODO - Make this user controlled?
-//         let requirePadding = true
-//         let numOfInferences: Int = requirePadding == true ? Int(totalWithPad/inputSize) : Int(totalWithoutPad/inputSize)
-        
-        
-//         //!debugging
-//         print("int16DataSize: \(int16DataSize)")
-//         print("inputSize: \(inputSize)")
-//         print("remainingSamples: \(remainingSamples)")
-//         print("missingSamples: \(missingSamples)")
-//         print("totalWithPad: \(totalWithPad)")
-//         print("totalWithoutPad: \(totalWithoutPad)")
-//         print("require padding: \(requirePadding)")
-//         print("true: \(totalWithPad/inputSize)")
-//         print("false: \(totalWithoutPad/inputSize)")
-//         print("numOfInferences: \(numOfInferences)")
-        
-        
-//         //breaks intData16 array into chunks, so it can be fed to the model
-//         var startCount = 0
-//         var endCount = inputSize
-//         self.isPreprocessing = true
-        
-//         self.preprocessQueue.async{ [self] in
-//             for inferenceCount in 1...numOfInferences{
-            
-//                 //used to forcibly stop preprocessing
-//                 if(self.isPreprocessing == false){
-//                     break
-//                 }
+         
+        self.preprocessQueue.async { [self] in
+            _ = audioFile!.getObservable()
+                .subscribe(
+                    onNext: { audioChunk in self.recognize(onBuffer: audioChunk)},
+                    onError: { error in print(error)},
+                    onCompleted: { self.stopStream() },
+                    onDisposed: {print("Recording stream disposed")})
 
-//                 if(inferenceCount != numOfInferences){
-//                     print("inference Count: \(inferenceCount)/\(numOfInferences)")
-//                     recognize(onBuffer: Array(int16Data[startCount..<endCount]))
-//                     startCount = endCount
-//                     endCount += inputSize
-//                 }else{
-//                     if(requirePadding){
-//                         print("inference count: \(inferenceCount)/\(numOfInferences)")
-//                         print("Padding missing samples to audio chunk")
-                        
-//                         endCount -= missingSamples
-//                         let remainingArray = int16Data[startCount..<endCount]
-//                         let silenceArray: [Int16] = (-10...10).randomElements(missingSamples)
-//                         var paddedArray: [Int16] = []
-//                         paddedArray.append(contentsOf: remainingArray)
-//                         paddedArray.append(contentsOf: silenceArray)
-                        
-//                         //!debug
-//                         assert(paddedArray.count == inputSize, "Error. Mismatch with paddedArray")
-//                         assert(startCount == totalWithoutPad, "Error. startCount does not match")
-//                         assert(endCount == (totalWithPad-missingSamples), "Error. end count does not match")
-//                         //  assert(paddedArray[remainingSamples-1] == remainingArray[remainingSamples-1], "Error, padded array mismatch")
-//                         //  print(startCount)
-//                         //  print(endCount)
-//                         //  print(silenceArray.count)
-//                         //  print(paddedArray.count)
-                        
-//                         recognize(onBuffer: Array(paddedArray[0..<inputSize]))
-// //                        self.lastInferenceRun = true
-//                         self.isPreprocessing = false
-//                         // stopRecognition()
-//                     }else{
-//                         print("inference Count: \(inferenceCount)/\(numOfInferences)")
-//                         print("Remaing audio file is too small. Skipping recognition")
-// //                        self.lastInferenceRun = true
-//                         self.isPreprocessing = false
-//                         // stopRecognition()
-//                     }
-//                 }   
-//             }
-//         }
-
-   
+            audioFile?.splice()
+        }
     }
     
     
@@ -542,21 +429,11 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         return command?.name
     }
     
-    func forceStopRecognition(){
-//        self.lastInferenceRun = true
-    
+    func forceStopRecognition(){    
         stopPreprocessing()
         stopRecording()
         // stopRecognition()
     }
-
-    // func stopRecognition(){
-    //     if(events != nil && lastInferenceRun == true){
-    //         print("recognition stream stopped")
-    //         self.lastInferenceRun = false
-    //         self.events(FlutterEndOfEventStream)
-    //     }
-    // }
 
     func stopStream(){
         if(events != nil){
@@ -570,6 +447,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         if let _recording = recording {
             print("Stop recording.")
             _recording.stop()
+        } else {
+            print("No recording found. Breaking")
         }
     }
 
@@ -577,11 +456,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         if let _audioFile = audioFile {
             print("Stop preprocessing")
             _audioFile.stop()
+        } else {
+            print("No preprocessing found. Breaking")
         }
-//        if(self.isPreprocessing == true){
-//            self.isPreprocessing = false
-//            print("stop preprocessing audio file")
-//        }
     }
 }
 

@@ -30,13 +30,9 @@ class AudioFileData{
 
     func getPaddingRequirement(excessSamples: Int, missingSamples: Int) -> Bool{
         let hasMissingSamples = missingSamples != 0 || excessSamples != inputSize
-        let pctThreshold: Double = 0.75
+        let pctThreshold: Double = 0.25
         let sampleThreshold  = Int(round(Double(inputSize) * pctThreshold))
         let underThreshold = missingSamples < sampleThreshold
-
-        print(hasMissingSamples)
-        print(sampleThreshold)
-        print(underThreshold)
 
         if (hasMissingSamples && underThreshold) {return true}
         else if (hasMissingSamples && !underThreshold) {return false}
@@ -51,7 +47,7 @@ class AudioFileData{
 
     func getState(i: Int) -> String{
         let reachInputSize: Bool = (i + 1) % inputSize == 0 
-        let reachFileSize: Bool = i == int16DataSize - 1
+        let reachFileSize: Bool = (i + 1) == int16DataSize
         let reachInferenceLimit: Bool = inferenceCount == numOfInferences
 
         if (reachInputSize && !reachInferenceLimit) {
@@ -113,7 +109,7 @@ class AudioFileData{
              audioChunk.append(contentsOf: paddedArray)
              print( "\(missingSamples) samples have been padded to audio chunk")
         }else{
-             print( "\(missingSamples) samples are missing. Padding not required")
+             print( "Under threshold. Padding not required")
         }
         return self
     }

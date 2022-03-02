@@ -21,23 +21,32 @@ class AudioFile{
         self.audioFileData = AudioFileData(inputSize: inputSize, bufferSize: Int(pcmBuffer!.frameCapacity))
         print(Int(pcmBuffer!.frameCapacity))
     }
+
+    func getObservable() -> Observable<[Int16]>{
+        return self.subject!.asObservable()
+    }
     
     func getBuffer(fileURL : URL) -> AVAudioPCMBuffer{
 
-        let file = try! AVAudioFile(forReading: fileURL)
-        let format = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: file.fileFormat.sampleRate, channels: 1, interleaved: false)
-        let fileSize = file.length
-        let frameSize = AVAudioFrameCount(fileSize)
-    
-        let pcmBuffer = AVAudioPCMBuffer(pcmFormat: format!, frameCapacity: frameSize)
-        try! file.read(into: pcmBuffer!)
+        let pcmBuffer: AVAudioPCMBuffer
+
+        do {
+            let file = try! AVAudioFile(forReading: fileURL, commonFormat: .pcmFormatInt16, interleaved: false)
+            let format = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: file.fileFormat.sampleRate, channels: 1, interleaved: false)    
+            pcmBuffer = AVAudioPCMBuffer(pcmFormat: format!, frameCapacity: AVAudioFrameCount(file.length))!
+            try file.read(into: pcmBuffer)
+        } catch let error as NSError {
+            print("Buffer loading error: ", error.localizedDescription)
+        }
         
-        return pcmBuffer!
+        return pcmBuffer
         
     }
 
     func stop(){
         isSplicing = false
+        self.subject!.onCompleted()
+        audioFileData = nil
     }
 
     func splice(){
@@ -56,11 +65,10 @@ class AudioFile{
                     audioFileData!
                         .append(data: data)
                         .displayCount()
-                        .emit{ (result) in print("emit") }
+                        .emit{ (audioChunk) in self.subject!.onNext(audioChunk) }
                         .reset()
                     break
                 case "appending":
-                    print(index)
                     audioFileData!
                         .append(data: data)
                     break
@@ -69,7 +77,7 @@ class AudioFile{
                         .append(data: data)
                         .displayCount()
                         .padSilence(i: index)
-                        .emit{ (result) in print("emit") }
+                        .emit{ (audioChunk) in self.subject!.onNext(audioChunk) }
                     self.stop()
                     break
                 default:
