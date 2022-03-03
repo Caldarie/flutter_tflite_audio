@@ -11,6 +11,10 @@ http://www.albertopasca.it/whiletrue/swift-chaining-methods/
 supress call warning
 */
 
+/* @escaping
+https://www.donnywals.com/what-is-escaping-in-swift/
+*/
+
 /* optionals "?" on class variables
 avoid need to call init() since we are using setters
 */

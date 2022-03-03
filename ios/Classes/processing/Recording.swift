@@ -31,9 +31,7 @@ class Recording{
     private var recordingData: RecordingData
     private var audioEngine: AVAudioEngine
     private let subject: PublishSubject<[Int16]>
-    private let conversionQueue = DispatchQueue(label: "conversionQueue")
- 
-
+  
     init(bufferSize: Int, inputSize: Int, sampleRate: Int, numOfInferences: Int){
 
         recordingData = RecordingData()
