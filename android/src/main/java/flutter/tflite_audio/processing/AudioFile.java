@@ -28,7 +28,6 @@ public class AudioFile {
     private short[] shortAudioChunk;
 
     private int inputSize;
-    private String inputType;
     private int fileSize;
 
     private int indexCount = 0;
@@ -39,11 +38,10 @@ public class AudioFile {
 
     private boolean isPreprocessing = false;
 
-    public AudioFile(byte[] byteData, String inputType, int inputSize) {
+    public AudioFile(byte[] byteData, int inputSize) {
 
         shortBuffer = ByteBuffer.wrap(byteData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
         this.inputSize = inputSize;
-        this.inputType = inputType;
 
         fileSize = shortBuffer.limit(); // calculate how many bytes in 1 second in short array
         shortAudioChunk = new short[inputSize];

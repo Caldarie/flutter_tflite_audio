@@ -297,7 +297,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     private void determineInput() {
 
-        this.inputShape = tfLite.getInputTensor(0).shape();
+        int [] inputShape = tfLite.getInputTensor(0).shape();
         int [] outputShape = tfLite.getOutputTensor(0).shape();
         
         if (inputType.equals("rawAudio") || inputType.equals("decodedWav")) {
@@ -586,7 +586,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     public void preprocess(byte[] byteData) {
         Log.d(LOG_TAG, "Preprocessing audio file..");
 
-        audioFile = new AudioFile(byteData, inputType, inputSize);
+        audioFile = new AudioFile(byteData, inputSize);
         audioFile.getObservable()
                 .doOnComplete(() -> {
                     stopStream(); 
