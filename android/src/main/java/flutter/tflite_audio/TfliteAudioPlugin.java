@@ -129,8 +129,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     // input/output variables
     private int inputSize;
     private int outputSize;
-    private int[] inputShape;
-    // private int [] outputShape;
     private boolean transposeInput = false;
     private boolean transposeOutput = false;
     private String inputType;
@@ -584,6 +582,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         preprocessThread.start();
     }
 
+    //No noticable performance difference with subscribleOn and observableOn
     public void preprocess(byte[] byteData) {
         Log.d(LOG_TAG, "Preprocessing audio file..");
 
@@ -595,7 +594,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 })
                 .subscribe((audioChunk) -> {
                     startRecognition(audioChunk);
-                    awaitRecognition(); //prevents results from coming in too quick! No need for scheduler thread.
                 });
         audioFile.splice();
     }
@@ -614,6 +612,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         recordingThread.start();
     }
 
+    //Some performance difference with subscribeOn and observeON (android only?)
     private void record() {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
@@ -623,7 +622,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 .subscribeOn(Schedulers.io()) //run [observable] on background thread
                 .observeOn(Schedulers.computation()) //tell [observer] to receive data on computation thread
                 .doOnComplete(() -> {
-                    awaitRecognition(); //prevents stream from prematurely closing before recognition. Scheduler required.
                     stopStream();
                     clearRecording();
                     })
@@ -634,22 +632,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         recording.splice();
     }
 
-    public synchronized void startRecognition(short[] audioBuffer) {
-        if (recognitionThread != null) {
-            return;
-        }
-
-        recognitionThread = new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        recognize(audioBuffer);
-                    }
-                });
-        recognitionThread.start();
-    }
-
-    private void recognize(short[] inputBuffer16) {
+    private void startRecognition(short[] inputBuffer16) {
         Log.v(LOG_TAG, "Recognition started.");
 
         if (events == null) {
@@ -774,8 +757,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         finalResults.put("hasPermission", true);
 
         getResult(finalResults);
-        // if(lastInference) clearRecognition(); else stopRecognition();
-        stopRecognition();
     }
 
     public void getResult(Map<String, Object> recognitionResult) {
@@ -787,48 +768,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         });
     }
 
-
-    public void awaitRecognition() {
-
-        if (recognitionThread == null){
-            Log.d(LOG_TAG, "There is no recognition thread to await. Breaking.");
-            return;
-        } 
-
-        try {
-            Log.d(LOG_TAG, "awaiting recognition to finish..");
-            recognitionThread.join();
-        } catch (InterruptedException ex) {
-            Log.d(LOG_TAG, "Error with recognition thread: " + ex);
-        }
-    }
-
-    public void forceStop() {
-        // !DO NOT CHANGE BELOW - awaits recognition thread or causes async error
-        try {
-            if (recognitionThread != null) {
-                recognitionThread.join();
-            }
-        } catch (InterruptedException e) {
-            throw new AssertionError("Error with force stop: " + e);
-        }
-        
-        stopRecording();
-        stopRecognition(); 
-        stopPreprocessing();
-        //no need to have stop stream here, as it is called when observable is onComplete()
-    }
-    
-    public void stopRecognition() {
-        if (recognitionThread == null) {
-            Log.d(LOG_TAG, "There is no ongoing recognition. Breaking.");
-            return;
-        }
-
-        Log.d(LOG_TAG, "Recognition stopped.");
-        recognitionThread = null;
-    }
-
     public void stopStream() {
 
         runOnUIThread(() -> {
@@ -837,6 +776,13 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 events.endOfStream();
             }
         });
+    }
+
+    public void forceStop() {
+           
+        stopRecording();
+        stopPreprocessing();
+        //no need to have stop stream here, as it is called when observable is onComplete()
     }
 
     public void stopRecording(){
