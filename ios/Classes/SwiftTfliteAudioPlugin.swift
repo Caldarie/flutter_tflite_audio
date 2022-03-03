@@ -28,25 +28,26 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private var bufferSize: Int!
     private var sampleRate: Int!
     private var recording: Recording?
-    // private var audioEngine: AVAudioEngine = AVAudioEngine()
     
     //Model variables
-    private var inputSize: Int!
-    private var inputType: String!
-    private var inputShape: [Int]!
-    private var outputRawScores: Bool!
     private var model: String!
     private var label: String!
     private var isAsset: Bool!
     private var numThreads: Int!
     private var numOfInferences: Int!
     
+    //input/output variables
+    private var inputSize: Int!
+    private var outputSize: Int!
+    private var inputType: String!
+    private var outputRawScores: Bool!
+    private var transposeInput: Bool!
+    private var transposeOutput: Bool!
+    
     //preprocessing variable
-//    private var preprocessing: Preprocessing?
     private var audioFile: AudioFile?
     private var audioDirectory: String!
     private var isPreprocessing: Bool = false
-//    private var stopPreprocessing: Bool = false
     private let maxInt16AsFloat32: Float32 = 32767.0
     
     //labelsmoothing variables
@@ -56,6 +57,13 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private var averageWindowDuration: Double!
     private var minimumTimeBetweenSamples: Double!
     private var suppressionTime: Double!
+
+    //spectrogram
+    private var inputTime: Double!
+    private var nMFCC: Int!
+    private var nFFT: Int!
+    private var nMels: Int!
+    private var hopLength: Int!
     
     //threads
     // private let conversionQueue = DispatchQueue(label: "conversionQueue")
@@ -84,10 +92,11 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         self.result = result
+        var arguments: [String: AnyObject]
         
         switch call.method{
         case "loadModel":
-            let arguments: [String: AnyObject] = call.arguments as! [String: AnyObject] //DO NOT CHANGE POSITION
+            arguments = call.arguments as! [String: AnyObject] //DO NOT CHANGE POSITION
             self.numThreads = arguments["numThreads"] as? Int
             self.inputType = arguments["inputType"] as? String
             self.outputRawScores = arguments["outputRawScores"] as? Bool
@@ -96,6 +105,15 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             self.isAsset = arguments["isAsset"] as? Bool
             loadModel(registrar: registrar)
             break
+        case "setSpectrogramParameters":
+            arguments = call.arguments as! [String: AnyObject]
+            self.inputTime = arguments["inputTime"] as? Double
+            self.nMFCC = arguments["nMFCC"] as? Int
+            self.nFFT = arguments["nFFT"] as? Int
+            self.nMels = arguments["nMels"] as? Int
+            self.hopLength = arguments["hopLength"] as? Int
+            print("Spectrogram parameters: \(arguments)")
+            break;
         case "stopAudioRecognition":
             forceStopRecognition()
             break
@@ -120,12 +138,14 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             self.bufferSize = arguments["bufferSize"] as? Int
             self.sampleRate = arguments["sampleRate"] as? Int
             self.numOfInferences = arguments["numOfInferences"] as? Int
+            determineInput()
             checkPermissions()
             break
         case "setFileRecognitionStream":
             //TODO - dont need to have external permission?
             self.audioDirectory = arguments["audioDirectory"] as? String
             self.sampleRate = arguments["sampleRate"] as? Int
+            determineInput()
             preprocessAudioFile()
             break
         default:
@@ -138,6 +158,46 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     public func onCancel(withArguments arguments: Any?) -> FlutterError? {
         self.events = nil
         return nil
+    }
+
+
+    func determineInput(){
+        
+        let inputShape: [Int]
+        let outputShape: [Int]
+                    
+        do {
+            inputShape = try interpreter.input(at: 0).shape.dimensions
+            outputShape = try interpreter.output(at: 0).shape.dimensions
+            
+            if(inputType == "rawAudio" || inputType == "decodedWav"){
+                self.inputSize = inputShape.max()
+                self.transposeInput = shouldTranspose(inputShape: inputShape)
+            } else {
+                self.inputSize = Int(round(Double(sampleRate) * inputTime))
+            }
+            
+            self.outputSize = outputShape.max()
+            
+            print("Input shape: \(inputShape)")
+            print("Input size \(inputSize!)")
+            print("Should transpose: \(transposeInput!)")
+            print("Input type \(inputType!)")
+            
+        } catch let error{
+            print("Failed to create the interpreter with error: \(error.localizedDescription)")
+        }
+            
+
+    }
+
+    func shouldTranspose(inputShape: [Int]) -> Bool{
+        
+        //check if shape contains element "1" at least once
+        let count = inputShape.reduce(0) { $1 == 1 ? $0 + 1 : $0}
+        if(count != 1) {assertionFailure("Problem with input shape: \(inputShape) ") }
+    
+        return inputShape[0] > inputShape[1] ? true : false
     }
     
     func loadModel(registrar: FlutterPluginRegistrar){
@@ -161,12 +221,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             // Create the `Interpreter` and allocate memory for the model's input `Tensor`s.
             self.interpreter = try Interpreter(modelPath: modelPath, options: options)
             try interpreter.allocateTensors()
-            
-            self.inputShape = try interpreter.input(at: 0).shape.dimensions
-            self.inputSize = inputShape.max()
-            print("Input shape: \(inputShape!)")
-            print("Input size \(inputSize!)")
-            print("Input type \(inputType!)")
             
         } catch let error {
             print("Failed to create the interpreter with error: \(error.localizedDescription)")
@@ -291,7 +345,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         }
     }
     
-    
+    //no noticable difference with subscribeOn and observeOn. (Maybe for different phones?)
     func startMicrophone(){
         print("start microphone")
 
@@ -306,16 +360,18 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
         //underscore to suppress disposable warning
         //https://github.com/ReactiveX/RxSwift/blob/main/Documentation/Warnings.md
-        _ = recording!.getObservable()
-            .subscribe(on: concurrentBackground)
-            .observe(on: main)   
-            .subscribe(
-                onNext: { audioChunk in self.recognize(onBuffer: audioChunk)},
-                onError: { error in print(error)},
-                onCompleted: { self.stopStream() },
-                onDisposed: {print("Recording stream disposed")})
-            
-        recording!.start()
+        self.preprocessQueue.async { [self] in
+            _ = recording!.getObservable()
+                .subscribe(on: concurrentBackground)
+                .observe(on: main)   
+                .subscribe(
+                    onNext: { audioChunk in self.recognize(onBuffer: audioChunk)},
+                    onError: { error in print(error)},
+                    onCompleted: { self.stopStream() },
+                    onDisposed: {print("Recording stream disposed")})
+                
+            recording!.start()
+        }
         
     }
     
@@ -329,8 +385,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
         var interval: TimeInterval!
         var outputTensor: Tensor!
-        // print(outputRawScores!)
-        // let outputRawScores = true
            
         do {
             // Copy the `[Int16]` buffer data as an array of `Float`s to the audio buffer input `Tensor`'s.
@@ -432,7 +486,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     func forceStopRecognition(){    
         stopPreprocessing()
         stopRecording()
-        // stopRecognition()
     }
 
     func stopStream(){
