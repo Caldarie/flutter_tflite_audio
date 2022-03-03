@@ -404,7 +404,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
    target 'Runner' do
      use_frameworks! 
      use_modular_headers!
-     pod 'TensorFlowLiteSelectTfOps' #Add this line here. 
+     pod'TensorFlowLiteSelectTfOps','~> 2.6.0' #Add this line here
 
      flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
    end
@@ -443,5 +443,17 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 
 ## References
 
-1. https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands
-2. https://www.tensorflow.org/lite/guide/ops_select
+This project wouldn't of been possible if it wasn't for the following:
+
+1. Project is based on:
+   * https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands
+2. Tflite & select ops:
+   * https://www.tensorflow.org/lite/guide/ops_select
+   * https://libraries.io/cocoapods/TensorFlowLiteSelectTfOps
+3. Spectogram libraries:
+   * https://github.com/Subtitle-Synchronizer/jlibrosa
+   * https://github.com/dhrebeniuk/RosaKit
+4. RxJava and RxSwift
+   * https://github.com/ReactiveX/RxAndroid
+   * https://github.com/ReactiveX/RxJava
+   * https://github.com/ReactiveX/RxSwift

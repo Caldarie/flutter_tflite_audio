@@ -1,7 +1,11 @@
-## 0.2.4
-* Feature: added MFCC, melSpectrogram and spectrogram support
-* Feature: Added transposable input and outputs
-* Improved stability of asyncronous operations with RxJava and RxSwift
+## 0.2.3
+* Feature: Support MFCC, melSpectrogram and spectrogram inputs
+* Feature: Automatically reshape and transpose input/outputs for model
+* Improvement: Stability of asyncronous operations with RxJava and RxSwift
+* Improvement: (iOS) Data extraction from audio no longer contains meta data.
+* Fixed: (iOS) Duplicate symbol error. Set version of TensorFlowLite to 2.6.0. Problem found [here][i25].
+
+[i25]: https://github.com/Caldarie/flutter_tflite_audio/issues/25
   
 ## 0.2.2+4
 * Handled NaN exception for raw output on swift
@@ -18,9 +22,8 @@
 ## 0.2.2
 * Feature: Added ability to recognise stored audio files
 * Breaking Change: RecordingLength will no longer be required as a parameter.
-* Improved stability of asyncronous tasks on Android.
-* Fixed NaN output for bufferRates that are non divisible to recordingLength 
-* Fixed android permission error when granted outside app.
+* Fixed: NaN output for bufferRates that are non divisible to recordingLength 
+* Fixed: android permission error when granted outside app.
 
 ## 0.2.1+2
 * Fixed NaN raw score output for Android.
