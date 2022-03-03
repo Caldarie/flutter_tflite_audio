@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'tflite_audio'
-  s.version          = '0.2.2+4'
+  s.version          = '0.2.3'
   s.summary          = 'A new flutter plugin project.'
   s.description      = <<-DESC
 A new flutter plugin project.
@@ -15,7 +15,10 @@ A new flutter plugin project.
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
-  s.dependency 'TensorFlowLiteSwift'
+  s.dependency 'TensorFlowLiteSwift', '~> 2.6.0'
+  s.dependency 'RxSwift', '6.5.0'
+  s.dependency 'RxCocoa', '6.5.0'
+  # s.dependency 'TensorFlowLiteSwift'
   # s.dependency 'TensorFlowLiteSelectTfOps'
   # s.dependency 'TensorFlowLiteSwift', '~> 2.4.0'
   # s.dependency 'TensorFlowLiteSelectTfOps', '~> 2.4.0'
