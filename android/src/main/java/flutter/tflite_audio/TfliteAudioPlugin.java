@@ -127,15 +127,19 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private Recording recording;
 
     // input/output variables
+    private int [] inputShape;
+    private int [] outputShape;
     private int inputSize;
     private int outputSize;
+    private int audioLength;
+    private boolean transposeAudio;
+    private boolean transposeSpectro;
     private boolean transposeInput = false;
     private boolean transposeOutput = false;
     private String inputType;
     private boolean outputRawScores;
 
     // default specrogram variables
-    private float inputTime = 1.00f;
     private int nMFCC = 20;
     private int nFFT = 256;
     private int nMels = 128;
@@ -233,17 +237,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 this.modelPath = (String) arguments.get("model");
                 this.labelPath = (String) arguments.get("label");
                 this.isAssetObj = arguments.get("isAsset");
+                loadModel();
                 Log.d(LOG_TAG, "loadModel parameters: " + arguments);
-                try {
-                    loadModel();
-                } catch (Exception e) {
-                    result.error("failed to load model", e.getMessage(), e);
-                }
                 break;
             case "setSpectrogramParameters":
                 // this.mSampleRate = (int) arguments.get("mSampleRate");
-                double time = (double) arguments.get("inputTime");
-                this.inputTime = (float) time;
+                this.transposeSpectro = (boolean) arguments.get("shouldTranspose");
                 this.nMFCC = (int) arguments.get("nMFCC");
                 this.nFFT = (int) arguments.get("nFFT");
                 this.nMels = (int) arguments.get("nMels");
@@ -280,13 +279,15 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 this.bufferSize = (int) arguments.get("bufferSize");
                 this.sampleRate = (int) arguments.get("sampleRate");
                 this.numOfInferences = (int) arguments.get("numOfInferences");
-                determineInput();
+                this.audioLength = determineInput(arguments); 
+                this.transposeAudio = determineAudio();
                 checkPermissions(REQUEST_RECORD_AUDIO);
                 break;
             case "setFileRecognitionStream":
                 this.audioDirectory = (String) arguments.get("audioDirectory");
                 this.sampleRate = (int) arguments.get("sampleRate");
-                determineInput();
+                this.audioLength = determineInput(arguments);
+                this.transposeAudio = determineAudio();
                 checkPermissions(REQUEST_READ_EXTERNAL_STORAGE);
                 break;
             default:
@@ -295,40 +296,56 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     }
 
-    private void determineInput() {
+    private int determineInput(HashMap arguments) {
 
-        int [] inputShape = tfLite.getInputTensor(0).shape();
-        int [] outputShape = tfLite.getOutputTensor(0).shape();
+        int audioLength = (int) arguments.get("audioLength");
+        boolean hasValue = audioLength > 0;
+        boolean isAudioInput = inputType.equals("rawAudio") || inputType.equals("decodedWav");
         
-        if (inputType.equals("rawAudio") || inputType.equals("decodedWav")) {
-            this.inputSize = Arrays.stream(inputShape).max().getAsInt();
-            this.transposeInput = shouldTranspose(inputShape);            
-        } else {
-            //TODO - add transpose for multiple inputs or more than 2d shape?
-            this.inputSize = (int)(sampleRate * inputTime); // calculate how many bytes in 1 second in float array
+        if(hasValue){
+            Log.d(LOG_TAG, "AudioLength does not need to be adjusted. Length: " + audioLength);
+            return audioLength;
         }
 
-        this.transposeOutput = shouldTranspose(outputShape);
-        this.outputSize = Arrays.stream(outputShape).max().getAsInt();
+        else if(!hasValue && isAudioInput){
+            int newAudioLength = Arrays.stream(inputShape).reduce(1, (subtotal, element) -> subtotal * element);
+            Log.d(LOG_TAG, "AudioLength has been readjusted. Length: " + newAudioLength);
+            return newAudioLength;
+        }
 
-        Log.v(LOG_TAG, "Input Type: " + inputType);
-        Log.v(LOG_TAG, "Input shape: " + Arrays.toString(inputShape));
-        Log.v(LOG_TAG, "Require Transpose: " + transposeInput);
-        Log.v(LOG_TAG, "Input size: " + inputSize);
-        Log.v(LOG_TAG, "Output shape: " + Arrays.toString(outputShape));
-        Log.v(LOG_TAG, "Require Transpose: " + transposeOutput);
-        Log.v(LOG_TAG, "Input size: " + outputSize);
-
-    }
-
-
-    private boolean shouldTranspose(int [] inputShape){
+        else if(!hasValue && !isAudioInput){
+            Log.d(LOG_TAG, "Warning: Unspecified audio length may cause unintended problems with spectro models");
+            Log.d(LOG_TAG, "AudioLength: " + sampleRate);
+            return sampleRate;
+        }
         
-        if (inputShape[0] > inputShape[1] && inputShape[1] == 1) return true;
-        else if (inputShape[0] < inputShape[1] && inputShape[0] == 1) return false;
-        else throw new AssertionError("Problem with input shape: " + inputShape);
+        else{
+            Log.d(LOG_TAG, "Error: Cannot determine audioLength.");
+            return 0;
+        }
     }
 
+
+    private boolean determineAudio(){
+
+        boolean isAudioInput = inputType.equals("rawAudio") || inputType.equals("decodedWav");
+    
+        if(isAudioInput){ 
+            //TODO - Assert length is 2, and is not stereo
+            //need to have try and catch
+            // int shape = Arrays.stream(inputShape).reduce(0, (count, element) -> count + 1); --- DOES NOT WORK
+            // if (shape != 1) { throw new AssertionError("Input shape " + inputShape + "is not mono or raw audio."); } 
+            //Log.d(LOG_TAG, "count: " + shape);
+
+            boolean result = inputShape[0] > inputShape[1] ? true : false;
+            Log.d(LOG_TAG, "Transpose Audio: " + result);
+
+            return result;
+        } else {
+            Log.d(LOG_TAG, "Transpose Audio: + false. Input is not audio");
+            return false;
+        }
+    }
 
 
     @Override
@@ -336,30 +353,39 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         this.events = null;
     }
 
-    private void loadModel() throws IOException {
+    private void loadModel(){
         Log.d(LOG_TAG, "model name is: " + modelPath);
         boolean isAsset = this.isAssetObj == null ? false : (boolean) isAssetObj;
         MappedByteBuffer buffer = null;
         String key = null;
-        if (isAsset) {
-            key = FlutterMain.getLookupKeyForAsset(modelPath);
-            AssetFileDescriptor fileDescriptor = assetManager.openFd(key);
-            FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-            FileChannel fileChannel = inputStream.getChannel();
-            long startOffset = fileDescriptor.getStartOffset();
-            long declaredLength = fileDescriptor.getDeclaredLength();
-            buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
-        } else {
-            FileInputStream inputStream = new FileInputStream(new File(modelPath));
-            FileChannel fileChannel = inputStream.getChannel();
-            long declaredLength = fileChannel.size();
-            buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, declaredLength);
+
+        try {
+            if (isAsset) {
+                key = FlutterMain.getLookupKeyForAsset(modelPath);
+                AssetFileDescriptor fileDescriptor = assetManager.openFd(key);
+                FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
+                FileChannel fileChannel = inputStream.getChannel();
+                long startOffset = fileDescriptor.getStartOffset();
+                long declaredLength = fileDescriptor.getDeclaredLength();
+                buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+            } else {
+                FileInputStream inputStream = new FileInputStream(new File(modelPath));
+                FileChannel fileChannel = inputStream.getChannel();
+                long declaredLength = fileChannel.size();
+                buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, declaredLength);
+            }
+
+            final Interpreter.Options tfliteOptions = new Interpreter.Options();
+            tfliteOptions.setNumThreads(numThreads);
+            this.tfLite = new Interpreter(buffer, tfliteOptions);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load model: ", e);
         }
 
-        final Interpreter.Options tfliteOptions = new Interpreter.Options();
-        tfliteOptions.setNumThreads(numThreads);
-        this.tfLite = new Interpreter(buffer, tfliteOptions);
-
+        this.inputShape = tfLite.getInputTensor(0).shape();
+        Log.d(LOG_TAG, "inputShape: " + Arrays.toString(inputShape));
+      
         // load labels
         Log.d(LOG_TAG, "label name is: " + labelPath);
 
@@ -390,7 +416,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             Log.d(LOG_TAG, "Labels: " + labels.toString());
             br.close();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read label file", e);
+            throw new RuntimeException("Failed to read label file: ", e);
         }
 
     }
@@ -586,7 +612,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     public void preprocess(byte[] byteData) {
         Log.d(LOG_TAG, "Preprocessing audio file..");
 
-        audioFile = new AudioFile(byteData, inputSize);
+        audioFile = new AudioFile(byteData, audioLength);
         audioFile.getObservable()
                 .doOnComplete(() -> {
                     stopStream(); 
@@ -616,7 +642,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private void record() {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
-        recording = new Recording(bufferSize, inputSize, sampleRate, numOfInferences);
+        recording = new Recording(bufferSize, audioLength, sampleRate, numOfInferences);
         recording.setReentrantLock(recordingBufferLock);
         recording.getObservable()
                 .subscribeOn(Schedulers.io()) //run [observable] on background thread
@@ -647,8 +673,11 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         float [][][][] inputTensor4D = {}; // for spectro
         Object [] inputArray = {};
 
+        int [] outputShape = tfLite.getOutputTensor(0).shape();
+        int outputSize = Arrays.stream(outputShape).max().getAsInt();
+        float [][] outputTensor = new float [1][outputSize];
         Map<Integer, Object> outputMap = new HashMap<>();
-        float [][] outputTensor = {};
+     
         
         Map<String, Object> finalResults = new HashMap();
 
@@ -663,10 +692,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 inputBuffer32 = audioData.normalizeBySigned16(inputBuffer16);
                 float mfcc [][] = signalProcessing.getMFCC(inputBuffer32);
                 // float transposedMfcc [][] = audioData.transpose2D(mfcc);
-                
-                outputTensor = transposeOutput
-                ? new float [outputSize][1]
-                : new float [1][outputSize];
+
+                // outputTensor = transposeOutput
+                // ? new float [outputSize][1]
+                // : new float [1][outputSize];
 
                 tfLite.run(mfcc, outputTensor);
                 break;
@@ -677,9 +706,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 float[][] melSpectrogram = signalProcessing.getMelSpectrogram(inputBuffer32);
                 inputTensor4D = signalProcessing.reshape2dto4d(melSpectrogram);
 
-                outputTensor = transposeOutput
-                ? new float [outputSize][1]
-                : new float [1][outputSize];
+                // outputTensor = transposeOutput
+                // ? new float [outputSize][1]
+                // : new float [1][outputSize];
 
                 tfLite.run(inputTensor4D, outputTensor);
                 break;
@@ -692,9 +721,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 // float[][][][] inputTensor4d = signalProcessing.reshape2dto4d(transposedSpectrogram);
                 inputTensor4D = signalProcessing.reshape2dto4d(spectrogram);
 
-                outputTensor = transposeOutput
-                ? new float [outputSize][1]
-                : new float [1][outputSize];
+                // outputTensor = transposeOutput
+                // ? new float [outputSize][1]
+                // : new float [1][outputSize];
 
                 tfLite.run(inputTensor4D, outputTensor);
                 break;
@@ -703,14 +732,16 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
                 //TODO - allow user to add their own additional inputs
                 //TODO - remove duplicate code by dynamically adding custom inputs
-         
-                inputTensor2D = transposeInput 
+
+                
+                inputTensor2D = transposeAudio 
                     ? audioData.normaliseToTranspose2D(inputBuffer16) 
                     : audioData.normaliseTo2D(inputBuffer16);
+                     
                 
-                outputTensor = transposeOutput
-                    ? new float [outputSize][1]
-                    : new float [1][outputSize];
+                // outputTensor = transposeOutput
+                //     ? new float [outputSize][1]
+                //     : new float [1][outputSize];
 
                 int [] sampleRateList = new int[] { sampleRate }; 
                 inputArray = new Object[] { inputTensor2D, sampleRateList};
@@ -720,14 +751,18 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 break;
 
             case "rawAudio":
-     
-                inputTensor2D = transposeInput 
+
+                // inputTensor2D = transposeAudio 
+                // ? audioData.normaliseTo2D(inputBuffer16)
+                // : audioData.normaliseToTranspose2D(inputBuffer16);
+
+                inputTensor2D = transposeAudio 
                     ? audioData.normaliseToTranspose2D(inputBuffer16) 
                     : audioData.normaliseTo2D(inputBuffer16);
 
-                outputTensor = transposeOutput
-                    ? new float [outputSize][1]
-                    : new float [1][outputSize];
+                // outputTensor = transposeOutput
+                //     ? new float [outputSize][1]
+                //     : new float [1][outputSize];
 
                 tfLite.run(inputTensor2D, outputTensor);
                 break;
