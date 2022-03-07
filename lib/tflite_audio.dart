@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:flutter/services.dart';
 
@@ -17,6 +18,7 @@ class TfliteAudio {
   static Stream<Map<dynamic, dynamic>> startAudioRecognition(
       {required int sampleRate,
       required int bufferSize,
+      int audioLength = 0,
       double detectionThreshold = 0.3,
       int numOfInferences = 1,
       int averageWindowDuration = 0,
@@ -27,6 +29,7 @@ class TfliteAudio {
         audioRecongitionChannel.receiveBroadcastStream(<String, dynamic>{
       'sampleRate': sampleRate,
       'bufferSize': bufferSize,
+      'audioLength': audioLength,
       'numOfInferences': numOfInferences,
       'averageWindowDuration': averageWindowDuration,
       'detectionThreshold': detectionThreshold,
@@ -45,6 +48,7 @@ class TfliteAudio {
   static Stream<Map<dynamic, dynamic>> startFileRecognition(
       {required String audioDirectory,
       required int sampleRate,
+      int audioLength = 0,
       double detectionThreshold = 0.3,
       int averageWindowDuration = 0,
       int minimumTimeBetweenSamples = 0,
@@ -54,6 +58,7 @@ class TfliteAudio {
         fileRecognitionChannel.receiveBroadcastStream(<String, dynamic>{
       'audioDirectory': audioDirectory,
       'sampleRate': sampleRate,
+      'audioLength': audioLength,
       'averageWindowDuration': averageWindowDuration,
       'detectionThreshold': detectionThreshold,
       'minimumTimeBetweenSamples': minimumTimeBetweenSamples,
@@ -75,7 +80,7 @@ class TfliteAudio {
 
   /// Call [setSpectrogramParameters] to adjust the default spectro parameters
   static Future setSpectrogramParameters({
-    double inputTime = 1.0,
+    bool shouldTranspose = false, //TODO - Add transposable spectro
     int nMFCC = 20,
     int nFFT = 2048,
     int nMels = 128,
@@ -84,7 +89,7 @@ class TfliteAudio {
     return _channel.invokeMethod(
       'setSpectrogramParameters',
       {
-        'inputTime': inputTime,
+        'shouldTranspose': shouldTranspose,
         'nMFCC': nMFCC,
         'nFFT': nFFT,
         'nMels': nMels,

@@ -26,6 +26,7 @@ class _MyAppState extends State<MyApp> {
   final String inputType = 'decodedWav';
   final int sampleRate = 16000;
   final int bufferSize = 2000;
+  // final int audioLength = 16000;
 
   //!example values for google's teachable machine model
   // final String model = 'assets/google_teach_machine_model.tflite';
@@ -34,19 +35,21 @@ class _MyAppState extends State<MyApp> {
   // final String audioDirectory = 'assets/sample_audio_44k_mono.wav';
   // final int sampleRate = 44100;
   // final int bufferSize = 22016;
+  // // final int audioLength = 44032;
   // // final int bufferSize = 11008;
 
   //!example values for MFCC, melspectrogram, spectrogram models
-  // final String model = 'assets/spectrogram_model.tflite';
-  // final String label = 'assets/spectrogram_label.txt';
-  // final String inputType = 'spectrogram';
+  // // final String model = 'assets/spectrogram_model.tflite';
+  // // final String label = 'assets/spectrogram_label.txt';
+  // // final String inputType = 'spectrogram';
   // // final String inputType = 'melSpectrogram';
-  // // final String model = 'assets/mfcc_model.tflite';
-  // // final String label = 'assets/mfcc_label.txt';
-  // // final String inputType = 'mfcc';
+  // final String model = 'assets/mfcc_model.tflite';
+  // final String label = 'assets/mfcc_label.txt';
+  // final String inputType = 'mfcc';
   // final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
   // final int sampleRate = 16000;
   // final int bufferSize = 2000;
+  // // final int audioLength = 15996;
 
   //!Optional parameters you can adjust to modify your input and output
   final bool outputRawScores = false;
@@ -73,18 +76,10 @@ class _MyAppState extends State<MyApp> {
     );
 
     //spectrogram parameters
-    TfliteAudio.setSpectrogramParameters(
-      inputTime: 1.0,
-      nFFT: 256,
-      hopLength: 129,
-    );
+    // TfliteAudio.setSpectrogramParameters(nFFT: 256, hopLength: 129);
 
     //mfcc parameters
-    // TfliteAudio.setSpectrogramParameters(
-    //   inputTime: 1.0,
-    //   nMFCC: 40,
-    //   hopLength: 16384,
-    // );
+    // TfliteAudio.setSpectrogramParameters(nMFCC: 40, hopLength: 16384);
   }
 
   /// get result by calling the stream startAudioRecognition
@@ -92,8 +87,10 @@ class _MyAppState extends State<MyApp> {
   void getResult() {
     //example for stored audio file recognition
     // result = TfliteAudio.startFileRecognition(
+    //   // audioLength: this.audioLength,
     //   audioDirectory: this.audioDirectory,
     //   sampleRate: this.sampleRate,
+
     //   // detectionThreshold: this.detectionThreshold,
     //   // averageWindowDuration: this.averageWindowDuration,
     //   // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
@@ -102,6 +99,7 @@ class _MyAppState extends State<MyApp> {
 
     //example for recording recognition
     result = TfliteAudio.startAudioRecognition(
+      // audioLength: this.audioLength,
       sampleRate: this.sampleRate,
       bufferSize: this.bufferSize,
       numOfInferences: this.numOfInferences,
