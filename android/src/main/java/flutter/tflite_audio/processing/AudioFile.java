@@ -27,7 +27,7 @@ public class AudioFile {
     private ShortBuffer shortBuffer;
     private short[] shortAudioChunk;
 
-    private int inputSize;
+    private int audioLength;
     private int fileSize;
 
     private int indexCount = 0;
@@ -38,16 +38,16 @@ public class AudioFile {
 
     private boolean isPreprocessing = false;
 
-    public AudioFile(byte[] byteData, int inputSize) {
+    public AudioFile(byte[] byteData, int audioLength) {
 
         shortBuffer = ByteBuffer.wrap(byteData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-        this.inputSize = inputSize;
+        this.audioLength = audioLength;
 
         fileSize = shortBuffer.limit(); // calculate how many bytes in 1 second in short array
-        shortAudioChunk = new short[inputSize];
+        shortAudioChunk = new short[audioLength];
 
-        int remainingSamples = fileSize % inputSize;
-        int missingSamples = inputSize - remainingSamples;
+        int remainingSamples = fileSize % audioLength;
+        int missingSamples = audioLength - remainingSamples;
         requirePadding = getPaddingRequirement(remainingSamples, missingSamples);
 
         int totalWithPad = fileSize + missingSamples;
@@ -57,10 +57,10 @@ public class AudioFile {
     }
 
     private boolean getPaddingRequirement(int remainingSamples, int missingSamples) {
-        // To debug requirePadding, simply change original [<] to > before (inputSize/2)
+        // To debug requirePadding, simply change original [<] to > before (audioLength/2)
         // TODO - add unit test | [>] 2/2 or 5/5 | [<] returns 1/1 or 6/6
-        boolean hasMissingSamples = missingSamples != 0 || remainingSamples != inputSize;
-        boolean underThreshold = missingSamples < (int) inputSize * 0.75f;
+        boolean hasMissingSamples = missingSamples != 0 || remainingSamples != audioLength;
+        boolean underThreshold = missingSamples < (int) audioLength * 0.75f;
 
         if (hasMissingSamples && underThreshold) return true;
         else if (hasMissingSamples && !underThreshold) return false;
@@ -70,7 +70,7 @@ public class AudioFile {
     }
 
     private int getNumOfInferences(int totalWithoutPad, int totalWithPad) {
-        return requirePadding ? (int) totalWithPad / inputSize : (int) totalWithoutPad / inputSize;
+        return requirePadding ? (int) totalWithPad / audioLength : (int) totalWithoutPad / audioLength;
     }
 
     public Observable<short[]> getObservable() {
@@ -111,7 +111,7 @@ public class AudioFile {
     }
 
     private String getState(int i) {
-        boolean reachInputSize = (i + 1) % inputSize == 0;
+        boolean reachInputSize = (i + 1) % audioLength == 0;
         boolean reachFileSize = i == fileSize - 1;
         boolean reachInferenceLimit = inferenceCount == numOfInferences;
 
@@ -151,17 +151,17 @@ public class AudioFile {
     private void reset(int i) {
         indexCount = 0;
         inferenceCount += 1;
-        shortAudioChunk = new short[inputSize];
+        shortAudioChunk = new short[audioLength];
         shortAudioChunk[indexCount] = shortBuffer.get(i);
     }
 
     private void padSilenceToChunk(int i) {
         if (requirePadding) {
-            int missingSamples = inputSize - indexCount;
+            int missingSamples = audioLength - indexCount;
             Log.d(LOG_TAG, "Missing samples found in short audio chunk..");
             shortAudioChunk = audioData.addSilence(missingSamples, shortAudioChunk, indexCount);
         } else {
-            int missingSamples = inputSize - indexCount;
+            int missingSamples = audioLength - indexCount;
             Log.d(LOG_TAG,
                     "Missing samples of " + missingSamples + " are less than half of input. Padding not required");
         }

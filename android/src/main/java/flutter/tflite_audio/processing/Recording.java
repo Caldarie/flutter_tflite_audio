@@ -26,7 +26,7 @@ public class Recording{
     private static final String LOG_TAG = "Recording_Splicer";
  
     private int bufferSize;
-    private int inputSize;
+    private int audioLength;
     private int sampleRate;
     private int numOfInferences;
 
@@ -49,9 +49,9 @@ public class Recording{
     private PublishSubject<short []> subject;
     private ReentrantLock recordingBufferLock;
 
-    public Recording(int bufferSize, int inputSize, int sampleRate, int numOfInferences){
+    public Recording(int bufferSize, int audioLength, int sampleRate, int numOfInferences){
         this.bufferSize = bufferSize;
-        this.inputSize = inputSize;
+        this.audioLength = audioLength;
         this.sampleRate = sampleRate;
         this.numOfInferences = numOfInferences;
 
@@ -66,7 +66,7 @@ public class Recording{
         subject = PublishSubject.create();
 
         recordingFrame = new short[bufferSize / 2];
-        recordingBuffer = new short[inputSize];
+        recordingBuffer = new short[audioLength];
 
         record = new AudioRecord(
             MediaRecorder.AudioSource.DEFAULT,
@@ -147,7 +147,7 @@ public class Recording{
                         Log.v(LOG_TAG, "inferenceCount " + inferenceCount);
                         Log.v(LOG_TAG, "numOfInference " + numOfInferences);
                         Log.v(LOG_TAG, "readCount " + readCount);
-                        Log.v(LOG_TAG, "inputSize " + inputSize);
+                        Log.v(LOG_TAG, "audioLength " + audioLength);
                         throw new AssertionError("Incorrect state when preprocessing");
                 }
             } finally {
@@ -164,11 +164,11 @@ public class Recording{
     }
 
     private String getState(){
-        if (inferenceCount <= numOfInferences && readCount < inputSize) { return "appending"; }
-        else if(inferenceCount < numOfInferences && readCount == inputSize){return "recognising"; }
-        else if(inferenceCount == numOfInferences && readCount == inputSize){return "finalising";}
-        else if(inferenceCount < numOfInferences && readCount > inputSize){ return "trimmingAndRecognising";}
-        else if(inferenceCount == numOfInferences && readCount > inputSize){return "trimmingAndFinalising";}
+        if (inferenceCount <= numOfInferences && readCount < audioLength) { return "appending"; }
+        else if(inferenceCount < numOfInferences && readCount == audioLength){return "recognising"; }
+        else if(inferenceCount == numOfInferences && readCount == audioLength){return "finalising";}
+        else if(inferenceCount < numOfInferences && readCount > audioLength){ return "trimmingAndRecognising";}
+        else if(inferenceCount == numOfInferences && readCount > audioLength){return "trimmingAndFinalising";}
         else{ return "error"; }
     }
     
@@ -192,14 +192,14 @@ public class Recording{
         System.arraycopy(recordingFrame, 0, recordingBuffer, recordingOffset, numberRead);
         recordingOffset += numberRead;
 
-        Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + inputSize + " | inferenceCount: "
+        Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + audioLength + " | inferenceCount: "
         + inferenceCount + "/" + numOfInferences);
     }
 
 
     private void calculateExcess(){
-        remainingLength = inputSize - recordingOffset;
-        excessLength = readCount - inputSize;
+        remainingLength = audioLength - recordingOffset;
+        excessLength = readCount - audioLength;
 
         Log.v(LOG_TAG, "remainingLength: " + remainingLength);
         Log.v(LOG_TAG, "excesslength: " + excessLength);
@@ -213,7 +213,7 @@ public class Recording{
 
         recordingOffset += remainingLength;
         Log.v(LOG_TAG, "Excess recording has been trimmed. RecordingOffset now at: " + recordingOffset + "/"
-                + inputSize);
+                + audioLength);
     }
 
     private void addExcessToNew(){
@@ -222,11 +222,11 @@ public class Recording{
         
         recordingOffset += excessLength;
         Log.v(LOG_TAG, "Added excess length to new recording buffer. RecordingOffset now at: "
-                + recordingOffset + "/" + inputSize);
+                + recordingOffset + "/" + audioLength);
     }
 
     private void clearRecordChunk(){
-        recordingBuffer = new short[inputSize];
+        recordingBuffer = new short[audioLength];
         recordingOffset = 0;
     }
 
