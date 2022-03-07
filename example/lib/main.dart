@@ -76,10 +76,12 @@ class _MyAppState extends State<MyApp> {
     );
 
     //spectrogram parameters
-    // TfliteAudio.setSpectrogramParameters(nFFT: 256, hopLength: 129);
+    // TfliteAudio.setSpectrogramParameters(
+    //     shouldTranspose: false, nFFT: 256, hopLength: 129);
 
-    //mfcc parameters
-    // TfliteAudio.setSpectrogramParameters(nMFCC: 40, hopLength: 16384);
+    // mfcc parameters
+    TfliteAudio.setSpectrogramParameters(
+        shouldTranspose: false, nMFCC: 40, hopLength: 16384);
   }
 
   /// get result by calling the stream startAudioRecognition

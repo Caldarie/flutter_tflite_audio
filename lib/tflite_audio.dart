@@ -80,7 +80,7 @@ class TfliteAudio {
 
   /// Call [setSpectrogramParameters] to adjust the default spectro parameters
   static Future setSpectrogramParameters({
-    bool shouldTranspose = false, //TODO - Add transposable spectro
+    bool shouldTranspose = false,
     int nMFCC = 20,
     int nFFT = 2048,
     int nMels = 128,
