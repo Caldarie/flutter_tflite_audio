@@ -3,6 +3,8 @@ import CoreLocation
 import UIKit
 import TensorFlowLite
 import AVFoundation
+import RosaKit //recognise
+import CoreML //recognise
 import RxCocoa
 import RxSwift
 import os
@@ -37,8 +39,11 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private var numOfInferences: Int!
     
     //input/output variables
+    private var inputShape: [Int]!
+    // private var outputShape: [Int]! //TODO - remove
     private var inputSize: Int!
-    private var outputSize: Int!
+    private var audioLength: Int!
+//    private var outputSize: Int!
     private var inputType: String!
     private var outputRawScores: Bool!
     private var transposeInput: Bool!
@@ -48,7 +53,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private var audioFile: AudioFile?
     private var audioDirectory: String!
     private var isPreprocessing: Bool = false
-    private let maxInt16AsFloat32: Float32 = 32767.0
     
     //labelsmoothing variables
     private var recognitionResult: LabelSmoothing?
@@ -97,6 +101,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         switch call.method{
         case "loadModel":
             arguments = call.arguments as! [String: AnyObject] //DO NOT CHANGE POSITION
+            print("Model argumentss: \(arguments)")
+
             self.numThreads = arguments["numThreads"] as? Int
             self.inputType = arguments["inputType"] as? String
             self.outputRawScores = arguments["outputRawScores"] as? Bool
@@ -107,12 +113,13 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             break
         case "setSpectrogramParameters":
             arguments = call.arguments as! [String: AnyObject]
+            print("Spectrogram arguments: \(arguments)")
+
             self.inputTime = arguments["inputTime"] as? Double
             self.nMFCC = arguments["nMFCC"] as? Int
             self.nFFT = arguments["nFFT"] as? Int
             self.nMels = arguments["nMels"] as? Int
             self.hopLength = arguments["hopLength"] as? Int
-            print("Spectrogram parameters: \(arguments)")
             break;
         case "stopAudioRecognition":
             forceStopRecognition()
@@ -125,27 +132,31 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         
         let arguments: [String: AnyObject] = arguments as! [String: AnyObject]
+        print("Stream arguments: \(arguments)")
+
         self.events = events
-        
         self.averageWindowDuration = arguments["averageWindowDuration"] as? Double
         self.detectionThreshold = arguments["detectionThreshold"] as? NSNumber
         self.minimumTimeBetweenSamples = arguments["minimumTimeBetweenSamples"] as? Double
         self.suppressionTime = arguments["suppressionTime"] as? Double
-        
+
         let method = arguments["method"] as? String
+        
         switch method {
         case "setAudioRecognitionStream":
             self.bufferSize = arguments["bufferSize"] as? Int
             self.sampleRate = arguments["sampleRate"] as? Int
             self.numOfInferences = arguments["numOfInferences"] as? Int
-            determineInput()
+            self.audioLength = determineInput(arguments: arguments)
+            if(audioLength == 0){ assertionFailure("audioLength is 0")}
             checkPermissions()
             break
         case "setFileRecognitionStream":
             //TODO - dont need to have external permission?
             self.audioDirectory = arguments["audioDirectory"] as? String
             self.sampleRate = arguments["sampleRate"] as? Int
-            determineInput()
+            self.audioLength = determineInput(arguments: arguments)
+            if(audioLength == 0){ assertionFailure("Error: Please specify audioLength.")}
             preprocessAudioFile()
             break
         default:
@@ -160,47 +171,50 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         return nil
     }
 
-
-    func determineInput(){
-        
-        let inputShape: [Int]
-        let outputShape: [Int]
-                    
-        do {
-            inputShape = try interpreter.input(at: 0).shape.dimensions
-            outputShape = try interpreter.output(at: 0).shape.dimensions
-            
-            if(inputType == "rawAudio" || inputType == "decodedWav"){
-                self.inputSize = inputShape.max()
-                self.transposeInput = shouldTranspose(inputShape: inputShape)
-            } else {
-                self.inputSize = Int(round(Double(sampleRate) * inputTime))
-            }
-            
-            self.outputSize = outputShape.max()
-            
-            print("Input shape: \(inputShape)")
-            print("Input size \(inputSize!)")
-            print("Should transpose: \(transposeInput!)")
-            print("Input type \(inputType!)")
-            
-        } catch let error{
-            print("Failed to create the interpreter with error: \(error.localizedDescription)")
-        }
-            
-
-    }
-
-    func shouldTranspose(inputShape: [Int]) -> Bool{
-        
-        //check if shape contains element "1" at least once
-        let count = inputShape.reduce(0) { $1 == 1 ? $0 + 1 : $0}
-        if(count != 1) {assertionFailure("Problem with input shape: \(inputShape) ") }
     
-        return inputShape[0] > inputShape[1] ? true : false
+    func determineInput(arguments: [String: AnyObject]) -> Int{
+        
+        let audioLength = arguments["audioLength"] as? Int
+        
+        let hasValue: Bool = audioLength! > 0
+        let isAudioInput: Bool = inputType == "rawAudio" || inputType == "decodedWav"
+        
+        
+        if(hasValue){
+            print("AudioLength: \(audioLength!)")
+            return audioLength!
+        }
+
+        else if(!hasValue && isAudioInput){
+            let newAudioLength = inputShape.reduce(1, *)
+            print("AudioLength: \(newAudioLength)")
+            return newAudioLength
+        }
+
+        else if(!hasValue && !isAudioInput){
+            print("Warning: Unspecified audio length may cause unintended problems with spectro models")
+            print("AudioLength: \(sampleRate!)")
+            return sampleRate
+        }
+        
+        else{
+            print("Error: Cannot determine audioLength.")
+            return 0
+        }
+        
     }
+
+    // func shouldTranspose(inputShape: [Int]) -> Bool{
+        
+    //     //check if shape contains element "1" at least once
+    //     let count = inputShape.reduce(0) { $1 == 1 ? $0 + 1 : $0}
+    //     if(count != 1) {assertionFailure("Problem with input shape: \(inputShape) ") }
+    
+    //     return inputShape[0] > inputShape[1] ? true : false
+    // }
     
     func loadModel(registrar: FlutterPluginRegistrar){
+     
         
         var modelPath: String
         var modelKey: String
@@ -222,10 +236,14 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             self.interpreter = try Interpreter(modelPath: modelPath, options: options)
             try interpreter.allocateTensors()
             
+            self.inputShape = try interpreter.input(at: 0).shape.dimensions
+        
         } catch let error {
-            print("Failed to create the interpreter with error: \(error.localizedDescription)")
-            //return nil
+            assertionFailure("Failed to create the interpreter with error: \(error.localizedDescription)")
         }
+        
+        print("Model succesfully loaded.")
+        print("InputShape: \(inputShape!)")
         
         //Load labels
         if(label.count > 0){
@@ -331,7 +349,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         print("Preprocessing audio file..")
   
         let url = loadData()
-        audioFile = AudioFile(fileURL: url, inputSize: inputSize)
+        audioFile = AudioFile(fileURL: url, audioLength: audioLength)
          
         self.preprocessQueue.async { [self] in
             _ = audioFile!.getObservable()
@@ -351,7 +369,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
 
         recording = Recording(
             bufferSize: bufferSize, 
-            inputSize: inputSize,
+            audioLength: audioLength,
             sampleRate: sampleRate, 
             numOfInferences: numOfInferences)
 
@@ -375,7 +393,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
     }
     
-    func recognize(onBuffer buffer: [Int16]){
+    
+    /* Normalisation formula
+     https://stats.stackexchange.com/questions/178626/how-to-normalize-data-between-1-and-1
+     https://stackoverflow.com/questions/32169111/distribute-array-values-so-maximum-will-be-1-and-minimum-will-be-0
+     */
+    func recognize(onBuffer buffer16: [Int16]){
         print("Running model")
         
         if(events == nil){
@@ -385,37 +408,104 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
         var interval: TimeInterval!
         var outputTensor: Tensor!
-           
+        let maxRes16: Int16 = 32767
+        let minAmp = buffer16.min()!
+        let maxAmp = buffer16.max()!
+        let bytesInFloat = 4
+        let inputSize = inputShape.reduce(1, *) * bytesInFloat //requird for spectro as inputsize varies 
+        
         do {
-            // Copy the `[Int16]` buffer data as an array of `Float`s to the audio buffer input `Tensor`'s.
-            let audioBufferData = Data(copyingBufferOf: buffer.map { Float($0) / maxInt16AsFloat32 })
-            try interpreter.copy(audioBufferData, toInputAt: 0)
             
-            if(inputType != "decodedWav" && inputType != "rawAudio"){
-                assertionFailure("Input type does not match decodedWav or rawAudio")
-            }
+            switch(inputType){
             
-            if(inputType == "decodedWav"){
-                // Copy the sample rate data to the sample rate input `Tensor`.
+            case "mfcc":
+
+//                let buffer64 = buffer16.map { Double($0) / Double(maxRes16) }
+
+                let buffer64 = buffer16.map { 2.0 *  ((Double($0) - Double(minAmp)) / (Double(maxAmp) - Double(minAmp))) - 1.0 }
+                print(buffer16[0..<40])
+                print(buffer64[0..<40])
+
+                let mfcc = buffer64.mfcc(nMFCC: nMFCC, nFFT: nFFT, hopLength: hopLength, sampleRate: sampleRate, melsCount: nMels)
+                
+//                for i in 1..<mfcc.count{
+//                    for n in 1..<mfcc[0].count{
+//                        print(mfcc[i][n])
+//                    }
+//                }
+                
+                let flatMFCC = mfcc.reduce([], +)
+                let minMFCC: Double = flatMFCC.min()!
+                let maxMFCC: Double = flatMFCC.max()!
+                
+//                let buffer32 = flatMel.map { Float($0) }
+                let buffer32: [Float] = flatMFCC.map {  Float(($0 - minMFCC) / (maxMFCC - minMFCC)) }
+                let inputData = Data(copyingBufferOf: buffer32) //2d to 1d
+                
+                displayShape(spectro: mfcc)
+                displayWarning(dataCount: inputData.count, inputSize: inputSize)
+                
+                try interpreter.copy(inputData[0..<inputSize], toInputAt: 0)
+                break
+
+            case "melSpectrogram":
+                let buffer64 =  buffer16.map { Double($0) /  Double(maxRes16)}
+                let melSpectrogram = buffer64.melspectrogram(nFFT: nFFT, hopLength: hopLength, sampleRate: sampleRate, melsCount: nMels)
+                let flatMel = melSpectrogram.reduce([], +)
+                let buffer32 = flatMel.map { Float($0) }
+                let inputData = Data(copyingBufferOf: buffer32)
+                
+                displayShape(spectro: melSpectrogram)
+                displayWarning(dataCount: inputData.count, inputSize: inputSize)
+                
+                try interpreter.copy(inputData[0..<inputSize], toInputAt: 0)
+                break
+            
+            case "spectrogram":
+                let buffer64 =  buffer16.map { Double($0) /  Double(maxRes16)}
+                let stft = buffer64.stft(nFFT: self.nFFT, hopLength: self.hopLength)
+                let spectrogram = stft.map { $0.map { Float(pow($0.real, 2.0) + pow($0.imagine, 2.0)) } } //iterate 2d
+                let inputData = Data(copyingBufferOf: spectrogram.flatMap { $0 }) //2d to 1d
+                
+                displayShape(spectro: spectrogram)
+                displayWarning(dataCount: inputData.count, inputSize: inputSize)
+                
+                try interpreter.copy(inputData[0..<inputSize], toInputAt: 0)
+                break
+                
+            case "rawAudio":
+                let buffer32 = buffer16.map { Float($0) / Float(maxRes16) }
+//                let buffer32 = buffer16.map { 2.0 *  ((Float($0) - Float(minAmp)) / (Float(maxAmp) - Float(minAmp))) - 1.0 }
+                print(buffer32[0..<40])
+                let inputData = Data(copyingBufferOf: buffer32)
+                try interpreter.copy(inputData, toInputAt: 0)
+                break
+                
+            case "decodedWav":
+                let buffer32 = buffer16.map { Float($0) / Float(maxRes16) }
+//                let buffer32 = buffer16.map { 2.0 *  ((Float($0) - Float(minAmp)) / (Float(maxAmp) - Float(minAmp))) - 1.0 }
+                let inputData = Data(copyingBufferOf: buffer32)
+                try interpreter.copy(inputData, toInputAt: 0)
+                
                 var rate = Int32(sampleRate)
                 let sampleRateData = Data(bytes: &rate, count: MemoryLayout.size(ofValue: rate))
                 try interpreter.copy(sampleRateData, toInputAt: 1)
+                break
+                
+            default:
+                print("incorrect input type: \(inputType!)")
+                
             }
             
-            // Calculate inference time
             let startDate = Date()
-            try interpreter.invoke() //required!!! Do not touch
+            try interpreter.invoke()
             interval = Date().timeIntervalSince(startDate) * 1000
-            
-            // Get the output `Tensor` to process the inference results.
             outputTensor = try interpreter.output(at: 0)
-            
+        
+
         } catch let error {
-            print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
+                print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
         }
-        
-        print(detectionThreshold!)
-        
         
         // Gets the formatted and averaged results.
         let scores = [Float32](unsafeData: outputTensor.data) ?? []
@@ -461,6 +551,17 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
          
     }
+    
+    private func displayShape(spectro: [[Any]]){
+        print("mfcc shape: [\(spectro.count), \(spectro[0].count)]")
+    }
+    
+    private func displayWarning(dataCount: Int, inputSize: Int){
+        if(dataCount > inputSize){
+            print("Warning: inputData(\(dataCount)) exceeds inputSize(\(inputSize)).")}
+            print("Warning: Excess may influence inference results")
+    }
+    
     
     
     // private func getResults(withScores scores: [Float]) -> RecognitionResult? {
