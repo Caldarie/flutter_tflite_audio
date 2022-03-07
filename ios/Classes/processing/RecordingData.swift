@@ -22,7 +22,7 @@ avoid need to call init() since we are using setters
 class RecordingData{
 
     private var bufferSize: Int?
-    private var inputSize: Int?
+    private var audioLength: Int?
     private var sampleRate: Int?
     private var numOfInferences: Int?
 
@@ -34,8 +34,8 @@ class RecordingData{
         self.bufferSize = bufferSize
     }
     
-    func setInputSize(inputSize: Int){
-        self.inputSize = inputSize
+    func setInputSize(audioLength: Int){
+        self.audioLength = audioLength
     }
 
     func setSampleRate(sampleRate: Int){
@@ -49,13 +49,13 @@ class RecordingData{
     func getState() -> String{
         var state: String = ""
 
-        if(inferenceCount <= numOfInferences! && recordingBuffer.count < inputSize!){
+        if(inferenceCount <= numOfInferences! && recordingBuffer.count < audioLength!){
             state = "append"
-        } else if (inferenceCount < numOfInferences! && recordingBuffer.count == inputSize!){
+        } else if (inferenceCount < numOfInferences! && recordingBuffer.count == audioLength!){
             state =  "recognise"
-        } else if (inferenceCount < numOfInferences! && recordingBuffer.count > inputSize!) {
+        } else if (inferenceCount < numOfInferences! && recordingBuffer.count > audioLength!) {
             state = "trimAndRecognise"
-        } else if (inferenceCount == numOfInferences! && recordingBuffer.count >= inputSize!) {
+        } else if (inferenceCount == numOfInferences! && recordingBuffer.count >= audioLength!) {
             state = "finalise"
         } else {
             state = "Incorrect state: \(displayLogCount())"
@@ -65,7 +65,7 @@ class RecordingData{
     }
 
     func displayLogCount() -> String{
-        return "\(inferenceCount)/\(numOfInferences!) | \(recordingBuffer.count)/\(inputSize!)"
+        return "\(inferenceCount)/\(numOfInferences!) | \(recordingBuffer.count)/\(audioLength!)"
     }
 
     @discardableResult
@@ -76,15 +76,15 @@ class RecordingData{
     }
     
     func emit(result: @escaping ([Int16]) -> Void) -> RecordingData{
-        // Swift.print(recordingBuffer[0..<inputSize])
-        result(Array(recordingBuffer[0..<inputSize!]))
+        // Swift.print(recordingBuffer[0..<audioLength])
+        result(Array(recordingBuffer[0..<audioLength!]))
         return self
         
     }
 
     @discardableResult
     func trimExcessToNewBuffer() -> RecordingData{
-        let excessRecordingBuffer: [Int16] = Array(recordingBuffer[inputSize!..<recordingBuffer.count])
+        let excessRecordingBuffer: [Int16] = Array(recordingBuffer[audioLength!..<recordingBuffer.count])
         recordingBuffer = excessRecordingBuffer
         return self
     }

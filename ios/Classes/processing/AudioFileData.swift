@@ -2,7 +2,7 @@ import Foundation
 
 class AudioFileData{
 
-    private var inputSize: Int
+    private var audioLength: Int
     private var int16DataSize: Int
 
     private var requirePadding: Bool? = nil
@@ -14,12 +14,12 @@ class AudioFileData{
     private var audioChunk: [Int16] = []
     private var result = [Int16]()
 
-    init(inputSize: Int, bufferSize: Int){
-        self.inputSize = inputSize
+    init(audioLength: Int, bufferSize: Int){
+        self.audioLength = audioLength
         self.int16DataSize = bufferSize
 
-        let excessSamples = int16DataSize % inputSize;
-        let missingSamples = inputSize - excessSamples;
+        let excessSamples = int16DataSize % audioLength;
+        let missingSamples = audioLength - excessSamples;
         requirePadding = getPaddingRequirement(excessSamples: excessSamples, missingSamples: missingSamples);
 
         let totalWithPad = int16DataSize + missingSamples;
@@ -29,9 +29,9 @@ class AudioFileData{
 
 
     func getPaddingRequirement(excessSamples: Int, missingSamples: Int) -> Bool{
-        let hasMissingSamples = missingSamples != 0 || excessSamples != inputSize
+        let hasMissingSamples = missingSamples != 0 || excessSamples != audioLength
         let pctThreshold: Double = 0.25
-        let sampleThreshold  = Int(round(Double(inputSize) * pctThreshold))
+        let sampleThreshold  = Int(round(Double(audioLength) * pctThreshold))
         let underThreshold = missingSamples < sampleThreshold
 
         if (hasMissingSamples && underThreshold) {return true}
@@ -42,11 +42,11 @@ class AudioFileData{
     }
 
     func getNumOfInferences(totalWithoutPad: Int, totalWithPad: Int) -> Int{
-        return requirePadding! ? Int(totalWithPad/inputSize) : Int(totalWithoutPad/inputSize)
+        return requirePadding! ? Int(totalWithPad/audioLength) : Int(totalWithoutPad/audioLength)
     }
 
     func getState(i: Int) -> String{
-        let reachInputSize: Bool = (i + 1) % inputSize == 0 
+        let reachInputSize: Bool = (i + 1) % audioLength == 0 
         let reachFileSize: Bool = (i + 1) == int16DataSize
         let reachInferenceLimit: Bool = inferenceCount == numOfInferences
 
@@ -88,7 +88,7 @@ class AudioFileData{
     @discardableResult
      func emit(result: @escaping ([Int16]) -> Void) -> AudioFileData{
          print(audioChunk.count)
-        result(Array(audioChunk[0..<inputSize]))
+        result(Array(audioChunk[0..<audioLength]))
         return self
         
     }
@@ -103,7 +103,7 @@ class AudioFileData{
 
     @discardableResult
     func padSilence(i: Int) -> AudioFileData{
-        let missingSamples = inputSize - indexCount
+        let missingSamples = audioLength - indexCount
         if(requirePadding!){
              let paddedArray: [Int16] = (-10...10).randomElements(missingSamples)
              audioChunk.append(contentsOf: paddedArray)

@@ -24,7 +24,7 @@ https://www.avanderlee.com/swift/concurrent-serial-dispatchqueue/
 class Recording{
 
     private var bufferSize: Int
-    private var inputSize: Int
+    private var audioLength: Int
     private var sampleRate: Int
     private var numOfInferences: Int
 
@@ -32,19 +32,19 @@ class Recording{
     private var audioEngine: AVAudioEngine
     private let subject: PublishSubject<[Int16]>
   
-    init(bufferSize: Int, inputSize: Int, sampleRate: Int, numOfInferences: Int){
+    init(bufferSize: Int, audioLength: Int, sampleRate: Int, numOfInferences: Int){
 
         recordingData = RecordingData()
         audioEngine = AVAudioEngine()
         subject = PublishSubject()
 
         self.bufferSize = bufferSize
-        self.inputSize = inputSize
+        self.audioLength = audioLength
         self.sampleRate = sampleRate
         self.numOfInferences = numOfInferences
 
         recordingData.setBufferSize(bufferSize: bufferSize)
-        recordingData.setInputSize(inputSize: inputSize)
+        recordingData.setInputSize(audioLength: audioLength)
         recordingData.setSampleRate(sampleRate: sampleRate)
         recordingData.setNumOfInferences(numOfInferences: numOfInferences)
     }

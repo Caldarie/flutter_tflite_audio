@@ -15,10 +15,10 @@ class AudioFile{
 
     private var isSplicing = false
  
-    init(fileURL: URL, inputSize: Int){
+    init(fileURL: URL, audioLength: Int){
         self.pcmBuffer = getBuffer(fileURL: fileURL)
         self.subject = PublishSubject()
-        self.audioFileData = AudioFileData(inputSize: inputSize, bufferSize: Int(pcmBuffer!.frameCapacity))
+        self.audioFileData = AudioFileData(audioLength: audioLength, bufferSize: Int(pcmBuffer!.frameCapacity))
         print(Int(pcmBuffer!.frameCapacity))
     }
 
