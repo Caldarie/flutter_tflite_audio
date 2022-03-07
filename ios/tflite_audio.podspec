@@ -18,6 +18,7 @@ A new flutter plugin project.
   s.dependency 'TensorFlowLiteSwift', '~> 2.6.0'
   s.dependency 'RxSwift', '6.5.0'
   s.dependency 'RxCocoa', '6.5.0'
+  s.dependency 'RosaKit'
   # s.dependency 'TensorFlowLiteSwift'
   # s.dependency 'TensorFlowLiteSelectTfOps'
   # s.dependency 'TensorFlowLiteSwift', '~> 2.4.0'
