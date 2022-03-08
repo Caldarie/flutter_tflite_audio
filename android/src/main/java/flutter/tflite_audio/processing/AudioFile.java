@@ -21,7 +21,7 @@ import java.nio.ByteOrder; //required for preprocessing
 public class AudioFile {
 
     private static final String LOG_TAG = "Audio_Slicing";
-    private AudioData audioData = new AudioData();
+    private AudioProcessing audioData = new AudioProcessing();
     private PublishSubject<short[]> subject = PublishSubject.create();
 
     private ShortBuffer shortBuffer;

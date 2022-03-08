@@ -15,7 +15,7 @@ Log.v(LOG_TAG, "smin: " + audioData.getMinAbsoluteValue(audioBuffer));
 Log.v(LOG_TAG, "audio data: " + Arrays.toString(audioBuffer));
 */
 
-public class AudioData {
+public class AudioProcessing {
 
     private static final String LOG_TAG = "Audio_Data";
     
@@ -49,7 +49,7 @@ public class AudioData {
 	}
 
 
-    public float[][] normaliseTo2D(short [] inputBuffer16){
+    public float[][] normalise(short [] inputBuffer16){
         final float maxRes16 = (float) Math.pow(2, 15) -1; //outputs 32767.0f
         float[][] floatInputBuffer = new float [1][inputBuffer16.length];
 
@@ -61,7 +61,7 @@ public class AudioData {
 	}
 
 
-    public float[][] normaliseToTranspose2D(short [] inputBuffer16){
+    public float[][] normaliseAndTranspose(short [] inputBuffer16){
         final float maxRes16 = (float) Math.pow(2, 15) -1; //outputs 32767.0f
         float[][] floatInputBuffer = new float [inputBuffer16.length][1];
 

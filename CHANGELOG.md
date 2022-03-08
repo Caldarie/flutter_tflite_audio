@@ -14,7 +14,7 @@
 * Hot fixed iOS issue where it will record indefintetly.
 
 ## 0.2.2+2
-* Hot fixed missing AudioData class.
+* Hot fixed missing AudioProcessing class.
 
 ## 0.2.2+1
 * Hot fixed issue with unresponsive forced stop recognition.
