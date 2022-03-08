@@ -342,7 +342,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
             return result;
         } else {
-            Log.d(LOG_TAG, "Transpose Audio: + false. Input is not audio");
+            Log.d(LOG_TAG, "Input is not audio. Audio does not require to be transposed.");
             return false;
         }
     }
@@ -385,7 +385,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
         this.inputShape = tfLite.getInputTensor(0).shape();
         Log.d(LOG_TAG, "inputShape: " + Arrays.toString(inputShape));
-      
+        
         // load labels
         Log.d(LOG_TAG, "label name is: " + labelPath);
 
@@ -581,7 +581,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         Log.d(LOG_TAG, "Extracting byte data from audio file");
 
         MediaDecoder decoder = new MediaDecoder(fileDescriptor, startOffset, declaredLength);
-        AudioData audioData = new AudioData();
+        AudioProcessing audioData = new AudioProcessing();
 
         byte[] byteData = {};
         byte[] readData;
@@ -665,12 +665,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             return;
         }
 
-        SignalProcessing signalProcessing;
-        AudioData audioData = new AudioData();
+        SignalProcessing signalProcessing = new SignalProcessing(sampleRate, nMFCC, nFFT, nMels, hopLength);
+        AudioProcessing audioData = new AudioProcessing();
 
         float [] inputBuffer32; //for spectro
-        float [][] inputTensor2D = {}; //for raw audio
-        float [][][][] inputTensor4D = {}; // for spectro
+        float [][] inputData2D = {}; //for raw audio
+        float [][][][] inputData4D = {}; // for spectro
         Object [] inputArray = {};
 
         int [] outputShape = tfLite.getOutputTensor(0).shape();
@@ -685,66 +685,50 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
         switch (inputType) {
 
-            //TODO - add transponse for spectro
-
             case "mfcc":
-                signalProcessing = new SignalProcessing(sampleRate, nMFCC, nFFT, nMels, hopLength);
+      
                 inputBuffer32 = audioData.normalizeBySigned16(inputBuffer16);
                 float mfcc [][] = signalProcessing.getMFCC(inputBuffer32);
-                // float transposedMfcc [][] = audioData.transpose2D(mfcc);
 
-                // outputTensor = transposeOutput
-                // ? new float [outputSize][1]
-                // : new float [1][outputSize];
+                inputData2D = transposeSpectro
+                    ? signalProcessing.transpose2D(mfcc)
+                    : mfcc;
 
                 tfLite.run(mfcc, outputTensor);
                 break;
 
             case "melSpectrogram":
-                signalProcessing = new SignalProcessing(sampleRate, nMFCC, nFFT, nMels, hopLength);
+              
                 inputBuffer32 = audioData.normalizeBySigned16(inputBuffer16);
                 float[][] melSpectrogram = signalProcessing.getMelSpectrogram(inputBuffer32);
-                inputTensor4D = signalProcessing.reshape2dto4d(melSpectrogram);
-
-                // outputTensor = transposeOutput
-                // ? new float [outputSize][1]
-                // : new float [1][outputSize];
-
-                tfLite.run(inputTensor4D, outputTensor);
+                
+                inputData4D = transposeSpectro
+                    ? signalProcessing.reshapeTo4DAndTranspose(melSpectrogram)
+                    : signalProcessing.reshapeTo4D(melSpectrogram);
+                    
+                tfLite.run(inputData4D, outputTensor);
                 break;
 
             case "spectrogram":
-                signalProcessing = new SignalProcessing(sampleRate, nMFCC, nFFT, nMels, hopLength);
+           
                 inputBuffer32 = audioData.normalizeBySigned16(inputBuffer16);
                 float[][] spectrogram = signalProcessing.getSpectrogram(inputBuffer32);
-                // float[][] transposedSpectrogram = audioData.transpose2D(spectrogram);
-                // float[][][][] inputTensor4d = signalProcessing.reshape2dto4d(transposedSpectrogram);
-                inputTensor4D = signalProcessing.reshape2dto4d(spectrogram);
+            
+                inputData4D = transposeSpectro
+                    ? signalProcessing.reshapeTo4DAndTranspose(spectrogram)
+                    : signalProcessing.reshapeTo4D(spectrogram);
 
-                // outputTensor = transposeOutput
-                // ? new float [outputSize][1]
-                // : new float [1][outputSize];
-
-                tfLite.run(inputTensor4D, outputTensor);
+                tfLite.run(inputData4D, outputTensor);
                 break;
 
             case "decodedWav":
-
-                //TODO - allow user to add their own additional inputs
-                //TODO - remove duplicate code by dynamically adding custom inputs
-
                 
-                inputTensor2D = transposeAudio 
-                    ? audioData.normaliseToTranspose2D(inputBuffer16) 
-                    : audioData.normaliseTo2D(inputBuffer16);
+                inputData2D = transposeAudio 
+                    ? audioData.normaliseAndTranspose(inputBuffer16) 
+                    : audioData.normalise(inputBuffer16);
                      
-                
-                // outputTensor = transposeOutput
-                //     ? new float [outputSize][1]
-                //     : new float [1][outputSize];
-
                 int [] sampleRateList = new int[] { sampleRate }; 
-                inputArray = new Object[] { inputTensor2D, sampleRateList};
+                inputArray = new Object[] { inputData2D, sampleRateList};
 
                 outputMap.put(0, outputTensor);
                 tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
@@ -752,19 +736,11 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
             case "rawAudio":
 
-                // inputTensor2D = transposeAudio 
-                // ? audioData.normaliseTo2D(inputBuffer16)
-                // : audioData.normaliseToTranspose2D(inputBuffer16);
+                inputData2D = transposeAudio 
+                    ? audioData.normaliseAndTranspose(inputBuffer16) 
+                    : audioData.normalise(inputBuffer16);
 
-                inputTensor2D = transposeAudio 
-                    ? audioData.normaliseToTranspose2D(inputBuffer16) 
-                    : audioData.normaliseTo2D(inputBuffer16);
-
-                // outputTensor = transposeOutput
-                //     ? new float [outputSize][1]
-                //     : new float [1][outputSize];
-
-                tfLite.run(inputTensor2D, outputTensor);
+                tfLite.run(inputData2D, outputTensor);
                 break;
 
         }

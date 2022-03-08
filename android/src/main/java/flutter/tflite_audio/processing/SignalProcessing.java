@@ -144,7 +144,21 @@ public class SignalProcessing{
         return floatOutput;
     }
 
-    public float[][][][] reshape2dto4d(float [][] spectrogram){
+    public float[][] transpose2D(float[][] matrix){
+	    int m = matrix.length;
+	    int n = matrix[0].length;
+
+	    float[][] transposedMatrix = new float[n][m];
+
+	    for(int x = 0; x < n; x++) {
+	        for(int y = 0; y < m; y++) {
+	            transposedMatrix[x][y] = matrix[y][x];
+	        }
+	    }
+	    return transposedMatrix;
+	}
+
+    public float[][][][] reshapeTo4D(float [][] spectrogram){
 
         int FRAMES = spectrogram.length;
         int MEL_BINS = spectrogram[0].length;
@@ -154,6 +168,23 @@ public class SignalProcessing{
         for (int frame = 0; frame < FRAMES; frame++) {
             for (int freq = 0; freq < MEL_BINS; freq++) {
                 inputTensor[0][frame][freq][0] = spectrogram[frame][freq];
+            }
+        }
+
+        return inputTensor;
+    }
+    
+
+    public float[][][][] reshapeTo4DAndTranspose(float [][] spectrogram){
+
+        int FRAMES = spectrogram.length;
+        int MEL_BINS = spectrogram[0].length;
+        float[][][][] inputTensor = new float[1][FRAMES][MEL_BINS][1];
+     
+
+        for (int frame = 0; frame < FRAMES; frame++) {
+            for (int freq = 0; freq < MEL_BINS; freq++) {
+                inputTensor[0][freq][frame][0] = spectrogram[frame][freq];
             }
         }
 
