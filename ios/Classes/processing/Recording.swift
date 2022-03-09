@@ -43,9 +43,7 @@ class Recording{
         self.sampleRate = sampleRate
         self.numOfInferences = numOfInferences
 
-        recordingData.setBufferSize(bufferSize: bufferSize)
-        recordingData.setInputSize(audioLength: audioLength)
-        recordingData.setSampleRate(sampleRate: sampleRate)
+        recordingData.setAudioLength(audioLength: audioLength)
         recordingData.setNumOfInferences(numOfInferences: numOfInferences)
     }
 
