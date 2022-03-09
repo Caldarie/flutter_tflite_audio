@@ -63,7 +63,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private var suppressionTime: Double!
 
     //spectrogram
-    private var inputTime: Double!
     private var nMFCC: Int!
     private var nFFT: Int!
     private var nMels: Int!
@@ -115,7 +114,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             arguments = call.arguments as! [String: AnyObject]
             print("Spectrogram arguments: \(arguments)")
 
-            self.inputTime = arguments["inputTime"] as? Double
             self.nMFCC = arguments["nMFCC"] as? Int
             self.nFFT = arguments["nFFT"] as? Int
             self.nMels = arguments["nMels"] as? Int
