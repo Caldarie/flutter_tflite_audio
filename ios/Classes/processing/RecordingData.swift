@@ -21,25 +21,15 @@ avoid need to call init() since we are using setters
 
 class RecordingData{
 
-    private var bufferSize: Int?
     private var audioLength: Int?
-    private var sampleRate: Int?
     private var numOfInferences: Int?
 
     private var inferenceCount = 1
     private var recordingBuffer: [Int16] = []
     private var result = [Int16]()
-
-    func setBufferSize(bufferSize: Int){
-        self.bufferSize = bufferSize
-    }
     
-    func setInputSize(audioLength: Int){
+    func setAudioLength(audioLength: Int){
         self.audioLength = audioLength
-    }
-
-    func setSampleRate(sampleRate: Int){
-        self.sampleRate = sampleRate
     }
 
     func setNumOfInferences(numOfInferences: Int){
@@ -85,7 +75,9 @@ class RecordingData{
     @discardableResult
     func trimExcessToNewBuffer() -> RecordingData{
         let excessRecordingBuffer: [Int16] = Array(recordingBuffer[audioLength!..<recordingBuffer.count])
+        print("Excess samples of: (\(excessRecordingBuffer.count)) found. Appending to new buffer..")
         recordingBuffer = excessRecordingBuffer
+        print("recordingBuffer length: \(displayLogCount())")
         return self
     }
 
