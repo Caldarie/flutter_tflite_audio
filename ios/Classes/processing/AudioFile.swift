@@ -61,22 +61,29 @@ class AudioFile{
             let state = audioFileData!.getState(i: index)
             
             switch state{
-                case "recognising":
+                case "recognise":
                     audioFileData!
                         .append(data: data)
                         .displayCount()
                         .emit{ (audioChunk) in self.subject!.onNext(audioChunk) }
                         .reset()
                     break
-                case "appending":
+                case "append":
                     audioFileData!
                         .append(data: data)
                     break
-                case "finalising":
+                case "finalise":
                     audioFileData!
                         .append(data: data)
                         .displayCount()
+                        .emit{ (audioChunk) in self.subject!.onNext(audioChunk) }
+                    self.stop() //Force break loop - excess data will be ignored
+                    break
+                case "padAndFinalise":
+                    audioFileData!
+                        .append(data: data)
                         .padSilence(i: index)
+                        .displayCount()
                         .emit{ (audioChunk) in self.subject!.onNext(audioChunk) }
                     self.stop()
                     break

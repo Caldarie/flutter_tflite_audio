@@ -21,22 +21,33 @@ class AudioFileData{
         let excessSamples = int16DataSize % audioLength;
         let missingSamples = audioLength - excessSamples;
         requirePadding = getPaddingRequirement(excessSamples: excessSamples, missingSamples: missingSamples);
-
+    
         let totalWithPad = int16DataSize + missingSamples;
         let totalWithoutPad = int16DataSize - excessSamples;
         numOfInferences = getNumOfInferences(totalWithoutPad: totalWithoutPad, totalWithPad: totalWithPad);
+
+        // //Force pad data that is lacking
+        // let isLackingData = numOfInferences == 0 && requirePadding == false
+        // if(isLackingData){
+        //     print("Insufficient Data. Audio Chunk set to be padded regardless of threshold")
+        //     self.requirePadding == true
+        //     self.numOfInferences == 1
+        // }
     }
 
 
     func getPaddingRequirement(excessSamples: Int, missingSamples: Int) -> Bool{
         let hasMissingSamples = missingSamples != 0 || excessSamples != audioLength
-        let pctThreshold: Double = 0.25
-        let sampleThreshold  = Int(round(Double(audioLength) * pctThreshold))
-        let underThreshold = missingSamples < sampleThreshold
-
-        if (hasMissingSamples && underThreshold) {return true}
-        else if (hasMissingSamples && !underThreshold) {return false}
-        else if (!hasMissingSamples && underThreshold) {return false}
+        let missingSampleThreshold: Double = 0.40
+        let missingSamplesRatio: Double = Double(missingSamples) / Double(audioLength)
+        let shouldPad = missingSamplesRatio < missingSampleThreshold 
+        // print(missingSampleThreshold) //testing
+        // print(missingSamplesRatio) //testing
+        // print(shouldPad) //testing
+    
+        if (hasMissingSamples && shouldPad) {return true}
+        else if (hasMissingSamples && !shouldPad) {return false}
+        else if (!hasMissingSamples && shouldPad) {return false}
         else {return false}
 
     }
@@ -51,19 +62,19 @@ class AudioFileData{
         let reachInferenceLimit: Bool = inferenceCount == numOfInferences
 
         if (reachInputSize && !reachInferenceLimit) {
-            return "recognising";
+            return "recognise";
         } // inferences > 1 && < not final
         else if (!reachInputSize && reachInferenceLimit && !reachFileSize) {
-            return "appending";
+            return "append";
         } // Inferences = 1
         else if (!reachInputSize && !reachInferenceLimit) {
-            return "appending";
+            return "append";
         } // Inferences > 1
         else if (!reachInputSize && reachInferenceLimit && reachFileSize) {
-            return "finalising";
+            return "padAndFinalise";
         } // for padding last infernce
         else if (reachInputSize && reachInferenceLimit) {
-            return "finalising";
+            return "finalise";
         } // inference is final
         else {
             return "Error";
@@ -81,13 +92,13 @@ class AudioFileData{
 
     @discardableResult
     func displayCount() -> AudioFileData{
+        // print("\(inferenceCount)/\(numOfInferences!) | \(audioChunk.count)/\(audioLength)") //TESTING
         print("inference count: \(inferenceCount)/\(numOfInferences!)")
         return self
     }
 
     @discardableResult
      func emit(result: @escaping ([Int16]) -> Void) -> AudioFileData{
-         print(audioChunk.count)
         result(Array(audioChunk[0..<audioLength]))
         return self
         
@@ -107,7 +118,7 @@ class AudioFileData{
         if(requirePadding!){
              let paddedArray: [Int16] = (-10...10).randomElements(missingSamples)
              audioChunk.append(contentsOf: paddedArray)
-             print( "\(missingSamples) samples have been padded to audio chunk")
+             print( "(\(missingSamples)) samples have been padded to audio chunk")
         }else{
              print( "Under threshold. Padding not required")
         }
