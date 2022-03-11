@@ -43,12 +43,14 @@ Recording            |  Inference result
 
 2. Audio recognition for recordings. 
 
-3. Abiliy to tune your model's output.
+3. Tunable parameters for recording/inferences
    *  Please look a the [parameters](#rough-guide-on-the-parameters) below for more information.
+
+4. Automatically reshape/transpose audio inputs.
 
 <br>
 
-### It can also support several model types:
+### This plugin can support several model types:
 
 1. Models from Google Teachable Machine
 
@@ -68,33 +70,13 @@ Recording            |  Inference result
 
 4. **(Experimental feature)**  Spectogram, MFCC, mel as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
 
-5. **(Currently worked on feature)** Raw audio with additional dynamic inputs. Take a look at this [branch](https://github.com/Caldarie/flutter_tflite_audio/tree/experimental_dynamic_input) for work on progress
-
-    * Supports two inputs: float32[audioLength, 1] and float32[dynamic input, 1] 
-    * Also supports reverse inputs: float32[1, audioLength] and float32[1, dynamic input] 
-    * Will support dynamic outputs
-    * Will add dynamic support for different input/output data types
-    * Add support on iOS
+5. **(Currently worked on feature)** Multiple input and outputs.
 
 <br>
 
 ## Known Issues/Commonly asked questions
 
-1. **How to use audio file recognition**
-
-   * Can only run inferences on mono wav files. (In the future, an audio converter will be included in this plugin.)
-   * Avoid using very large audio files. This may cause adverse effects.
-   * For best results, make sure the sample rate of the wav file is similar to the inputSize. For example, GTM models have an input size of 44032. So a sample rate of 44100 should be used. Similarly, decodedWav models have a inputSize of 16000, so a sample rate of 16000 should be used.
-
-2. **My Model won't load**
-
-   You need to configures permissions and dependencies to use this plugin. Please follow the steps below:
-
-   * [Android installation & permissions](#android-installation--permissions)
-  
-   * [iOS installation & permissions](#ios-installation--permissions)         
-
-3. **How to adjust the recording length/time**
+1. **How to adjust the recording length/time**
 
    There are two ways to reduce adjust recording length/time:
 
@@ -104,11 +86,11 @@ Recording            |  Inference result
   
    **Note:** That stretching the value too low will cause problems with model accuracy. In that case, you may want to consider lowering your sample rate as well. Likewise, a very low sample rate can also cause problems with accuracy. It is your job to find the sweetspot for both values.
 
-4. **How to reduce false positives in my model**
+2. **How to reduce false positives in my model**
 
    To reduce false positives, you may want to adjust the default values of `detectionThreshold=0.3` and `averageWindowDuration=1000` to a higher value. A good value for both respectively are `0.7`  and `1500`. For more details about these parameters, please visit this [section](#rough-guide-on-the-parameters).
 
-5. **I am getting build errors on iOS**
+3. **I am getting build errors on iOS**
 
    There are several ways to fix this:
 
@@ -127,7 +109,7 @@ Recording            |  Inference result
 
    * Others have fixed this issue building the app without the line: `pod 'TensorFlowLiteSelectTfOps`. Then rebuilding the app by re-adding the line again.
 
-6. **I am getting TensorFlow Lite Error on iOS. -  Regular TensorFlow ops are not supported by this interpreter. Make sure you apply/link the Flex delegate before inference** 
+4. **I am getting TensorFlow Lite Error on iOS. -  Regular TensorFlow ops are not supported by this interpreter. Make sure you apply/link the Flex delegate before inference** 
 
    *  Please make sure that you have enabled ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
@@ -137,13 +119,13 @@ Recording            |  Inference result
 
    * Take a looking at issue number 4 if none of the above works.  
 
-7. **(iOS) App crashes when running Google's Teachable Machine model** 
+5. **(iOS) App crashes when running Google's Teachable Machine model** 
 
    Please run your simulation on actual iOS device. Running your device on M1 macs should also be ok.
   
    As of this moment, there's [limited support](https://github.com/tensorflow/tensorflow/issues/44997#issuecomment-734001671) for x86_64 architectures from the Tensorflow Lite select-ops framework. If you absolutely need to run it on an emulator, you can consider building the select ops framework yourself. Instructions can be found [here](https://www.tensorflow.org/lite/guide/ops_select#ios)
 
-8. **(Android) Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xfffffff4 in tid 5403** 
+6. **(Android) Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0xfffffff4 in tid 5403** 
 
    It seems like the latest tflite package for android is causing this issue. Until this issue is fixed, please run this package on an actual Android Device. 
 
@@ -327,11 +309,11 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
   * numOfInferences - determines how many times you want to loop the recording and inference. For example:
 `numOfInference = 3` will repeat the recording three times, so recording length will be (1 to 2 seconds) x 3 = (3 to 6 seconds). Also the model will output the scores three times.
 
-  * sampleRate - A higher sample rate may improve accuracy. Recommened values are 16000, 22050, 44100
+  * sampleRate - A higher sample rate may improve accuracy for recordings. Recommened values are 16000, 22050, 44100
 
   * audioLength - Default is 0 as the plugin will determine the length for you. You can manually adjust this if you wish to shorten or extend the number of audio samples.
 
-  * bufferSize - Make sure this value is equal or below your recording length. Be aware that a higher value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive. Remember that the optimal value varies depending on the device.
+  * bufferSize - A lower value will lengthen the recording. Likewise, a higehr value will shorten the recording. Make sure this value is equal or below your recording length. 
     
   * detectionThreshold - Will ignore any predictions where its probability does not exceed the detection threshold. Useful for situations where you pickup unwanted/unintentional sounds. Lower the value if your model's performance isn't doing too well.
 
