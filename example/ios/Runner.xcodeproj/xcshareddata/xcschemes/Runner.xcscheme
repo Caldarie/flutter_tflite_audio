@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1310"
+   LastUpgradeVersion = "1300"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -37,6 +37,36 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4C31495E27D75B5800D489C9"
+               BuildableName = "tflite_audio_exampleTests.xctest"
+               BlueprintName = "tflite_audio_exampleTests"
+               ReferencedContainer = "container:Runner.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4C31497A27D77BF100D489C9"
+               BuildableName = "RunnerTests.xctest"
+               BlueprintName = "RunnerTests"
+               ReferencedContainer = "container:Runner.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4C31498827D9DDA600D489C9"
+               BuildableName = "RecordingTest.xctest"
+               BlueprintName = "RecordingTest"
+               ReferencedContainer = "container:Runner.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

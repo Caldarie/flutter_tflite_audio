@@ -37,10 +37,7 @@ void main() {
 
   test('returns a map stream correctly', () async {
     var value = TfliteAudio.startAudioRecognition(
-        inputType: 'decodedWav',
-        sampleRate: 16000,
-        recordingLength: 16000,
-        bufferSize: 2000);
+        sampleRate: 16000, audioLength: 16000, bufferSize: 2000);
 
     value.listen(expectAsync1((event) {
       expect(event, <dynamic, dynamic>{

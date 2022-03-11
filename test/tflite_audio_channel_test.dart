@@ -30,11 +30,13 @@ void main() {
 
     test('passes optional and required arguments correctly', () async {
       await TfliteAudio.loadModel(
+        inputType: 'decodedWav',
         model: 'assets/decoded_wav_model.tflite',
         label: 'assets/decoded_wav_label.txt',
       );
 
       await TfliteAudio.loadModel(
+        inputType: 'decodedWav',
         model: 'assets/google_teach_machine_model.tflite',
         label: 'assets/google_teach_machine_label.txt',
         numThreads: 3,
@@ -84,7 +86,7 @@ void main() {
   //     TfliteAudio.startAudioRecognition(
   //         inputType: 'decodedWav',
   //         sampleRate: 16000,
-  //         recordingLength: 16000,
+  //         audioLength: 16000,
   //         bufferSize: 2000);
 
   //     expect(
@@ -95,7 +97,7 @@ void main() {
   //           arguments: <dynamic, dynamic>{
   //             'inputType': 'decodedWav',
   //             'sampleRate': 16000,
-  //             'recordingLength': 16000,
+  //             'audioLength': 16000,
   //             'bufferSize': 2000,
   //           },
   //         ),
