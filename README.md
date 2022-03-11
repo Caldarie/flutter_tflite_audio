@@ -37,13 +37,14 @@ Recording            |  Inference result
 
 ## About This Plugin
 
-### The plugin has several features that you can use:
+### The plugin has several features:
 
-1. Audio recognition for stored audio files. 
+1. Audio recognition for stored audio files. (Only mono wav files for now)
 
 2. Audio recognition for recordings. 
 
-3. Abiliy to tune your model's output. Please look a the [parameters](#rough-guide-on-the-parameters) below for more information.
+3. Abiliy to tune your model's output.
+   *  Please look a the [parameters](#rough-guide-on-the-parameters) below for more information.
 
 <br>
 
@@ -59,21 +60,21 @@ Recording            |  Inference result
    * Can recognize the following inputs: float32[recordingLength, 1] or float32[1, recordingLength]
    * For more information on how to train your own model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
 
-3. Supports models with decoded wave inputs. 
+3. Supports models with decoded wav inputs. 
 
    * Supports two inputs: float32[recordingLength, 1] and int32[1]
    * For more information on how to train your own model. Take a look [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
    * To train a decoded wave with MFCC, take a look [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
 
-4. **(Currently worked on feature)** Raw audio with additional dynamic inputs. Take a look at this [branch](https://github.com/Caldarie/flutter_tflite_audio/tree/experimental_dynamic_input) for work on progress
+4. **(Excperimental) feature)**  Spectogram, MFCC, mel as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
+
+5. **(Currently worked on feature)** Raw audio with additional dynamic inputs. Take a look at this [branch](https://github.com/Caldarie/flutter_tflite_audio/tree/experimental_dynamic_input) for work on progress
 
     * Supports two inputs: float32[recordingLength, 1] and float32[dynamic input, 1] 
     * Also supports reverse inputs: float32[1, recordingLength] and float32[1, dynamic input] 
     * Will support dynamic outputs
     * Will add dynamic support for different input/output data types
     * Add support on iOS
-
-5. **(Future feature)**  Spectogram, MFCC, mel as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
 
 <br>
 
