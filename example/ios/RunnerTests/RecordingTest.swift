@@ -9,30 +9,89 @@ import XCTest
 @testable import tflite_audio
 
 class RecordingTest: XCTestCase {
+    
+    func test_singleSplice(){
+        let recordingData: [Int16] = [1, 2, 3, 4]
+        let audioLength = 4
+        let numOfInferences = 1
+        let expectedResult: [Int16] = [1, 2, 3, 4]
+        let result = mockRecording(data: recordingData, length: audioLength, num: numOfInferences)
+        XCTAssertEqual(result, expectedResult)
+    }
+    
+    func test_singleSplice_lackData(){
+        let recordingData: [Int16] = [1, 2, 3]
+        let audioLength = 4
+        let numOfInferences = 1
+        let expectedResult: [Int16] = [1, 2, 3, 1]
+        let result = mockRecording(data: recordingData, length: audioLength, num: numOfInferences)
+        XCTAssertEqual(result, expectedResult)
+    }
+    
+    
+    func test_singleSplice_withExcess(){
+        let recordingData: [Int16] = [1, 2, 3, 4, 5]
+        let audioLength = 4
+        let numOfInferences = 1
+        let expectedResult: [Int16] = [1, 2, 3, 4]
+        let result = mockRecording(data: recordingData, length: audioLength, num: numOfInferences)
+        XCTAssertEqual(result, expectedResult)
+    }
+    
+    
+    
+    func test_multiSplice(){
+        let recordingData: [Int16] = [1, 2, 3, 4]
+        let audioLength = 4
+        let numOfInferences = 3
+        let expectedResult: [Int16] = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]
+        let result = mockRecording(data: recordingData, length: audioLength, num: numOfInferences)
+        XCTAssertEqual(result, expectedResult)
+    }
+    
+    func test_multiSplice_lackData(){
+        let recordingData: [Int16] = [1, 2, 3]
+        let audioLength = 4
+        let numOfInferences = 3
+        let expectedResult: [Int16] = [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3]
+        let result = mockRecording(data: recordingData, length: audioLength, num: numOfInferences)
+        XCTAssertEqual(result, expectedResult)
+    }
 
-    func testRecordingSplice(){
+    
+    func test_multiSplice_withExcess(){
         
-        let mockRecordingData: [Int16] = [1, 2, 3, 4]
+        let recordingData: [Int16] = [1, 2, 3, 4, 5]
+        let audioLength = 4
+        let numOfInferences = 3
+        let expectedResult: [Int16] = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2]
+        let result = mockRecording(data: recordingData, length: audioLength, num: numOfInferences)
+        XCTAssertEqual(result, expectedResult)
+    }
+
+    func mockRecording(data: [Int16], length: Int, num: Int) -> [Int16]{
+        
+       
         var result: [Int16] = []
-        var mockIsRecording = true
+        var isRecording = true
         
         let recordingData: RecordingData = RecordingData()
-        recordingData.setAudioLength(audioLength: 5)
-        recordingData.setNumOfInferences(numOfInferences: 3)
+        recordingData.setAudioLength(audioLength: length)
+        recordingData.setNumOfInferences(numOfInferences: num)
         
-        while(mockIsRecording){
+        while(isRecording){
             let state = recordingData.getState()
                  
              switch state{
                  case "append":
-                     recordingData.append(data: mockRecordingData)
+                     recordingData.append(data: data)
                      break
                  case "recognise":
                      recordingData
                     .emit{ (audioChunk) in  result.append(contentsOf: audioChunk)}
                          .updateCount()
                          .clear()
-                         .append(data: mockRecordingData)
+                         .append(data: data)
                      break
                  case "trimAndRecognise":
                      recordingData
@@ -47,7 +106,7 @@ class RecordingTest: XCTestCase {
                          .resetCount()
                          .clear()
                          
-                     mockIsRecording = false
+                     isRecording = false
                      break
                  default:
                      print("Error: \(state)")
@@ -55,6 +114,7 @@ class RecordingTest: XCTestCase {
              }
         }
         
-        XCTAssertEqual(result, [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3])
+        return result
     }
+    
 }
