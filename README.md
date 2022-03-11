@@ -52,23 +52,26 @@ Recording            |  Inference result
 
 ### This plugin can support several model types:
 
-1. Models from Google Teachable Machine
+1. Google Teachable Machine (Raw audio input)
 
    * For beginners with little to no machine learning knowledge. You can read can read the tutorial [here](https://carolinamalbuquerque.medium.com/audio-recognition-using-tensorflow-lite-in-flutter-application-8a4ad39964ae) if you are a newbie.
    * Training can be done [here](https://teachablemachine.withgoogle.com/train/audio) 
 
-2. Raw audio inputs. 
+2. Raw audio input. 
 
    * Can recognize the following inputs: float32[audioLength, 1] or float32[1, audioLength]
    * For more information on how to train your own model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
 
-3. Supports models with decoded wav inputs. 
+3. Decoded wav input. 
 
    * Supports two inputs: float32[audioLength, 1] and int32[1]
    * For more information on how to train your own model. Take a look [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
    * To train a decoded wave with MFCC, take a look [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
 
-4. **(Experimental feature)**  Spectogram, MFCC, mel as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
+4. **(Experimental feature)**  Spectogram, melspectrogram, and MFCC inputs. 
+
+   * Please note that this feature is experimental, and results may not be accurate compared to raw audio / decoded wav.
+   * Spectrogram model can be trained here [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
 
 5. **(Currently worked on feature)** Multiple input and outputs.
 
@@ -109,6 +112,20 @@ Recording            |  Inference result
 
    * Others have fixed this issue building the app without the line: `pod 'TensorFlowLiteSelectTfOps`. Then rebuilding the app by re-adding the line again.
 
+   * Remember to run the following below:
+   
+   ```
+     1. cd into iOS folder
+
+     2. Run `flutter pub get` on terminal
+
+     3. Run `pod install` on terminal
+
+     4. Run `flutter clean` on terminal
+
+     5. Run `flutter run` on terminal. All done!
+   ```
+
 4. **I am getting TensorFlow Lite Error on iOS. -  Regular TensorFlow ops are not supported by this interpreter. Make sure you apply/link the Flex delegate before inference** 
 
    *  Please make sure that you have enabled ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
@@ -117,7 +134,7 @@ Recording            |  Inference result
 
    * If you recieved this error from your custom model (not GTM), its likely that you're using unsupported tensorflow operators for tflite, as found in [issue #5](https://github.com/Caldarie/flutter_tflite_audio/issues/5#issuecomment-789260402). For more details on which operators are supported, look at the official documentation [here](https://www.tensorflow.org/lite/guide/ops_compatibility)
 
-   * Take a looking at issue number 4 if none of the above works.  
+   * Take a looking at issue number 3 if none of the above works.  
 
 5. **(iOS) App crashes when running Google's Teachable Machine model** 
 
