@@ -23,7 +23,7 @@
 ## 0.2.2
 * Feature: Added ability to recognise stored audio files
 * Breaking Change: RecordingLength will no longer be required as a parameter.
-* Fixed: NaN output for bufferRates that are non divisible to recordingLength 
+* Fixed: NaN output for bufferRates that are non divisible to audioLength 
 * Fixed: android permission error when granted outside app.
 
 ## 0.2.1+2
@@ -126,7 +126,7 @@
 ## 0.0.4
 * Added the following arguments into the future: startAudioRecognition()
     - sampleRate
-    - recordingLength
+    - audioLength
     - bufferSize
 
 ## 0.0.3

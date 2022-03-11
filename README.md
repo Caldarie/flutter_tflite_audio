@@ -57,12 +57,12 @@ Recording            |  Inference result
 
 2. Raw audio inputs. 
 
-   * Can recognize the following inputs: float32[recordingLength, 1] or float32[1, recordingLength]
+   * Can recognize the following inputs: float32[audioLength, 1] or float32[1, audioLength]
    * For more information on how to train your own model, take a look [here](https://github.com/tensorflow/examples/tree/master/lite/examples/speech_commands/ml).
 
 3. Supports models with decoded wav inputs. 
 
-   * Supports two inputs: float32[recordingLength, 1] and int32[1]
+   * Supports two inputs: float32[audioLength, 1] and int32[1]
    * For more information on how to train your own model. Take a look [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
    * To train a decoded wave with MFCC, take a look [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
 
@@ -70,8 +70,8 @@ Recording            |  Inference result
 
 5. **(Currently worked on feature)** Raw audio with additional dynamic inputs. Take a look at this [branch](https://github.com/Caldarie/flutter_tflite_audio/tree/experimental_dynamic_input) for work on progress
 
-    * Supports two inputs: float32[recordingLength, 1] and float32[dynamic input, 1] 
-    * Also supports reverse inputs: float32[1, recordingLength] and float32[1, dynamic input] 
+    * Supports two inputs: float32[audioLength, 1] and float32[dynamic input, 1] 
+    * Also supports reverse inputs: float32[1, audioLength] and float32[1, dynamic input] 
     * Will support dynamic outputs
     * Will add dynamic support for different input/output data types
     * Add support on iOS
@@ -258,6 +258,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
         sampleRate: 44100,
         bufferSize: 22016,
         numOfInferences: 5,
+        audioLength = 44032,
         detectionThreshold: 0.3, 
         averageWindowDuration = 1000,
         minimumTimeBetweenSamples = 30,
@@ -269,14 +270,23 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
     * If you want to use the recognition stream for stored audio files. 
 
        ```dart
-       //Example values for both GTM or decodedwav
+       //Example values for Google teachable models
        recognitionStream = TfliteAudio.startFileRecognition(
+         sampleRate: 44100,
+         audioDirectory: "assets/sampleAudio.wav",
+         );
+
+      //Examples values for decodedWav
+       recognitionStream = TfliteAudio.startFileRecognition(
+         sampleRate: 16000,
          audioDirectory: "assets/sampleAudio.wav",
          );
 
        //Example for advanced users who want to utilise all optional parameters from this package. 
        recognitionStream = TfliteAudio.startFileRecognition(
+         sampleRate: 44100,
          audioDirectory: "assets/sampleAudio.wav",
+         audioLength: 44032,
          detectionThreshold: 0.3,
          averageWindowDuration: 1000,
          minimumTimeBetweenSamples: 30,
@@ -319,7 +329,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
 
   * sampleRate - A higher sample rate may improve accuracy. Recommened values are 16000, 22050, 44100
 
-  * recordingLength - determines the size of your tensor input. If the value is not equal to your tensor input, it will crash.
+  * audioLength - Default is 0 as the plugin will determine the length for you. You can manually adjust this if you wish to shorten or extend the number of audio samples.
 
   * bufferSize - Make sure this value is equal or below your recording length. Be aware that a higher value may not allow the recording enough time to capture your voice. A lower value will give more time, but it'll be more cpu intensive. Remember that the optimal value varies depending on the device.
     
