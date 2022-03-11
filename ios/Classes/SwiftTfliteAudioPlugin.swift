@@ -391,6 +391,19 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         
     }
     
+//https://stackoverflow.com/questions/12469361/java-algorithm-for-normalizing-audio
+    // func normalise(value: Int16, max: Int16) -> Float{
+    //     let targetMax: Double = 32767.0
+    //     let rawMax: Double = Double(max)
+        
+    //     let maxAdjust: Double = 1.0 - targetMax / rawMax
+    //     let absVal: Double = Double(abs(value))
+    //     let factor: Double = maxAdjust * absVal / rawMax
+
+    //     return Float(round(1 - factor) * Double(value))
+    // }
+
+    
     
     /* Normalisation formula
      https://stats.stackexchange.com/questions/178626/how-to-normalize-data-between-1-and-1
@@ -473,9 +486,14 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                 
             case "rawAudio":
                 let buffer32 = buffer16.map { Float($0) / Float(maxRes16) }
-//                let buffer32 = buffer16.map { 2.0 *  ((Float($0) - Float(minAmp)) / (Float(maxAmp) - Float(minAmp))) - 1.0 }
-                print(buffer32[0..<40])
-                let inputData = Data(copyingBufferOf: buffer32)
+                // let buffer32 = buffer16.map { 2.0 *  ((Float($0) - Float(minAmp)) / (Float(maxAmp) - Float(minAmp))) - 1.0 }
+                // let rawMax: Int16 = buffer16.max()!
+                // let buffer32 = buffer16.map { normalise(value: $0, max: rawMax) }
+//                let reddit = buffer32.map { $0 / Float(maxRes16) }
+                // print(rawMax)
+                // print (buffer16[0..<40])
+                // print( buffer32[0..<40])
+                let inputData = Data(copyingBufferOf:  buffer32)
                 try interpreter.copy(inputData, toInputAt: 0)
                 break
                 

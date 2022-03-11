@@ -36,20 +36,19 @@ class _MyAppState extends State<MyApp> {
   // final int sampleRate = 44100;
   // final int bufferSize = 22016;
   // // final int audioLength = 44032;
-  // // final int bufferSize = 11008;
 
   //!example values for MFCC, melspectrogram, spectrogram models
-  // // final String model = 'assets/spectrogram_model.tflite';
-  // // final String label = 'assets/spectrogram_label.txt';
-  // // final String inputType = 'spectrogram';
-  // // final String inputType = 'melSpectrogram';
+  // final String model = 'assets/spectrogram_model.tflite';
+  // final String label = 'assets/spectrogram_label.txt';
+  // final String inputType = 'spectrogram';
+  // final String inputType = 'melSpectrogram';
   // final String model = 'assets/mfcc_model.tflite';
   // final String label = 'assets/mfcc_label.txt';
   // final String inputType = 'mfcc';
   // final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
   // final int sampleRate = 16000;
   // final int bufferSize = 2000;
-  // // final int audioLength = 15996;
+  // final int audioLength = 16000;
 
   //!Optional parameters you can adjust to modify your input and output
   final bool outputRawScores = false;
@@ -76,12 +75,10 @@ class _MyAppState extends State<MyApp> {
     );
 
     //spectrogram parameters
-    // TfliteAudio.setSpectrogramParameters(
-    //     shouldTranspose: false, nFFT: 256, hopLength: 129);
+    // TfliteAudio.setSpectrogramParameters(nFFT: 256, hopLength: 129);
 
     // mfcc parameters
-    TfliteAudio.setSpectrogramParameters(
-        shouldTranspose: false, nMFCC: 40, hopLength: 16384);
+    // TfliteAudio.setSpectrogramParameters(nMFCC: 40, hopLength: 16384);
   }
 
   /// get result by calling the stream startAudioRecognition
@@ -89,10 +86,9 @@ class _MyAppState extends State<MyApp> {
   void getResult() {
     //example for stored audio file recognition
     // result = TfliteAudio.startFileRecognition(
-    //   // audioLength: this.audioLength,
     //   audioDirectory: this.audioDirectory,
     //   sampleRate: this.sampleRate,
-
+    //   // audioLength: this.audioLength,
     //   // detectionThreshold: this.detectionThreshold,
     //   // averageWindowDuration: this.averageWindowDuration,
     //   // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
@@ -101,10 +97,10 @@ class _MyAppState extends State<MyApp> {
 
     //example for recording recognition
     result = TfliteAudio.startAudioRecognition(
-      // audioLength: this.audioLength,
       sampleRate: this.sampleRate,
       bufferSize: this.bufferSize,
       numOfInferences: this.numOfInferences,
+      // audioLength: this.audioLength,
       // detectionThreshold: this.detectionThreshold,
       // averageWindowDuration: this.averageWindowDuration,
       // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
@@ -132,7 +128,7 @@ class _MyAppState extends State<MyApp> {
 
   ///handles null exception if snapshot is null.
   String showResult(AsyncSnapshot snapshot, String key) =>
-      snapshot.hasData ? snapshot.data[key].toString() : 'null ';
+      snapshot.hasData ? snapshot.data[key].toString() : '0 ';
 
   @override
   Widget build(BuildContext context) {
