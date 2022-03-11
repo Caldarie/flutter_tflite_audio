@@ -66,7 +66,7 @@ Recording            |  Inference result
    * For more information on how to train your own model. Take a look [here](https://github.com/tensorflow/docs/blob/master/site/en/r1/tutorials/sequences/audio_recognition.md)
    * To train a decoded wave with MFCC, take a look [here](https://github.com/tensorflow/tensorflow/tree/r1.15/tensorflow/examples/speech_commands)
 
-4. **(Excperimental) feature)**  Spectogram, MFCC, mel as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
+4. **(Experimental feature)**  Spectogram, MFCC, mel as an input type. Will support model from this [tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). 
 
 5. **(Currently worked on feature)** Raw audio with additional dynamic inputs. Take a look at this [branch](https://github.com/Caldarie/flutter_tflite_audio/tree/experimental_dynamic_input) for work on progress
 
@@ -226,7 +226,7 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
        inputType: 'decodedWav',
        outputRawScores: false, 
        numThreads: 1,
-       isAsset: this.isAsset,
+       isAsset: true,
      );
    ```
 
@@ -359,11 +359,11 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
            noCompress 'tflite'
    ```
 
-<br/>
+<br>
 
 #### **NOTE:** Skip below if your are not using Google Teachable Machine (Android)
 
-<br/>
+<br>
 
 
 1. Enable select-ops under dependencies in your build gradle.
@@ -402,11 +402,11 @@ Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tr
    platform :ios, '12.0'
    ```
 
-<br/>
+<br>
 
 #### **NOTE:** Skip below if your are not using Google Teachable Machine (iOS)
 
-<br/>
+<br>
 
 
 1. In the same podfile, add `pod 'TensorFlowLiteSelectTfOps' under target.
