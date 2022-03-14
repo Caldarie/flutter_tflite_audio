@@ -1,4 +1,4 @@
-package io.flutter.plugins.tflite_audio_example;
+package flutter.tflite_audio_example;
 
 import androidx.test.rule.ActivityTestRule;
 import dev.flutter.plugins.integration_test.FlutterTestRunner;

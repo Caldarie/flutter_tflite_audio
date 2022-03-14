@@ -1,4 +1,4 @@
-package io.flutter.plugins.tflite_audio_example;
+package flutter.tflite_audio_example;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
