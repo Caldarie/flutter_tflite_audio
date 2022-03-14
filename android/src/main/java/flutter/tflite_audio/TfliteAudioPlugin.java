@@ -655,7 +655,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     startRecognition(audioChunk);
                 });
          
-        recording.splice();
+        recording.start();
     }
 
     private void startRecognition(short[] inputBuffer16) {
