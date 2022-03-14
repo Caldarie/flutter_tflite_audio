@@ -1,7 +1,5 @@
 package flutter.tflite_audio;
 
-// import flutter.tflite_audio.processing.D
-
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -14,10 +12,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.provider.Settings;
 import android.util.Log;
-import android.media.AudioRecord;
-import android.media.AudioFormat; //Toggle this off unless debugging?
-import android.media.MediaCodec; //required for extracting raw audio
-import android.media.MediaRecorder;
 import android.os.Looper;
 import android.os.Handler;
 
@@ -26,35 +20,23 @@ import androidx.annotation.NonNull;
 
 import org.tensorflow.lite.Interpreter;
 
-import java.util.concurrent.CompletableFuture; //required to get value from thread
-import java.util.concurrent.CountDownLatch;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.ByteBuffer; //required for preprocessing
-import java.nio.ByteOrder; //required for preprocessing
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.MappedByteBuffer;
-import java.nio.ShortBuffer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.*;
 import io.reactivex.rxjava3.schedulers.Schedulers;
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.subjects.PublishSubject;
 
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
@@ -71,11 +53,6 @@ import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.EventChannel.EventSink;
 import io.flutter.plugin.common.EventChannel.StreamHandler;
 
-//External libraries
-//TODO - new class
-import org.apache.commons.math3.complex.Complex;
-import com.jlibrosa.audio.JLibrosa;
-
 public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, FlutterPlugin, ActivityAware,
         PluginRegistry.RequestPermissionsResultListener {
 
@@ -84,7 +61,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private static final int REQUEST_RECORD_AUDIO = 13;
     private static final int REQUEST_READ_EXTERNAL_STORAGE = 1;
     private static TfliteAudioPlugin instance;
-    private Handler handler = new Handler(Looper.getMainLooper()); //required for runOnUI threads
+    private final Handler handler = new Handler(Looper.getMainLooper()); //required for runOnUI threads
 
     // working recording variables
     private Thread recordingThread;
@@ -98,10 +75,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     // working label variables
     private List<String> labels;
 
-    // working recognition variables
-    private long lastProcessingTimeMs;
     private Interpreter tfLite;
-    private LabelSmoothing labelSmoothing = null;
 
     // flutter
     private AssetManager assetManager;
@@ -213,9 +187,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     }
 
     @Override
-    public void onMethodCall(@NonNull MethodCall call, @NonNull Result _result) {
+    public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
         HashMap arguments = (HashMap) call.arguments;
-        Result result = _result;
 
         switch (call.method) {
             case "loadModel":
@@ -344,8 +317,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private void loadModel(){
         Log.d(LOG_TAG, "model name is: " + modelPath);
         boolean isAsset = this.isAssetObj == null ? false : (boolean) isAssetObj;
-        MappedByteBuffer buffer = null;
-        String key = null;
+        MappedByteBuffer buffer;
+        String key;
 
         try {
             if (isAsset) {
@@ -657,9 +630,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         AudioProcessing audioData = new AudioProcessing();
 
         float [] inputBuffer32; //for spectro
-        float [][] inputData2D = {}; //for raw audio
-        float [][][][] inputData4D = {}; // for spectro
-        Object [] inputArray = {};
+        float [][] inputData2D; //for raw audio
+        float [][][][] inputData4D; // for spectro
+        Object [] inputArray;
 
         int [] outputShape = tfLite.getOutputTensor(0).shape();
         int outputSize = Arrays.stream(outputShape).max().getAsInt();
@@ -682,7 +655,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     ? signalProcessing.transpose2D(mfcc)
                     : mfcc;
 
-                tfLite.run(mfcc, outputTensor);
+                tfLite.run(inputData2D, outputTensor);
                 break;
 
             case "melSpectrogram":
@@ -733,11 +706,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
         }
 
-        lastProcessingTimeMs = new Date().getTime() - startTime;
+        // working recognition variables
+        long lastProcessingTimeMs = new Date().getTime() - startTime;
         Log.v(LOG_TAG, "Raw Scores: " + Arrays.toString(outputTensor[0]));
    
-        if (outputRawScores == false) {
-            labelSmoothing = new LabelSmoothing(
+        if (!outputRawScores) {
+            LabelSmoothing labelSmoothing = new LabelSmoothing(
                     labels,
                     averageWindowDuration,
                     detectionThreshold,
