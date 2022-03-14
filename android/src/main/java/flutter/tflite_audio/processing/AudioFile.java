@@ -2,174 +2,108 @@ package flutter.tflite_audio;
 
 import android.util.Log;
 
-// import io.reactivex.Observable;
-// import io.reactivex.Observer;
-
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.*;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.subjects.PublishSubject;
-// import org.apache.commons.math3.complex.Complex;
-// import com.jlibrosa.audio.JLibrosa;
 
 import java.nio.ShortBuffer;
 import java.util.Arrays;
-import java.nio.FloatBuffer;
-import java.nio.ByteBuffer; //required for preprocessing
-import java.nio.ByteOrder; //required for preprocessing
+import java.nio.ByteBuffer; 
+import java.nio.ByteOrder; 
 
 public class AudioFile {
 
-    private static final String LOG_TAG = "Audio_Slicing";
-    private AudioProcessing audioData = new AudioProcessing();
-    private PublishSubject<short[]> subject = PublishSubject.create();
+    private static final String LOG_TAG = "AudioFile";
 
     private ShortBuffer shortBuffer;
-    private short[] shortAudioChunk;
+    private PublishSubject<short[]> subject;
+    private AudioData audioData;
 
-    private int audioLength;
-    private int fileSize;
-
-    private int indexCount = 0;
-    private int inferenceCount = 1;
-
-    private boolean requirePadding;
-    private int numOfInferences;
-
-    private boolean isPreprocessing = false;
+    private boolean isSplicing = false;
 
     public AudioFile(byte[] byteData, int audioLength) {
 
         shortBuffer = ByteBuffer.wrap(byteData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-        this.audioLength = audioLength;
+        subject = PublishSubject.create();
+        audioData = new AudioData(audioLength, shortBuffer.limit());
+        // fileSize = shortBuffer.limit(); // calculate how many bytes in 1 second in short array
+        // shortAudioChunk = new short[audioLength];
 
-        fileSize = shortBuffer.limit(); // calculate how many bytes in 1 second in short array
-        shortAudioChunk = new short[audioLength];
-
-        int remainingSamples = fileSize % audioLength;
-        int missingSamples = audioLength - remainingSamples;
-        requirePadding = getPaddingRequirement(remainingSamples, missingSamples);
-
-        int totalWithPad = fileSize + missingSamples;
-        int totalWithoutPad = fileSize - remainingSamples;
-        numOfInferences = getNumOfInferences(totalWithoutPad, totalWithPad);
-
-    }
-
-    private boolean getPaddingRequirement(int remainingSamples, int missingSamples) {
-        // To debug requirePadding, simply change original [<] to > before (audioLength/2)
-        // TODO - add unit test | [>] 2/2 or 5/5 | [<] returns 1/1 or 6/6
-        boolean hasMissingSamples = missingSamples != 0 || remainingSamples != audioLength;
-        boolean underThreshold = missingSamples < (int) audioLength * 0.75f;
-
-        if (hasMissingSamples && underThreshold) return true;
-        else if (hasMissingSamples && !underThreshold) return false;
-        else if (!hasMissingSamples && underThreshold) return false;
-        else return false;
-        
-    }
-
-    private int getNumOfInferences(int totalWithoutPad, int totalWithPad) {
-        return requirePadding ? (int) totalWithPad / audioLength : (int) totalWithoutPad / audioLength;
     }
 
     public Observable<short[]> getObservable() {
         return (Observable<short[]>) this.subject;
     }
 
+    public void stop() {
+        isSplicing = false;
+        subject.onComplete();
+    }
+
     public void splice() {
-        isPreprocessing = true;
+        isSplicing = true;
 
-        for (int i = 0; i < fileSize; i++) {
+        for (int i = 0; i < shortBuffer.limit(); i++) {
 
-            if (isPreprocessing == false) {
+            short dataPoint = shortBuffer.get(i);
+
+            if (isSplicing == false) {
                 subject.onComplete();
                 break;
             }
 
-            switch (getState(i)) {
-                case "recognising":
+            switch (audioData.getState(i)) {
+                case "append":
+                    audioData
+                        .append(dataPoint);
+                break;
+                case "recognise":
                     Log.d(LOG_TAG, "Recognising");
-                    displayInferenceCount();
-                    sendAudioChunk();
-                    reset(i);
+                    audioData
+                        .append(dataPoint)
+                        .displayInference()
+                        .emit(new AudioChunk(){
+                            @Override
+                            public void get(short [] data) {
+                                subject.onNext(data);
+                                // Log.d(LOG_TAG, "Inference count: " + Arrays.toString(data));
+                            }
+                        })
+                        .reset();
                     break;
-                case "finalising":
+                case "finalise":
                     Log.d(LOG_TAG, "Finalising");
-                    displayInferenceCount();
-                    padSilenceToChunk(i);
-                    sendAudioChunk();
+                    audioData
+                        .append(dataPoint)
+                        .displayInference()
+                        .emit(new AudioChunk(){
+                            @Override
+                            public void get(short [] data) {
+                                subject.onNext(data);
+                            }
+                        });
                     stop();
                     break;
-                case "appending":
-                    appendDataToChunk(i);
+                case "padAndFinalise":
+                    Log.d(LOG_TAG, "Padding and finalising");
+                    audioData
+                        .append(dataPoint)
+                        .padSilence(i)
+                        .displayInference()
+                        .emit(new AudioChunk(){
+                            @Override
+                            public void get(short [] data) {
+                                subject.onNext(data);
+                            }
+                        });
+                    stop();
                     break;
+         
                 default:
                     throw new AssertionError("Incorrect state when preprocessing");
             }
         }
-    }
-
-    private String getState(int i) {
-        boolean reachInputSize = (i + 1) % audioLength == 0;
-        boolean reachFileSize = i == fileSize - 1;
-        boolean reachInferenceLimit = inferenceCount == numOfInferences;
-
-        if (reachInputSize && !reachInferenceLimit) {
-            return "recognising";
-        } // inferences > 1 && < not final
-        else if (!reachInputSize && reachInferenceLimit && !reachFileSize) {
-            return "appending";
-        } // Inferences = 1
-        else if (!reachInputSize && !reachInferenceLimit) {
-            return "appending";
-        } // Inferences > 1
-        else if (!reachInputSize && reachInferenceLimit && reachFileSize) {
-            return "finalising";
-        } // for padding last infernce
-        else if (reachInputSize && reachInferenceLimit) {
-            return "finalising";
-        } // inference is final
-        else {
-            return "Error";
-        }
-    }
-
-    private void displayInferenceCount() {
-        Log.d(LOG_TAG, "Inference count: " + (inferenceCount) + "/" + numOfInferences);
-    }
-
-    private void sendAudioChunk() {
-        subject.onNext(shortAudioChunk);
-    }
-
-    public void stop() {
-        isPreprocessing = false;
-        subject.onComplete();
-    }
-
-    private void reset(int i) {
-        indexCount = 0;
-        inferenceCount += 1;
-        shortAudioChunk = new short[audioLength];
-        shortAudioChunk[indexCount] = shortBuffer.get(i);
-    }
-
-    private void padSilenceToChunk(int i) {
-        if (requirePadding) {
-            int missingSamples = audioLength - indexCount;
-            Log.d(LOG_TAG, "Missing samples found in short audio chunk..");
-            shortAudioChunk = audioData.addSilence(missingSamples, shortAudioChunk, indexCount);
-        } else {
-            int missingSamples = audioLength - indexCount;
-            Log.d(LOG_TAG,
-                    "Missing samples of " + missingSamples + " are less than half of input. Padding not required");
-        }
-    }
-
-    private void appendDataToChunk(int i) {
-        shortAudioChunk[indexCount] = shortBuffer.get(i);
-        indexCount += 1;
     }
 
 }
