@@ -1,15 +1,16 @@
+/* Point of reference
+https://github.com/flutter/plugins/blob/main/packages/camera/camera/example/android/build.gradle
+*/
+
+
 buildscript {
     repositories {
         google()
         mavenCentral()
-        //jcenter()
-        /*maven {
-            url "https://maven.google.com"
-        }*/
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.0'
+        classpath 'com.android.tools.build:gradle:7.0.2'
     }
 }
 
