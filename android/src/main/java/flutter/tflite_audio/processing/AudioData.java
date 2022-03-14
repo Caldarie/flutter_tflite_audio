@@ -17,10 +17,7 @@ public class AudioData {
     private int indexCount = 0;
     private int inferenceCount = 1;
 
-
     private short[] audioChunk;
-    // private short[] result;
-
 
     public AudioData(int audioLength, int fileSize){
         this.audioLength = audioLength;
