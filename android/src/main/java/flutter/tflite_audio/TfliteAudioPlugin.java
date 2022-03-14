@@ -1,5 +1,7 @@
 package flutter.tflite_audio;
 
+// import flutter.tflite_audio.processing.D
+
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -78,20 +80,13 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         PluginRegistry.RequestPermissionsResultListener {
 
     // ui elements
-    private static final String LOG_TAG = "Tflite_audio";
+    private static final String LOG_TAG = "TfliteAudio";
     private static final int REQUEST_RECORD_AUDIO = 13;
     private static final int REQUEST_READ_EXTERNAL_STORAGE = 1;
     private static TfliteAudioPlugin instance;
-    private Handler handler = new Handler(Looper.getMainLooper());
-
-    // debugging
-    private DisplayLogs display = new DisplayLogs();
-    private boolean showPreprocessLogs = true;
-    private boolean showRecordLogs = false;
+    private Handler handler = new Handler(Looper.getMainLooper()); //required for runOnUI threads
 
     // working recording variables
-    AudioRecord record;
-    boolean shouldContinue = true;
     private Thread recordingThread;
     private final ReentrantLock recordingBufferLock = new ReentrantLock();
 
@@ -99,15 +94,12 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private Thread preprocessThread;
     private String audioDirectory;
     AudioFile audioFile;
-    // private boolean isPreprocessing;
 
     // working label variables
     private List<String> labels;
 
     // working recognition variables
-    boolean lastInference = false;
     private long lastProcessingTimeMs;
-    private Thread recognitionThread;
     private Interpreter tfLite;
     private LabelSmoothing labelSmoothing = null;
 
@@ -128,14 +120,10 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     // input/output variables
     private int [] inputShape;
-    private int [] outputShape;
-    private int inputSize;
-    private int outputSize;
+    // private int [] outputShape;
     private int audioLength;
     private boolean transposeAudio;
     private boolean transposeSpectro;
-    private boolean transposeInput = false;
-    private boolean transposeOutput = false;
     private String inputType;
     private boolean outputRawScores;
 
@@ -158,8 +146,8 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private int suppressionTime;
 
     // Used to extract raw audio data
-    private MediaCodec mediaCodec;
-    MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+    // private MediaCodec mediaCodec;
+    // MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
 
     static Activity getActivity() {
         return instance.activity;
