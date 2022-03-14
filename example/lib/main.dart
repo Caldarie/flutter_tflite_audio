@@ -85,27 +85,27 @@ class _MyAppState extends State<MyApp> {
   /// Uncomment the parameters below if you wish to adjust the values
   void getResult() {
     //example for stored audio file recognition
-    // result = TfliteAudio.startFileRecognition(
-    //   audioDirectory: this.audioDirectory,
-    //   sampleRate: this.sampleRate,
-    //   // audioLength: this.audioLength,
-    //   // detectionThreshold: this.detectionThreshold,
-    //   // averageWindowDuration: this.averageWindowDuration,
-    //   // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
-    //   // suppressionTime: this.suppressionTime,
-    // );
-
-    //example for recording recognition
-    result = TfliteAudio.startAudioRecognition(
+    result = TfliteAudio.startFileRecognition(
+      audioDirectory: this.audioDirectory,
       sampleRate: this.sampleRate,
-      bufferSize: this.bufferSize,
-      numOfInferences: this.numOfInferences,
       // audioLength: this.audioLength,
       // detectionThreshold: this.detectionThreshold,
       // averageWindowDuration: this.averageWindowDuration,
       // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
       // suppressionTime: this.suppressionTime,
     );
+
+    //example for recording recognition
+    // result = TfliteAudio.startAudioRecognition(
+    //   sampleRate: this.sampleRate,
+    //   bufferSize: this.bufferSize,
+    //   numOfInferences: this.numOfInferences,
+    //   // audioLength: this.audioLength,
+    //   // detectionThreshold: this.detectionThreshold,
+    //   // averageWindowDuration: this.averageWindowDuration,
+    //   // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
+    //   // suppressionTime: this.suppressionTime,
+    // );
 
     //Event returns a map. Keys are:
     //event["recognitionResult"], event["hasPermission"], event["inferenceTime"]
