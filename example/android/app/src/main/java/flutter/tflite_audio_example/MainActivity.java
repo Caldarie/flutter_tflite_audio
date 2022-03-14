@@ -1,4 +1,4 @@
-package tfliteaudio.tflite_audio_example;
+package io.flutter.plugins.tflite_audio_example;
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterEngine;
