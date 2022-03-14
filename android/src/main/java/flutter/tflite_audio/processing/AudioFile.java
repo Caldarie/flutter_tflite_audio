@@ -27,8 +27,6 @@ public class AudioFile {
         shortBuffer = ByteBuffer.wrap(byteData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
         subject = PublishSubject.create();
         audioData = new AudioData(audioLength, shortBuffer.limit());
-        // fileSize = shortBuffer.limit(); // calculate how many bytes in 1 second in short array
-        // shortAudioChunk = new short[audioLength];
 
     }
 
@@ -67,7 +65,6 @@ public class AudioFile {
                             @Override
                             public void get(short [] data) {
                                 subject.onNext(data);
-                                // Log.d(LOG_TAG, "Inference count: " + Arrays.toString(data));
                             }
                         })
                         .reset();
