@@ -268,21 +268,16 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             return audioLength;
         }
 
-        else if(!hasValue && isAudioInput){
+        else if(isAudioInput){
             int newAudioLength = Arrays.stream(inputShape).reduce(1, (subtotal, element) -> subtotal * element);
             Log.d(LOG_TAG, "AudioLength has been readjusted. Length: " + newAudioLength);
             return newAudioLength;
         }
 
-        else if(!hasValue && !isAudioInput){
+        else {
             Log.d(LOG_TAG, "Warning: Unspecified audio length may cause unintended problems with spectro models");
             Log.d(LOG_TAG, "AudioLength: " + sampleRate);
             return sampleRate;
-        }
-        
-        else{
-            Log.d(LOG_TAG, "Error: Cannot determine audioLength.");
-            return 0;
         }
     }
 
@@ -298,7 +293,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             // if (shape != 1) { throw new AssertionError("Input shape " + inputShape + "is not mono or raw audio."); } 
             //Log.d(LOG_TAG, "count: " + shape);
 
-            boolean result = inputShape[0] > inputShape[1] ? true : false;
+            boolean result = inputShape[0] > inputShape[1];
             Log.d(LOG_TAG, "Transpose Audio: " + result);
 
             return result;
@@ -316,7 +311,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     private void loadModel(){
         Log.d(LOG_TAG, "model name is: " + modelPath);
-        boolean isAsset = this.isAssetObj == null ? false : (boolean) isAssetObj;
+        boolean isAsset = this.isAssetObj != null && (boolean) isAssetObj;
         MappedByteBuffer buffer;
         String key;
 
@@ -330,7 +325,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 long declaredLength = fileDescriptor.getDeclaredLength();
                 buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
             } else {
-                FileInputStream inputStream = new FileInputStream(new File(modelPath));
+                FileInputStream inputStream = new FileInputStream(modelPath);
                 FileChannel fileChannel = inputStream.getChannel();
                 long declaredLength = fileChannel.size();
                 buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, declaredLength);
@@ -367,7 +362,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             if (assetManager != null) {
                 br = new BufferedReader(new InputStreamReader(assetManager.open(path)));
             } else {
-                br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path))));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
             }
             String line;
             labels = new ArrayList<>(); // resets label input
@@ -485,22 +480,16 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             builder.setMessage(message);
             builder.setPositiveButton(
                     "Settings",
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                    Uri.parse("package:" + activity.getPackageName()));
-                            intent.addCategory(Intent.CATEGORY_DEFAULT);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            activity.startActivity(intent);
-                        }
+                    (dialog, id) -> {
+                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:" + activity.getPackageName()));
+                        intent.addCategory(Intent.CATEGORY_DEFAULT);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        activity.startActivity(intent);
                     });
             builder.setNegativeButton(
                     "Cancel",
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            dialog.cancel();
-                        }
-                    });
+                    (dialog, id) -> dialog.cancel());
             AlertDialog alert = builder.create();
             alert.show();
         });
@@ -509,22 +498,20 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
     private void loadAudioFile() {
         Log.d(LOG_TAG, "Loading audio file to buffer");
-        boolean isAsset = this.isAssetObj == null ? false : (boolean) isAssetObj;
+        boolean isAsset = this.isAssetObj != null && (boolean) isAssetObj;
         AssetFileDescriptor fileDescriptor = null;
         long startOffset = 0;
-        long declaredLength = 0;
+        long declaredLength;
 
         try {
             if (isAsset) {
                 // Get exact location of the file in the asssets folder.
                 String key = FlutterMain.getLookupKeyForAsset(audioDirectory);
                 fileDescriptor = assetManager.openFd(key);
-                FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-                FileChannel fileChannel = inputStream.getChannel();
                 startOffset = fileDescriptor.getStartOffset();
                 declaredLength = fileDescriptor.getDeclaredLength();
             } else {
-                FileInputStream inputStream = new FileInputStream(new File(audioDirectory));
+                FileInputStream inputStream = new FileInputStream(audioDirectory);
                 FileChannel fileChannel = inputStream.getChannel();
                 declaredLength = fileChannel.size();
             }
@@ -560,12 +547,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             return;
         }
         preprocessThread = new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        preprocess(byteData);
-                    }
-                });
+                () -> preprocess(byteData));
         preprocessThread.start();
     }
 
@@ -579,9 +561,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     stopStream(); 
                     clearPreprocessing();
                 })
-                .subscribe((audioChunk) -> {
-                    startRecognition(audioChunk);
-                });
+                .subscribe(this::startRecognition);
         audioFile.splice();
     }
 
@@ -590,12 +570,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             return;
         }
         recordingThread = new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        record();
-                    }
-                });
+                this::record);
         recordingThread.start();
     }
 
@@ -612,9 +587,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                     stopStream();
                     clearRecording();
                     })
-                .subscribe((audioChunk) -> {
-                    startRecognition(audioChunk);
-                });
+                .subscribe(this::startRecognition);
          
         recording.start();
     }
@@ -649,7 +622,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             case "mfcc":
       
                 inputBuffer32 = audioData.normalizeBySigned16(inputBuffer16);
-                float mfcc [][] = signalProcessing.getMFCC(inputBuffer32);
+                float[][] mfcc = signalProcessing.getMFCC(inputBuffer32);
 
                 inputData2D = transposeSpectro
                     ? signalProcessing.transpose2D(mfcc)
