@@ -148,7 +148,10 @@ public class RecordingTest {
                     System.out.println("recognising");
                     recordingData
                             .append(shortBuffer)
-                            .emit(data -> result.addAll(convertToList(data)))
+                            .emit(data -> {
+                                System.out.println(Arrays.toString(data));
+                                result.addAll(convertToList(data));
+                            })
                             .updateInferenceCount()
                             .clear();
                     break;
@@ -178,7 +181,6 @@ public class RecordingTest {
                             .clear()
                             .updateExcess()
                             .addExcessToNew(shortBuffer);
-//                            .resetExcessCount();
                     break;
 
                 case "trimAndFinalise":

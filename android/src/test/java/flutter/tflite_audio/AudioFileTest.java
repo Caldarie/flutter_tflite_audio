@@ -16,8 +16,6 @@ import java.util.stream.IntStream;
 
 public class AudioFileTest {
 
-    private static final String LOG_TAG = "AudioFileTest";
-
     @Test
     public void testSingleSplice() {
 
@@ -43,7 +41,6 @@ public class AudioFileTest {
     public void testSingleSplice_lackData_withPad(){
         short [] audioData = {1, 2};
         int audioLength = 3;
-        short [] expectedNoPad = audioData;
         int expectedWithPadLength = 3;
 
         List<Short> resultList = splice(audioData, audioLength, audioData.length);
@@ -51,7 +48,7 @@ public class AudioFileTest {
         short [] resultNoPad = Arrays.copyOfRange(result, 0, audioData.length);
 
         System.out.println("singleSplice_lackData_withPad: " + resultList.toString());
-        assertArrayEquals(resultNoPad, expectedNoPad);
+        assertArrayEquals(resultNoPad, audioData);
         assertEquals(result.length, expectedWithPadLength);
     }
 
@@ -82,7 +79,6 @@ public class AudioFileTest {
 
         short [] audioData = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         int audioLength = 6;
-        short [] expectedNoPad = audioData;
         int expectedWithPadLength = 12;
 
         List<Short> resultList = splice(audioData, audioLength, audioData.length);
@@ -90,17 +86,16 @@ public class AudioFileTest {
         short [] resultNoPad = Arrays.copyOfRange(result, 0, audioData.length);
 
         System.out.println("multiSplice_lackData_withPad: " + resultList.toString());
-        assertArrayEquals(resultNoPad, expectedNoPad);
+        assertArrayEquals(resultNoPad, audioData);
         assertEquals(result.length, expectedWithPadLength);
     }
 
 
     //https://stackoverflow.com/questions/60072435/how-to-convert-short-into-listshort-in-java-with-streams
     public List <Short> convertToList(short [] shortArray){
-        List <Short> result = IntStream.range(0, shortArray.length)
+        return IntStream.range(0, shortArray.length)
                 .mapToObj(s -> shortArray[s])
                 .collect(Collectors.toList());
-        return result;
     }
 
     //https://stackoverflow.com/questions/718554/how-to-convert-an-arraylist-containing-integers-to-primitive-int-array
@@ -108,7 +103,7 @@ public class AudioFileTest {
         short [] result = new short[shortList.size()];
 
         for (int i=0; i < result.length; i++) {
-            result[i] = shortList.get(i).shortValue();
+            result[i] = shortList.get(i);
         }
 
         return result;
@@ -116,7 +111,6 @@ public class AudioFileTest {
 
     public List<Short> splice(short [] shortBuffer, int audioLength, int bufferSize){
 
-//        short[] result = {};
         List <Short> result = new ArrayList<Short>();
         AudioProcessing audioProcessing = new AudioProcessing();
         AudioData audioData = new AudioData(audioLength, bufferSize);
@@ -124,7 +118,7 @@ public class AudioFileTest {
 
         for (int i = 0; i < shortBuffer.length; i++) {
 
-            if (isSplicing == false) {
+            if (!isSplicing) {
                 break;
             }
 
@@ -136,7 +130,7 @@ public class AudioFileTest {
                         .append(dataPoint);
                 break;
                 case "recognise":
-//                    System.out.println("recognising");
+                    System.out.println("recognising");
                     audioData
                         .append(dataPoint)
                         .displayInference()
@@ -146,7 +140,7 @@ public class AudioFileTest {
                         .reset();
                     break;
                 case "finalise":
-//                    System.out.println("finalising");
+                    System.out.println("finalising");
                     audioData
                         .append(dataPoint)
                         .displayInference()
@@ -156,7 +150,7 @@ public class AudioFileTest {
                     isSplicing = false;
                     break;
                 case "padAndFinalise":
-//                    System.out.println("padding and finalising");
+                    System.out.println("padding and finalising");
                     audioData
                         .append(dataPoint)
                         .padSilence(i)

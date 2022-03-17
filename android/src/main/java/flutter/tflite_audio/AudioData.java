@@ -8,11 +8,11 @@ public class AudioData {
 
     private static final String LOG_TAG = "AudioData";
 
-    private int audioLength;
-    private int fileSize;
+    private final int audioLength;
+    private final int fileSize;
 
-    private boolean requirePadding;
-    private int numOfInferences;
+    private final boolean requirePadding;
+    private final int numOfInferences;
 
     private int indexCount = 0;
     private int inferenceCount = 1;
@@ -38,14 +38,14 @@ public class AudioData {
 
         boolean hasMissingSamples = missingSamples != 0 || excessSample != audioLength;
         double missingSampleThreshold = 0.40;
-        double missingSamplesRatio = Double.valueOf(missingSamples) / Double.valueOf(audioLength);
+        double missingSamplesRatio = (double) missingSamples / (double) audioLength;
         boolean shouldPad =  missingSamplesRatio < missingSampleThreshold;
 
         if (hasMissingSamples && shouldPad) return true;
         else if (hasMissingSamples && !shouldPad) return false;
         else if (!hasMissingSamples && shouldPad) return false;
         else return false;
-        
+
     }
 
     private int getNumOfInferences(int totalWithoutPad, int totalWithPad) {
@@ -88,9 +88,10 @@ public class AudioData {
         return this;
     }
 
-    //https://www.javatpoint.com/java-closure
-    //https://www.geeksforgeeks.org/method-within-method-in-java/
-    // https://stackoverflow.com/questions/54566753/escaping-closure-in-swift-and-how-to-perform-it-in-java
+    /*
+    https://www.javatpoint.com/java-closure
+    https://www.geeksforgeeks.org/method-within-method-in-java/
+    https://stackoverflow.com/questions/54566753/escaping-closure-in-swift-and-how-to-perform-it-in-java */
     public AudioData emit(AudioChunk audioChunk) {
         audioChunk.get(this.audioChunk);
         return this;

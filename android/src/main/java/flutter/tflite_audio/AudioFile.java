@@ -12,13 +12,33 @@ import java.util.Arrays;
 import java.nio.ByteBuffer; 
 import java.nio.ByteOrder; 
 
+/*
+!References
+https://www.javatpoint.com/java-closure
+https://www.geeksforgeeks.org/method-within-method-in-java/
+https://stackoverflow.com/questions/54566753/escaping-closure-in-swift-and-how-to-perform-it-in-java
+
+```
+.emit(new AudioChunk(){
+                    @Override
+                    public void get(short [] data) {
+                        subject.onNext(data);
+                    }
+                })
+```
+!Code above same as lambda below:
+
+`.emit(data -> subject.onNext(data))`
+
+*/
+
 public class AudioFile {
 
     private static final String LOG_TAG = "AudioFile";
 
-    private ShortBuffer shortBuffer;
-    private PublishSubject<short[]> subject;
-    private AudioData audioData;
+    private final ShortBuffer shortBuffer;
+    private final PublishSubject<short[]> subject;
+    private final AudioData audioData;
 
     private boolean isSplicing = false;
 
@@ -46,7 +66,7 @@ public class AudioFile {
 
             short dataPoint = shortBuffer.get(i);
 
-            if (isSplicing == false) {
+            if (!isSplicing) {
                 subject.onComplete();
                 break;
             }
@@ -61,12 +81,7 @@ public class AudioFile {
                     audioData
                         .append(dataPoint)
                         .displayInference()
-                        .emit(new AudioChunk(){
-                            @Override
-                            public void get(short [] data) {
-                                subject.onNext(data);
-                            }
-                        })
+                        .emit(data -> subject.onNext(data))
                         .reset();
                     break;
                 case "finalise":
@@ -74,12 +89,7 @@ public class AudioFile {
                     audioData
                         .append(dataPoint)
                         .displayInference()
-                        .emit(new AudioChunk(){
-                            @Override
-                            public void get(short [] data) {
-                                subject.onNext(data);
-                            }
-                        });
+                        .emit(data -> subject.onNext(data));
                     stop();
                     break;
                 case "padAndFinalise":
@@ -88,12 +98,7 @@ public class AudioFile {
                         .append(dataPoint)
                         .padSilence(i)
                         .displayInference()
-                        .emit(new AudioChunk(){
-                            @Override
-                            public void get(short [] data) {
-                                subject.onNext(data);
-                            }
-                        });
+                        .emit(data -> subject.onNext(data));
                     stop();
                     break;
          

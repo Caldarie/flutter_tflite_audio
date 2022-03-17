@@ -1,5 +1,6 @@
 package flutter.tflite_audio;
 
+import android.annotation.SuppressLint;
 import android.media.MediaRecorder;
 import android.media.AudioRecord;
 import android.media.AudioFormat;
@@ -11,6 +12,26 @@ import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.*;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.subjects.PublishSubject;
+
+/*
+!References
+https://www.javatpoint.com/java-closure
+https://www.geeksforgeeks.org/method-within-method-in-java/
+https://stackoverflow.com/questions/54566753/escaping-closure-in-swift-and-how-to-perform-it-in-java
+
+```
+.emit(new AudioChunk(){
+                    @Override
+                    public void get(short [] data) {
+                        subject.onNext(data);
+                    }
+                })
+```
+!Code above same as lambda below:
+
+`.emit(data -> subject.onNext(data))`
+
+*/
 
 
 public class Recording{
@@ -29,6 +50,7 @@ public class Recording{
     private PublishSubject<short []> subject;
     private ReentrantLock recordingBufferLock;
 
+    @SuppressLint("MissingPermission")
     public Recording(int bufferSize, int audioLength, int sampleRate, int numOfInferences){
         this.bufferSize = bufferSize;
         this.audioLength = audioLength;
@@ -36,17 +58,14 @@ public class Recording{
         this.numOfInferences = numOfInferences;
 
         this.subject = PublishSubject.create();
-        this.recordingData = new RecordingData();
+        this.recordingData = new RecordingData(audioLength, bufferSize, numOfInferences);
         this.record = new AudioRecord(
             MediaRecorder.AudioSource.DEFAULT,
             sampleRate,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
             bufferSize);
-        
-        recordingData.setRecordingBufferSize(audioLength);
-        recordingData.setNumOfInferences(numOfInferences);
-        recordingData.setAudioLength(audioLength);
+    
     }
 
     public void setReentrantLock(ReentrantLock recordingBufferLock){
@@ -83,74 +102,48 @@ public class Recording{
 
         while (shouldContinue) {
 
-            short[] recordingFrame = new short [bufferSize/2];
-            record.read(recordingFrame, 0, recordingFrame.length);
-            // recordingData.updateReadCount(numberRead);
-
+            short[] shortData = new short [bufferSize/2];
+            record.read(shortData, 0, shortData.length);
             recordingBufferLock.lock();
 
             try {
                 switch (recordingData.getState()) {
                     case "append":
                         recordingData
-                            .append(recordingFrame);
+                            .append(shortData);
                         break;
 
                     case "recognise":
-                        // Log.v(LOG_TAG, "recognising");
                         recordingData
-                            .append(recordingFrame)
-                            .emit(new AudioChunk(){
-                                @Override
-                                public void get(short [] data) {
-                                    subject.onNext(data);
-                                }
-                            })
-                            .updateCount()
+                            .append(shortData)
+                            .emit(data -> subject.onNext(data))
+                            .updateInferenceCount()
                             .clear();
                         break;
 
                     case "finalise":
-                        // Log.v(LOG_TAG, "finalising");
                         recordingData
-                            .append(recordingFrame)
-                            .emit(new AudioChunk(){
-                                @Override
-                                public void get(short [] data) {
-                                    subject.onNext(data);
-                                }
-                            });
+                            .append(shortData)
+                            .emit(data -> subject.onNext(data));
                         stop();
                         break;
 
                     case "trimAndRecognise":
-                        // Log.v(LOG_TAG, "trimming and recognising");
                         recordingData
-                            .calculateExcess()
-                            .trimExcessToRemain(recordingFrame)
-                            .emit(new AudioChunk(){
-                                @Override
-                                public void get(short [] data) {
-                                    subject.onNext(data);
-                                }
-                            })
-                            .updateCount()
+                            .updateRemain()
+                            .trimToRemain(shortData)
+                            .emit(data -> subject.onNext(data))
+                            .updateInferenceCount()
                             .clear()
-                            .addExcessToNew(recordingFrame)
-                            .resetExcessCount();
+                            .updateExcess()
+                            .addExcessToNew(shortData);
                         break;
 
                     case "trimAndFinalise":
-                        // Log.v(LOG_TAG, "trimming and finalising");
                         recordingData
-                            .calculateExcess()
-                            .trimExcessToRemain(recordingFrame)
-                            .emit(new AudioChunk(){
-                                @Override
-                                public void get(short [] data) {
-                                    subject.onNext(data);
-                                }
-                            });
+                            .updateRemain()
+                            .trimToRemain(shortData)
+                            .emit(data -> subject.onNext(data));
                         stop();
                         break;
                     

@@ -59,13 +59,13 @@ public class RecordingData {
     }
 
 
-    public RecordingData append(short[] recordingFrame){
+    public RecordingData append(short[] shortData){
 
         //TODO - break when excess or remainframe is full
 
-        System.arraycopy(recordingFrame, 0, recordingBuffer, recordingOffset, recordingFrame.length);
-        recordingOffset += recordingFrame.length;
-        readCount =  recordingOffset + recordingFrame.length;
+        System.arraycopy(shortData, 0, recordingBuffer, recordingOffset, shortData.length);
+        recordingOffset += shortData.length;
+        readCount =  recordingOffset + shortData.length;
 
         Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + audioLength + " | inferenceCount: "
         + inferenceCount + "/" + numOfInferences);
@@ -83,71 +83,37 @@ public class RecordingData {
     }
 
     public RecordingData updateRemain(){
-        //algorithm does not work where recordingFrame exceeds audioLength.
-        //refer to RecordingTest.java - testMultiSplice_withExcess
-
         remainingLength = audioLength - recordingOffset;
         remainingFrame = new short[remainingLength];
-
-        // System.out.println("audioLength: " + audioLength);
-        // System.out.println("recordingOffset: " + recordingOffset);
-        // System.out.println("readCount: " + readCount);
-        // System.out.println("adjust: " + adjust);
-        System.out.println("remainingLength: " + remainingLength);
-
         return this;
     }
 
 
-    public RecordingData trimToRemain(short[] recordingFrame){
-        System.arraycopy(recordingFrame, 0, remainingFrame, 0, remainingLength);
+    public RecordingData trimToRemain(short[] shortData){
+        System.arraycopy(shortData, 0, remainingFrame, 0, remainingLength);
         System.arraycopy(remainingFrame, 0, recordingBuffer, recordingOffset, remainingLength);
-        System.out.println("remainingFrame: " + Arrays.toString(remainingFrame));
-        
-        //Dont need read count as you are trimming the data. (Already readcount in append)
+
+        //!Dont need [readCount] as you are trimming the data. (Already readcount in append)
         recordingOffset += remainingLength;
-        System.out.println("remainReadCount: " + readCount);
-        // Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + audioLength + " | inferenceCount: "
-        // + inferenceCount + "/" + numOfInferences + " (" + remainingLength +  " samples has been trimmed)");
-        System.out.println("recordingOffset: " + recordingOffset + "/" + audioLength + " | inferenceCount: "
+        Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + audioLength + " | inferenceCount: "
         + inferenceCount + "/" + numOfInferences + " (" + remainingLength +  " samples has been trimmed)");
         return this;
     }
 
     public RecordingData updateExcess(){
-        //algorithm does not work where recordingFrame exceeds audioLength.
-        //refer to RecordingTest.java - testMultiSplice_withExcess
-
-        //! = add situation where readcount overflows e.g audioLength = 4, buffer = [1, 2, 3] => [1, 2, 3, 1, 2]
-        // boolean adjust = readCount <= audioLength;
-        // excessLength = adjust ? readCount : readCount - audioLength;
-        // excessLength = readCount - audioLength;
         excessLength = bufferSize - remainingLength;
-        System.out.println("excesslength: " + excessLength);
         excessFrame = new short[excessLength];
-
         return this;
     }
 
-    public RecordingData addExcessToNew(short[] recordingFrame){
-        // System.out.println("readCount: " + readCount);
-        // System.out.println("recordingFrame: " + Arrays.toString(recordingFrame));
-        System.out.println("remainingLength: " + remainingLength);
-        // System.out.println("recordingFrame: " + Arrays.toString(recordingFrame));
-        // System.out.println("recordingFrame: " + Arrays.toString(recordingFrame));
-
-        System.arraycopy(recordingFrame, remainingLength, excessFrame, 0, excessLength);;
+    public RecordingData addExcessToNew(short[] shortData){
+        System.arraycopy(shortData, remainingLength, excessFrame, 0, excessLength);;
         System.arraycopy(excessFrame, 0, recordingBuffer, 0, excessLength);
-        System.out.println("excessFrame: " + Arrays.toString(excessFrame));
-        System.out.println("recordingFrameAfterExcess: " + Arrays.toString(recordingBuffer));
         
-        //need readcount as your add excess data in appeneded to new data
+        //!need [readCount] as your add excess data in appeneded to new data
         recordingOffset += excessLength;
-        readCount = recordingOffset + recordingFrame.length;
-        System.out.println("excessReadCount: " + readCount);
-        // Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + audioLength + " | inferenceCount: "
-        // + inferenceCount + "/" + numOfInferences + " (" + excessLength +  " samples added to new recording buffer)");
-        System.out.println("recordingOffset: " + recordingOffset + "/" + audioLength + " | inferenceCount: "
+        readCount = recordingOffset + shortData.length;
+        Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + audioLength + " | inferenceCount: "
         + inferenceCount + "/" + numOfInferences + " (" + excessLength +  " samples added to new recording buffer)");
         return this;
     }
