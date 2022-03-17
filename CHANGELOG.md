@@ -1,10 +1,12 @@
-## 0.2.3
+## 0.3.0
 * Experimental: Support MFCC, melSpectrogram and spectrogram inputs
 * Feature: Can automatically or manually set audio length
 * Feature: Can automatically or manually transpose input shape
 * Improvement: Stability of asyncronous operations with RxJava and RxSwift
 * Improvement: (iOS) Removed meta info when extracting data from audio file.
 * Fixed: (iOS) Duplicate symbol error. Set version of TensorFlowLite to 2.6.0. Problem found [here][i25].
+* Fixed: (Android & iOS) Incorrect padding when splicing audio file. All test cases have now passed.
+* Fixed: (Android) Incorrect splicing algorithm. All test cases have now passed.
 
 [i25]: https://github.com/Caldarie/flutter_tflite_audio/issues/25
   
