@@ -53,7 +53,7 @@ class Recording{
 
     func start(){
 
-        let recordingFrameBuffer = bufferSize/2
+        let recordingFrame = AVAudioFrameCount(bufferSize)
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
         let recordingFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: Double(sampleRate), channels: 1, interleaved: true)
@@ -63,7 +63,7 @@ class Recording{
 
          audioEngine.inputNode.installTap(onBus: 0, bufferSize: AVAudioFrameCount(bufferSize), format: inputFormat) { (buffer, time) in
             
-            let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFrameBuffer))
+            let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: recordingFrame)
             var error: NSError? = nil
             
             let inputBlock: AVAudioConverterInputBlock = {inNumPackets, outStatus in

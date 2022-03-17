@@ -102,7 +102,7 @@ public class Recording{
 
         while (shouldContinue) {
 
-            short[] shortData = new short [bufferSize/2];
+            short[] shortData = new short [bufferSize];
             record.read(shortData, 0, shortData.length);
             recordingBufferLock.lock();
 
