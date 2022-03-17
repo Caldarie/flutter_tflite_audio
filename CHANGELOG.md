@@ -1,12 +1,13 @@
 ## 0.3.0
+* BREAK CHANGE: Recording bufferSize now takes in 2x the number of samples. To keep the same recording length, simply divide your previous bufferSize by 2.
 * Experimental: Support MFCC, melSpectrogram and spectrogram inputs
 * Feature: Can automatically or manually set audio length
 * Feature: Can automatically or manually transpose input shape
 * Improvement: Stability of asyncronous operations with RxJava and RxSwift
 * Improvement: (iOS) Removed meta info when extracting data from audio file.
+* Improvement: (Android) Splicing algorithm passes all test case. Audio recogntion should now be more accurate.
 * Fixed: (iOS) Duplicate symbol error. Set version of TensorFlowLite to 2.6.0. Problem found [here][i25].
-* Fixed: (Android & iOS) Incorrect padding when splicing audio file. All test cases have now passed.
-* Fixed: (Android) Incorrect splicing algorithm. All test cases have now passed.
+* Fixed: (Android & iOS) Incorrect padding when splicing audio file. All test cases have passed.
 
 [i25]: https://github.com/Caldarie/flutter_tflite_audio/issues/25
   
