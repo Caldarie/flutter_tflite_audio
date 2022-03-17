@@ -107,7 +107,7 @@ public class RecordingData {
     }
 
     public RecordingData addExcessToNew(short[] shortData){
-        System.arraycopy(shortData, remainingLength, excessFrame, 0, excessLength);;
+        System.arraycopy(shortData, remainingLength, excessFrame, 0, excessLength);
         System.arraycopy(excessFrame, 0, recordingBuffer, 0, excessLength);
         
         //!need [readCount] as your add excess data in appeneded to new data
