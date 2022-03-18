@@ -88,24 +88,23 @@ class RecordingTest: XCTestCase {
                      break
                  case "recognise":
                      recordingData
-                    .emit{ (audioChunk) in  result.append(contentsOf: audioChunk)}
+                         .emit{ (audioChunk) in  result.append(contentsOf: audioChunk)}
                          .updateCount()
                          .clear()
                          .append(data: data)
                      break
                  case "trimAndRecognise":
                      recordingData
-                    .emit{ (audioChunk) in  result.append(contentsOf: audioChunk)}
+                         .emit{ (audioChunk) in  result.append(contentsOf: audioChunk)}
                          .updateCount()
                          .trimExcessToNewBuffer()
                      break
                  case "finalise":
                      recordingData
-                    .emit{ (audioChunk) in  result.append(contentsOf: audioChunk)}
+                         .emit{ (audioChunk) in  result.append(contentsOf: audioChunk)}
                          .updateCount()
                          .resetCount()
                          .clear()
-                         
                      isRecording = false
                      break
                  default:

@@ -128,7 +128,6 @@ class Recording{
                     .updateCount()
                     .resetCount()
                     .clear()
-                    
                 self.stop()
                 break
             default:

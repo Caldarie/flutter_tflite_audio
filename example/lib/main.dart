@@ -36,7 +36,7 @@ class _MyAppState extends State<MyApp> {
   final String inputType = 'rawAudio';
   final String audioDirectory = 'assets/sample_audio_44k_mono.wav';
   final int sampleRate = 44100;
-  final int bufferSize = 22016;
+  final int bufferSize = 11016;
   // final int audioLength = 44032;
 
   ///example values for MFCC, melspectrogram, spectrogram models
@@ -90,27 +90,27 @@ class _MyAppState extends State<MyApp> {
 
   void getResult() {
     ///example for stored audio file recognition
-    result = TfliteAudio.startFileRecognition(
-      audioDirectory: audioDirectory,
-      sampleRate: sampleRate,
-      // audioLength: audioLength,
-      // detectionThreshold: detectionThreshold,
-      // averageWindowDuration: averageWindowDuration,
-      // minimumTimeBetweenSamples: minimumTimeBetweenSamples,
-      // suppressionTime: suppressionTime,
-    );
-
-    ///example for recording recognition
-    // result = TfliteAudio.startAudioRecognition(
+    // result = TfliteAudio.startFileRecognition(
+    //   audioDirectory: audioDirectory,
     //   sampleRate: sampleRate,
-    //   bufferSize: bufferSize,
-    //   numOfInferences: numOfInferences,
     //   // audioLength: audioLength,
     //   // detectionThreshold: detectionThreshold,
     //   // averageWindowDuration: averageWindowDuration,
     //   // minimumTimeBetweenSamples: minimumTimeBetweenSamples,
     //   // suppressionTime: suppressionTime,
     // );
+
+    ///example for recording recognition
+    result = TfliteAudio.startAudioRecognition(
+      sampleRate: sampleRate,
+      bufferSize: bufferSize,
+      numOfInferences: numOfInferences,
+      // audioLength: audioLength,
+      // detectionThreshold: detectionThreshold,
+      // averageWindowDuration: averageWindowDuration,
+      // minimumTimeBetweenSamples: minimumTimeBetweenSamples,
+      // suppressionTime: suppressionTime,
+    );
 
     ///Below returns a map of values. The keys are:
     ///"recognitionResult", "hasPermission", "inferenceTime"
@@ -208,8 +208,6 @@ class _MyAppState extends State<MyApp> {
                     return FloatingActionButton(
                       onPressed: () {
                         log('Audio Recognition Stopped');
-
-                        ///Press button again to cancel audio recognition
                         TfliteAudio.stopAudioRecognition();
                       },
                       backgroundColor: Colors.red,

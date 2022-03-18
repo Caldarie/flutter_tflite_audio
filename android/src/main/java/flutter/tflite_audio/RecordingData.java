@@ -96,7 +96,7 @@ public class RecordingData {
         //!Dont need [readCount] as you are trimming the data. (Already readcount in append)
         recordingOffset += remainingLength;
         Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + audioLength + " | inferenceCount: "
-        + inferenceCount + "/" + numOfInferences + " (" + remainingLength +  " samples has been trimmed)");
+        + inferenceCount + "/" + numOfInferences + " (" + remainingLength +  " samples trimmed to remaining buffer)");
         return this;
     }
 
@@ -114,7 +114,7 @@ public class RecordingData {
         recordingOffset += excessLength;
         readCount = recordingOffset + shortData.length;
         Log.v(LOG_TAG, "recordingOffset: " + recordingOffset + "/" + audioLength + " | inferenceCount: "
-        + inferenceCount + "/" + numOfInferences + " (" + excessLength +  " samples added to new recording buffer)");
+        + inferenceCount + "/" + numOfInferences + " (" + excessLength +  " excess samples added to new buffer)");
         return this;
     }
 
