@@ -1,7 +1,6 @@
 # TFlite Audio Plugin for Flutter
 
 [![pub package](https://img.shields.io/pub/v/tflite_audio.svg?label=version&color=blue)](https://pub.dev/packages/tflite_audio)
-[![likes](https://badges.bar/tflite_audio/likes)](https://pub.dev/packages/tflite_audio/score)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![style: effective dart](https://img.shields.io/badge/style-effective_dart-40c4ff.svg)](https://pub.dev/packages/effective_dart)
 
