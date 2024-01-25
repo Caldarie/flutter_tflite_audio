@@ -51,14 +51,14 @@ public class Recording{
     private ReentrantLock recordingBufferLock;
 
     @SuppressLint("MissingPermission")
-    public Recording(int bufferSize, int audioLength, int sampleRate, int numOfInferences){
+    public Recording(int bufferSize, int audioLength, int sampleRate, int numOfInferences, double overlap){
         this.bufferSize = bufferSize;
         this.audioLength = audioLength;
         this.sampleRate = sampleRate;
         this.numOfInferences = numOfInferences;
 
         this.subject = PublishSubject.create();
-        this.recordingData = new RecordingData(audioLength, bufferSize, numOfInferences);
+        this.recordingData = new RecordingData(audioLength, bufferSize, numOfInferences, overlap);
         this.record = new AudioRecord(
             MediaRecorder.AudioSource.DEFAULT,
             sampleRate,
@@ -117,8 +117,8 @@ public class Recording{
                         recordingData
                             .append(shortData)
                             .emit(data -> subject.onNext(data))
-                            .updateInferenceCount()
-                            .clear();
+                            .updateInference()
+                            .clearBuffer();
                         break;
 
                     case "finalise":
@@ -130,19 +130,19 @@ public class Recording{
 
                     case "trimAndRecognise":
                         recordingData
-                            .updateRemain()
-                            .trimToRemain(shortData)
+                            .extractRemain(shortData)
+                            .appendRemain()
                             .emit(data -> subject.onNext(data))
-                            .updateInferenceCount()
-                            .clear()
-                            .updateExcess()
-                            .addExcessToNew(shortData);
+                            .updateInference()
+                            .clearBuffer()
+                            .extractExcess(shortData)
+                            .appendExcess();
                         break;
 
                     case "trimAndFinalise":
                         recordingData
-                            .updateRemain()
-                            .trimToRemain(shortData)
+                            .extractRemain(shortData)
+                            .appendRemain()
                             .emit(data -> subject.onNext(data));
                         stop();
                         break;

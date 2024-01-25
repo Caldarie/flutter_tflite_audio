@@ -91,6 +91,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private int sampleRate;
     private int numOfInferences;
     private Recording recording;
+    private double overlap = 0.0; //TODO - ADD THIS TO TFLITE
 
     // input/output variables
     private int [] inputShape;
@@ -578,7 +579,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
     private void record() {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
-        recording = new Recording(bufferSize, audioLength, sampleRate, numOfInferences);
+        recording = new Recording(bufferSize, audioLength, sampleRate, numOfInferences, overlap);
         recording.setReentrantLock(recordingBufferLock);
         recording.getObservable()
                 .subscribeOn(Schedulers.io()) //run [observable] on background thread
