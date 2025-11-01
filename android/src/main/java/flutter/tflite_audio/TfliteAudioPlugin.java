@@ -43,7 +43,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 
 import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.view.FlutterMain;
+import io.flutter.FlutterInjector;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -200,6 +200,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 this.isAssetObj = arguments.get("isAsset");
                 loadModel();
                 Log.d(LOG_TAG, "loadModel parameters: " + arguments);
+                result.success(null);
                 break;
             case "setSpectrogramParameters":
                 // this.mSampleRate = (int) arguments.get("mSampleRate");
@@ -209,9 +210,11 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
                 this.nMels = (int) arguments.get("nMels");
                 this.hopLength = (int) arguments.get("hopLength");
                 Log.d(LOG_TAG, "Spectrogram parameters: " + arguments);
+                result.success(null);
                 break;
             case "stopAudioRecognition":
                 forceStop();
+                result.success(null);
                 break;
             default:
                 result.notImplemented();
@@ -256,7 +259,9 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         }
 
     }
-
+   public String getAssetLookupKey( String modelPath) {
+        return FlutterInjector.instance().flutterLoader().getLookupKeyForAsset(modelPath);
+    }
     private int determineInput(HashMap arguments) {
 
         int audioLength = (int) arguments.get("audioLength");
@@ -268,13 +273,16 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
             return audioLength;
         }
 
-        else if(isAudioInput){
+        else if(isAudioInput && inputShape != null){
             int newAudioLength = Arrays.stream(inputShape).reduce(1, (subtotal, element) -> subtotal * element);
             Log.d(LOG_TAG, "AudioLength has been readjusted. Length: " + newAudioLength);
             return newAudioLength;
         }
 
         else {
+            if(inputShape == null) {
+                Log.e(LOG_TAG, "Error: Model not loaded. Call loadModel() before starting recognition.");
+            }
             Log.d(LOG_TAG, "Warning: Unspecified audio length may cause unintended problems with spectro models");
             Log.d(LOG_TAG, "AudioLength: " + sampleRate);
             return sampleRate;
@@ -286,19 +294,15 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
         boolean isAudioInput = inputType.equals("rawAudio") || inputType.equals("decodedWav");
     
-        if(isAudioInput){ 
-            //TODO - Assert length is 2, and is not stereo
-            //need to have try and catch
-            // int shape = Arrays.stream(inputShape).reduce(0, (count, element) -> count + 1); --- DOES NOT WORK
-            // if (shape != 1) { throw new AssertionError("Input shape " + inputShape + "is not mono or raw audio."); } 
-            //Log.d(LOG_TAG, "count: " + shape);
-
+        if(isAudioInput && inputShape != null && inputShape.length >= 2){ 
             boolean result = inputShape[0] > inputShape[1];
             Log.d(LOG_TAG, "Transpose Audio: " + result);
-
             return result;
         } else {
-            Log.d(LOG_TAG, "Input is not audio. Audio does not require to be transposed.");
+            if(isAudioInput && inputShape == null) {
+                Log.e(LOG_TAG, "Error: Model not loaded. Cannot determine audio transpose. Defaulting to false.");
+            }
+            Log.d(LOG_TAG, "Input is not audio or model not loaded. Audio does not require to be transposed.");
             return false;
         }
     }
@@ -317,7 +321,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
         try {
             if (isAsset) {
-                key = FlutterMain.getLookupKeyForAsset(modelPath);
+                key = getAssetLookupKey(modelPath);
                 AssetFileDescriptor fileDescriptor = assetManager.openFd(key);
                 FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
                 FileChannel fileChannel = inputStream.getChannel();
@@ -347,7 +351,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
 
         if (labelPath.length() > 0) {
             if (isAsset) {
-                key = FlutterMain.getLookupKeyForAsset(labelPath);
+                key = getAssetLookupKey(labelPath);
                 loadLabels(assetManager, key);
             } else {
                 loadLabels(null, labelPath);
@@ -506,7 +510,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Flut
         try {
             if (isAsset) {
                 // Get exact location of the file in the asssets folder.
-                String key = FlutterMain.getLookupKeyForAsset(audioDirectory);
+                String key = getAssetLookupKey(audioDirectory);
                 fileDescriptor = assetManager.openFd(key);
                 startOffset = fileDescriptor.getStartOffset();
                 declaredLength = fileDescriptor.getDeclaredLength();

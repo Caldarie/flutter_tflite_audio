@@ -1,3 +1,15 @@
+## 0.4.0
+* **Feature: Android 15+ 16KB page size support** - Verified ARM64 16KB alignment for Google Play submission
+* **Breaking Change: TensorFlow Lite upgraded to 2.17.0** - Removed Select Ops support (not 16KB compatible yet)
+* **Breaking Change: Minimum Flutter version now 3.0.0** - Updated SDK constraints to support Dart 3.x
+* **Fixed: Critical NullPointerException crashes** - Added null safety checks for inputShape in determineInput() and determineAudio()
+* **Fixed: Model loading hanging indefinitely** - Added missing result.success() callbacks for async methods
+* **Feature: Improved UI loading states** - Added isModelLoaded tracking with loading spinner
+* **Improvement: Updated build tools** - AGP 8.3.0, Gradle 8.4, Java 11
+* **Improvement: Replaced deprecated methods** - FlutterLoader → FlutterInjector, lintOptions → lint
+* **Improvement: Better error logging** - Clear messages when model not loaded
+* **Note:** Google Teachable Machine models require Select Ops which don't support 16KB yet. Use standard TFLite models instead.
+
 ## 0.3.0
 * BREAK CHANGE: Recording bufferSize now takes in 2x the number of samples. To keep the same recording length, simply divide your previous bufferSize by 2.
 * Experimental: Support MFCC, melSpectrogram and spectrogram inputs

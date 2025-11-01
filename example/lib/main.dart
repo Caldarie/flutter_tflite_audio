@@ -19,24 +19,25 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final isRecording = ValueNotifier<bool>(false);
+  final isModelLoaded = ValueNotifier<bool>(false);
   Stream<Map<dynamic, dynamic>>? result;
 
-  ///example values for decodedwav models
-  // final String model = 'assets/decoded_wav_model.tflite';
-  // final String label = 'assets/decoded_wav_label.txt';
-  // final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
-  // final String inputType = 'decodedWav';
-  // final int sampleRate = 16000;
-  // final int bufferSize = 2000;
-  // // final int audioLength = 16000;
+  ///example values for decodedwav models (✅ WORKS - 16KB COMPATIBLE)
+  final String model = 'assets/decoded_wav_model.tflite';
+  final String label = 'assets/decoded_wav_label.txt';
+  final String audioDirectory = 'assets/sample_audio_16k_mono.wav';
+  final String inputType = 'decodedWav';
+  final int sampleRate = 16000;
+  final int bufferSize = 2000;
+  // final int audioLength = 16000;
 
-  ///example values for google's teachable machine model
-  final String model = 'assets/google_teach_machine_model.tflite';
-  final String label = 'assets/google_teach_machine_label.txt';
-  final String inputType = 'rawAudio';
-  final String audioDirectory = 'assets/sample_audio_44k_mono.wav';
-  final int sampleRate = 44100;
-  final int bufferSize = 11016;
+  ///example values for google's teachable machine model (❌ REQUIRES SELECT OPS - NOT YET 16KB COMPATIBLE)
+  // final String model = 'assets/google_teach_machine_model.tflite';
+  // final String label = 'assets/google_teach_machine_label.txt';
+  // final String inputType = 'rawAudio';
+  // final String audioDirectory = 'assets/sample_audio_44k_mono.wav';
+  // final int sampleRate = 44100;
+  // final int bufferSize = 11016;
   // final int audioLength = 44032;
 
   ///example values for MFCC, melspectrogram, spectrogram models
@@ -72,20 +73,34 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    TfliteAudio.loadModel(
-      // numThreads: this.numThreads,
-      // isAsset: this.isAsset,
-      // outputRawScores: outputRawScores,
-      inputType: inputType,
-      model: model,
-      label: label,
-    );
+    _loadModel();
+  }
 
-    //spectrogram parameters
-    // TfliteAudio.setSpectrogramParameters(nFFT: 256, hopLength: 129);
+  Future<void> _loadModel() async {
+    try {
+      log('Loading TFLite model...');
+      await TfliteAudio.loadModel(
+        numThreads: this.numThreads,
+        isAsset: this.isAsset,
+        outputRawScores: outputRawScores,
+        inputType: inputType,
+        model: model,
+        label: label,
+      );
+      log('Model loaded successfully');
 
-    // mfcc parameters
-    TfliteAudio.setSpectrogramParameters(nMFCC: 40, hopLength: 16384);
+      //spectrogram parameters (for spectrogram models)
+      // await TfliteAudio.setSpectrogramParameters(nFFT: 256, hopLength: 129);
+
+      // mfcc parameters (for mfcc models)
+      // await TfliteAudio.setSpectrogramParameters(nMFCC: 40, hopLength: 16384);
+      log('Spectrogram parameters set');
+
+      isModelLoaded.value = true;
+      log('Ready to start recognition');
+    } catch (e) {
+      log('Error loading model: $e');
+    }
   }
 
   void getResult() {
@@ -190,30 +205,42 @@ class _MyAppState extends State<MyApp> {
                 }),
             floatingActionButtonLocation:
                 FloatingActionButtonLocation.centerFloat,
-            floatingActionButton: ValueListenableBuilder(
-                valueListenable: isRecording,
-                builder: (context, value, widget) {
-                  if (value == false) {
+            floatingActionButton: ValueListenableBuilder<bool>(
+                valueListenable: isModelLoaded,
+                builder: (context, modelLoaded, widget) {
+                  if (!modelLoaded) {
                     return FloatingActionButton(
-                      onPressed: () {
-                        isRecording.value = true;
-                        setState(() {
-                          getResult();
-                        });
-                      },
-                      backgroundColor: Colors.blue,
-                      child: const Icon(Icons.mic),
-                    );
-                  } else {
-                    return FloatingActionButton(
-                      onPressed: () {
-                        log('Audio Recognition Stopped');
-                        TfliteAudio.stopAudioRecognition();
-                      },
-                      backgroundColor: Colors.red,
-                      child: const Icon(Icons.adjust),
+                      onPressed: null,
+                      backgroundColor: Colors.grey,
+                      child:
+                          const CircularProgressIndicator(color: Colors.white),
                     );
                   }
+                  return ValueListenableBuilder<bool>(
+                      valueListenable: isRecording,
+                      builder: (context, recording, widget) {
+                        if (recording == false) {
+                          return FloatingActionButton(
+                            onPressed: () {
+                              isRecording.value = true;
+                              setState(() {
+                                getResult();
+                              });
+                            },
+                            backgroundColor: Colors.blue,
+                            child: const Icon(Icons.mic),
+                          );
+                        } else {
+                          return FloatingActionButton(
+                            onPressed: () {
+                              log('Audio Recognition Stopped');
+                              TfliteAudio.stopAudioRecognition();
+                            },
+                            backgroundColor: Colors.red,
+                            child: const Icon(Icons.adjust),
+                          );
+                        }
+                      });
                 })));
   }
 
